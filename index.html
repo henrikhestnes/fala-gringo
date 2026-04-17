@@ -131,6 +131,10 @@
     transition: box-shadow 0.15s ease;
   }
 
+  .shuffled .verb-row {
+    border-left: 4px solid var(--row-color, var(--border));
+  }
+
   .verb-row:hover {
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
   }
@@ -224,6 +228,11 @@
     <button onclick="showAll()" id="btn-show">Show all</button>
   </div>
 
+  <div class="controls">
+    <button onclick="shuffleVerbs()" id="btn-shuffle">Shuffle</button>
+    <button onclick="resetOrder()" id="btn-reset">Original order</button>
+  </div>
+
   <div id="content"></div>
 
   <footer>50 verbos mais úteis &mdash; study tool</footer>
@@ -313,9 +322,37 @@ const DATA = [
   }
 ];
 
+function buildRow(num, pt, en, note, color) {
+  const row = document.createElement("div");
+  row.className = "verb-row";
+  if (color) row.style.setProperty("--row-color", color);
+
+  const numEl = document.createElement("span");
+  numEl.className = "verb-num";
+  numEl.textContent = num + ".";
+
+  const ptEl = document.createElement("span");
+  ptEl.className = "verb-pt";
+  ptEl.dataset.lang = "pt";
+  ptEl.innerHTML = pt + (note ? ` <span class="note">(${note})</span>` : "");
+  ptEl.addEventListener("click", () => ptEl.classList.toggle("hidden"));
+
+  const enEl = document.createElement("span");
+  enEl.className = "verb-en";
+  enEl.dataset.lang = "en";
+  enEl.textContent = en;
+  enEl.addEventListener("click", () => enEl.classList.toggle("hidden"));
+
+  row.appendChild(numEl);
+  row.appendChild(ptEl);
+  row.appendChild(enEl);
+  return row;
+}
+
 function render() {
   const root = document.getElementById("content");
   root.innerHTML = "";
+  root.classList.remove("shuffled");
 
   DATA.forEach(cat => {
     const section = document.createElement("div");
@@ -331,34 +368,55 @@ function render() {
 
     cat.verbs.forEach(v => {
       const [num, pt, en, note] = v;
-      const row = document.createElement("div");
-      row.className = "verb-row";
-
-      const numEl = document.createElement("span");
-      numEl.className = "verb-num";
-      numEl.textContent = num + ".";
-
-      const ptEl = document.createElement("span");
-      ptEl.className = "verb-pt";
-      ptEl.dataset.lang = "pt";
-      ptEl.innerHTML = pt + (note ? ` <span class="note">(${note})</span>` : "");
-      ptEl.addEventListener("click", () => ptEl.classList.toggle("hidden"));
-
-      const enEl = document.createElement("span");
-      enEl.className = "verb-en";
-      enEl.dataset.lang = "en";
-      enEl.textContent = en;
-      enEl.addEventListener("click", () => enEl.classList.toggle("hidden"));
-
-      row.appendChild(numEl);
-      row.appendChild(ptEl);
-      row.appendChild(enEl);
-      list.appendChild(row);
+      list.appendChild(buildRow(num, pt, en, note, cat.color));
     });
 
     section.appendChild(list);
     root.appendChild(section);
   });
+
+  updateOrderButtons(false);
+}
+
+function renderShuffled() {
+  const all = [];
+  DATA.forEach(cat => {
+    cat.verbs.forEach(v => {
+      const [num, pt, en, note] = v;
+      all.push({ num, pt, en, note, color: cat.color });
+    });
+  });
+
+  for (let i = all.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [all[i], all[j]] = [all[j], all[i]];
+  }
+
+  const root = document.getElementById("content");
+  root.innerHTML = "";
+  root.classList.add("shuffled");
+
+  const list = document.createElement("div");
+  list.className = "verb-list";
+  all.forEach(v => {
+    list.appendChild(buildRow(v.num, v.pt, v.en, v.note, v.color));
+  });
+  root.appendChild(list);
+
+  updateOrderButtons(true);
+}
+
+function shuffleVerbs() {
+  renderShuffled();
+}
+
+function resetOrder() {
+  render();
+}
+
+function updateOrderButtons(isShuffled) {
+  document.getElementById("btn-shuffle").classList.toggle("active", isShuffled);
+  document.getElementById("btn-reset").classList.toggle("active", !isShuffled);
 }
 
 function hideAll(lang) {
