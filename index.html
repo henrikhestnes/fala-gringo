@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>50 Verbos Úteis — Português / English</title>
+<title>Verbos Úteis — Português / English</title>
 <style>
   :root {
     --bg: #fafaf9;
@@ -218,7 +218,7 @@
 <body>
 <div class="container">
   <header>
-    <h1>50 Verbos Úteis</h1>
+    <h1>Verbos Úteis</h1>
     <p>Portuguese &harr; English &mdash; click any word to hide/reveal</p>
   </header>
 
@@ -235,89 +235,174 @@
 
   <div id="content"></div>
 
-  <footer>50 verbos mais úteis &mdash; study tool</footer>
+  <footer>Verbos mais úteis &mdash; study tool</footer>
 </div>
 
 <script>
 const DATA = [
   {
+    category: "Essenciais",
+    color: "#ec4899",
+    verbs: [
+      [1, "ser", "to be (permanent / inherent)", "irregular"],
+      [2, "estar", "to be (temporary / location)", "irregular"],
+      [3, "ter", "to have", "irregular"],
+      [4, "haver", "there to be / to exist", "irregular"],
+      [5, "ir", "to go", "irregular"],
+      [6, "vir", "to come", "irregular"],
+      [7, "fazer", "to do, to make", "irregular"],
+      [8, "dar", "to give", "irregular"],
+      [9, "ver", "to see", "irregular"],
+      [10, "ficar", "to stay, to become"]
+    ]
+  },
+  {
+    category: "Modais e cognitivos",
+    color: "#0ea5e9",
+    verbs: [
+      [11, "poder", "can, to be able to", "irregular"],
+      [12, "querer", "to want", "irregular"],
+      [13, "precisar", "to need"],
+      [14, "dever", "must, should"],
+      [15, "saber", "to know (facts)", "irregular"],
+      [16, "conhecer", "to know (people, places)"],
+      [17, "achar", "to think, to find"],
+      [18, "pensar", "to think"],
+      [19, "lembrar", "to remember"],
+      [20, "esquecer", "to forget"]
+    ]
+  },
+  {
     category: "Vida diária e mobilidade",
     color: "#3b82f6",
     verbs: [
-      [1, "morar", "to live"],
-      [2, "trabalhar", "to work"],
-      [3, "estudar", "to study"],
-      [4, "chegar", "to arrive"],
-      [5, "sair", "to go out", "irregular"],
-      [6, "entrar", "to enter, to get in, to come in"],
-      [7, "pegar", "to take (bus, metro, Uber)"],
-      [8, "levar", "to take / carry"],
-      [9, "voltar", "to return"],
-      [10, "caminhar", "to walk"]
+      [21, "morar", "to live (reside)"],
+      [22, "trabalhar", "to work"],
+      [23, "estudar", "to study"],
+      [24, "chegar", "to arrive"],
+      [25, "sair", "to go out", "irregular"],
+      [26, "entrar", "to enter, to get in, to come in"],
+      [27, "pegar", "to take (bus, metro, Uber)"],
+      [28, "levar", "to take / carry"],
+      [29, "voltar", "to return"],
+      [30, "caminhar", "to walk"],
+      [31, "dirigir", "to drive"],
+      [32, "ligar", "to call (phone), to turn on"]
     ]
   },
   {
     category: "Comunicação",
     color: "#8b5cf6",
     verbs: [
-      [11, "falar", "to speak, to talk"],
-      [12, "perguntar", "to ask"],
-      [13, "responder", "to answer"],
-      [14, "explicar", "to explain"],
-      [15, "chamar", "to call"],
-      [16, "conversar", "to chat"],
-      [17, "contar", "to tell"],
-      [18, "repetir", "to repeat", "irregular"],
-      [19, "entender", "to understand"],
-      [20, "aprender", "to learn"]
+      [33, "falar", "to speak, to talk"],
+      [34, "dizer", "to say", "irregular"],
+      [35, "perguntar", "to ask"],
+      [36, "responder", "to answer"],
+      [37, "explicar", "to explain"],
+      [38, "chamar", "to call"],
+      [39, "conversar", "to chat"],
+      [40, "contar", "to tell"],
+      [41, "repetir", "to repeat", "irregular"],
+      [42, "entender", "to understand"],
+      [43, "aprender", "to learn"]
     ]
   },
   {
     category: "Consumo e serviços",
     color: "#10b981",
     verbs: [
-      [21, "comprar", "to buy"],
-      [22, "pagar", "to pay"],
-      [23, "usar", "to use"],
-      [24, "pedir", "to order / request", "irregular"],
-      [25, "abrir", "to open"],
-      [26, "fechar", "to close"],
-      [27, "vender", "to sell"],
-      [28, "trocar", "to exchange"],
-      [29, "escolher", "to choose"],
-      [30, "procurar", "to look for"]
+      [44, "comprar", "to buy"],
+      [45, "pagar", "to pay"],
+      [46, "usar", "to use"],
+      [47, "pedir", "to order / request", "irregular"],
+      [48, "abrir", "to open"],
+      [49, "fechar", "to close"],
+      [50, "vender", "to sell"],
+      [51, "trocar", "to exchange"],
+      [52, "escolher", "to choose"],
+      [53, "procurar", "to look for"]
     ]
   },
   {
     category: "Rotina e lazer",
     color: "#f59e0b",
     verbs: [
-      [31, "comer", "to eat"],
-      [32, "beber", "to drink"],
-      [33, "cozinhar", "to cook"],
-      [34, "assistir", "to watch"],
-      [35, "escutar", "to listen"],
-      [36, "dançar", "to dance"],
-      [37, "viajar", "to travel"],
-      [38, "descansar", "to rest"],
-      [39, "praticar", "to practice"],
-      [40, "treinar", "to train"]
+      [54, "comer", "to eat"],
+      [55, "beber", "to drink"],
+      [56, "cozinhar", "to cook"],
+      [57, "assistir", "to watch"],
+      [58, "escutar", "to listen"],
+      [59, "dançar", "to dance"],
+      [60, "viajar", "to travel"],
+      [61, "descansar", "to rest"],
+      [62, "praticar", "to practice"],
+      [63, "treinar", "to train"]
+    ]
+  },
+  {
+    category: "Ações do dia a dia",
+    color: "#f97316",
+    verbs: [
+      [64, "acordar", "to wake up"],
+      [65, "dormir", "to sleep", "irregular"],
+      [66, "ler", "to read", "irregular"],
+      [67, "escrever", "to write"],
+      [68, "ouvir", "to hear", "irregular"],
+      [69, "começar", "to start, to begin"],
+      [70, "terminar", "to finish"],
+      [71, "tentar", "to try"],
+      [72, "conseguir", "to manage, to succeed", "irregular"],
+      [73, "mostrar", "to show"]
+    ]
+  },
+  {
+    category: "Ações e movimentos",
+    color: "#14b8a6",
+    verbs: [
+      [74, "trazer", "to bring", "irregular"],
+      [75, "colocar", "to put, to place"],
+      [76, "tirar", "to take off, to remove"],
+      [77, "deixar", "to leave (behind), to let"],
+      [78, "passar", "to pass, to spend (time)"],
+      [79, "parar", "to stop"],
+      [80, "continuar", "to continue"],
+      [81, "mudar", "to change, to move (house)"],
+      [82, "correr", "to run"],
+      [83, "cair", "to fall", "irregular"]
+    ]
+  },
+  {
+    category: "Sentimentos e percepção",
+    color: "#a855f7",
+    verbs: [
+      [84, "sentir", "to feel", "irregular"],
+      [85, "acreditar", "to believe"],
+      [86, "parecer", "to seem, to look like"],
+      [87, "ganhar", "to win, to earn"],
+      [88, "perder", "to lose", "irregular"],
+      [89, "rir", "to laugh", "irregular"],
+      [90, "sorrir", "to smile", "irregular"],
+      [91, "chorar", "to cry"],
+      [92, "sonhar", "to dream"],
+      [93, "viver", "to live (to be alive)"]
     ]
   },
   {
     category: "Interação social",
     color: "#ef4444",
     verbs: [
-      [41, "gostar", "to like"],
-      [42, "amar", "to love"],
-      [43, "ajudar", "to help"],
-      [44, "convidar", "to invite"],
-      [45, "aceitar", "to accept"],
-      [46, "recusar", "to refuse"],
-      [47, "combinar", "to arrange"],
-      [48, "encontrar", "to meet"],
-      [49, "esperar", "to wait"],
-      [50, "seguir", "to follow", "irregular"]
+      [94, "gostar", "to like"],
+      [95, "amar", "to love"],
+      [96, "ajudar", "to help"],
+      [97, "convidar", "to invite"],
+      [98, "aceitar", "to accept"],
+      [99, "recusar", "to refuse"],
+      [100, "combinar", "to arrange"],
+      [101, "encontrar", "to meet"],
+      [102, "esperar", "to wait, to hope"],
+      [103, "seguir", "to follow", "irregular"],
+      [104, "agradecer", "to thank"],
+      [105, "desculpar", "to apologize, to excuse"]
     ]
   }
 ];
