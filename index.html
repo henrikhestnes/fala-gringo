@@ -121,7 +121,7 @@
 
   .verb-row {
     display: grid;
-    grid-template-columns: 2.2rem 1fr 1fr;
+    grid-template-columns: 2.2rem 1.75rem 1fr 1fr;
     align-items: center;
     gap: 0.5rem;
     background: var(--card);
@@ -129,6 +129,42 @@
     border-radius: 8px;
     padding: 0.6rem 0.75rem;
     transition: box-shadow 0.15s ease;
+  }
+
+  .speak-btn {
+    width: 1.75rem;
+    height: 1.75rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    border-radius: 50%;
+    padding: 0;
+    transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  .speak-btn:hover {
+    background: var(--hidden-bg);
+    color: var(--accent);
+  }
+
+  .speak-btn:active {
+    transform: scale(0.9);
+  }
+
+  .speak-btn.playing {
+    color: var(--accent);
+    background: var(--hidden-bg);
+  }
+
+  .speak-btn svg {
+    width: 1.05rem;
+    height: 1.05rem;
   }
 
   .shuffled .verb-row {
@@ -201,12 +237,12 @@
 
   @media (max-width: 500px) {
     .verb-row {
-      grid-template-columns: 2rem 1fr;
+      grid-template-columns: 1.75rem 1.75rem 1fr;
       padding: 0.6rem;
       gap: 0.2rem 0.4rem;
     }
     .verb-en {
-      grid-column: 2;
+      grid-column: 3;
       font-size: 0.85rem;
       padding-top: 0;
     }
@@ -407,6 +443,42 @@ const DATA = [
   }
 ];
 
+const SPEAKER_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>';
+
+let ptVoice = null;
+function loadVoices() {
+  const voices = window.speechSynthesis ? speechSynthesis.getVoices() : [];
+  const isPt = v => v.lang && v.lang.toLowerCase().startsWith("pt");
+  ptVoice = voices.find(v => isPt(v) && /luciana/i.test(v.name))
+         || voices.find(v => v.lang === "pt-BR" && /google|natural|premium|enhanced/i.test(v.name))
+         || voices.find(v => v.lang === "pt-BR")
+         || voices.find(isPt)
+         || null;
+}
+if (typeof window !== "undefined" && window.speechSynthesis) {
+  loadVoices();
+  speechSynthesis.onvoiceschanged = loadVoices;
+}
+
+function speak(text, btn) {
+  if (!window.speechSynthesis) return;
+  speechSynthesis.cancel();
+  document.querySelectorAll(".speak-btn.playing").forEach(b => b.classList.remove("playing"));
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "pt-BR";
+  utterance.rate = 0.9;
+  if (ptVoice) utterance.voice = ptVoice;
+
+  if (btn) {
+    btn.classList.add("playing");
+    utterance.onend = () => btn.classList.remove("playing");
+    utterance.onerror = () => btn.classList.remove("playing");
+  }
+
+  speechSynthesis.speak(utterance);
+}
+
 function buildRow(num, pt, en, note, color) {
   const row = document.createElement("div");
   row.className = "verb-row";
@@ -415,6 +487,17 @@ function buildRow(num, pt, en, note, color) {
   const numEl = document.createElement("span");
   numEl.className = "verb-num";
   numEl.textContent = num + ".";
+
+  const speakBtn = document.createElement("button");
+  speakBtn.className = "speak-btn";
+  speakBtn.type = "button";
+  speakBtn.setAttribute("aria-label", `Ouvir pronúncia de ${pt}`);
+  speakBtn.title = `Ouvir "${pt}"`;
+  speakBtn.innerHTML = SPEAKER_SVG;
+  speakBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    speak(pt, speakBtn);
+  });
 
   const ptEl = document.createElement("span");
   ptEl.className = "verb-pt";
@@ -429,6 +512,7 @@ function buildRow(num, pt, en, note, color) {
   enEl.addEventListener("click", () => enEl.classList.toggle("hidden"));
 
   row.appendChild(numEl);
+  row.appendChild(speakBtn);
   row.appendChild(ptEl);
   row.appendChild(enEl);
   return row;
