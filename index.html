@@ -123,7 +123,7 @@
 
   .verb-row {
     display: grid;
-    grid-template-columns: 2.2rem 1.75rem 1fr 1fr;
+    grid-template-columns: 2.2rem 1.75rem 1fr 1.75rem;
     align-items: center;
     gap: 0.5rem;
     background: var(--card);
@@ -133,7 +133,15 @@
     transition: box-shadow 0.15s ease;
   }
 
-  .speak-btn {
+  .verb-text {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  .speak-btn, .conj-btn {
     width: 1.75rem;
     height: 1.75rem;
     display: inline-flex;
@@ -150,12 +158,12 @@
     touch-action: manipulation;
   }
 
-  .speak-btn:hover {
+  .speak-btn:hover, .conj-btn:hover {
     background: var(--hidden-bg);
     color: var(--accent);
   }
 
-  .speak-btn:active {
+  .speak-btn:active, .conj-btn:active {
     transform: scale(0.9);
   }
 
@@ -164,9 +172,105 @@
     background: var(--hidden-bg);
   }
 
-  .speak-btn svg {
+  .speak-btn svg, .conj-btn svg {
     width: 1.05rem;
     height: 1.05rem;
+  }
+
+  .conj-btn svg {
+    transition: transform 0.2s ease;
+  }
+
+  .verb-row.expanded .conj-btn {
+    color: var(--accent);
+  }
+
+  .verb-row.expanded .conj-btn svg {
+    transform: rotate(180deg);
+  }
+
+  .conjugation-panel {
+    grid-column: 1 / -1;
+    display: none;
+    margin-top: 0.6rem;
+    padding-top: 0.6rem;
+    border-top: 1px dashed var(--border);
+  }
+
+  .verb-row.expanded .conjugation-panel {
+    display: block;
+  }
+
+  .conj-body {
+    display: grid;
+    gap: 0.9rem 1.25rem;
+  }
+
+  @media (min-width: 620px) {
+    .conj-body {
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+  }
+
+  .conj-tense {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 0.6rem;
+    row-gap: 0.4rem;
+    align-items: baseline;
+  }
+
+  .conj-title {
+    grid-column: 1 / -1;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin-bottom: 0.15rem;
+  }
+
+  .conj-pron {
+    color: var(--muted);
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+
+  .conj-forms {
+    display: flex;
+    flex-direction: column;
+    gap: 0.05rem;
+    min-width: 0;
+  }
+
+  .conj-form {
+    font-size: 0.92rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+    transition: background 0.15s ease, color 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+    align-self: flex-start;
+  }
+
+  .conj-form:hover {
+    background: var(--hidden-bg);
+    color: var(--accent);
+  }
+
+  .conj-en {
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-style: italic;
+    padding: 0 0.35rem;
+    line-height: 1.25;
+  }
+
+  .conjugation-panel .note-unknown {
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-style: italic;
   }
 
   .shuffled .verb-row {
@@ -239,12 +343,15 @@
 
   @media (max-width: 500px) {
     .verb-row {
-      grid-template-columns: 1.75rem 1.75rem 1fr;
+      grid-template-columns: 1.75rem 1.75rem 1fr 1.5rem;
       padding: 0.6rem;
-      gap: 0.2rem 0.4rem;
+      gap: 0.3rem 0.4rem;
+    }
+    .verb-text {
+      grid-template-columns: 1fr;
+      gap: 0.1rem;
     }
     .verb-en {
-      grid-column: 3;
       font-size: 0.85rem;
       padding-top: 0;
     }
@@ -446,6 +553,362 @@ const DATA = [
 ];
 
 const SPEAKER_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>';
+const CHEVRON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>';
+
+const PRONOUNS = ["eu", "você / ele / ela", "nós", "vocês / eles / elas"];
+const TENSES = [
+  { key: "presente", label: "Presente" },
+  { key: "perfeito", label: "Pret. Perfeito" },
+  { key: "imperfeito", label: "Pret. Imperfeito" }
+];
+
+const IRREGULAR = {
+  ser: {
+    presente: ["sou", "é", "somos", "são"],
+    perfeito: ["fui", "foi", "fomos", "foram"],
+    imperfeito: ["era", "era", "éramos", "eram"]
+  },
+  estar: {
+    presente: ["estou", "está", "estamos", "estão"],
+    perfeito: ["estive", "esteve", "estivemos", "estiveram"],
+    imperfeito: ["estava", "estava", "estávamos", "estavam"]
+  },
+  ter: {
+    presente: ["tenho", "tem", "temos", "têm"],
+    perfeito: ["tive", "teve", "tivemos", "tiveram"],
+    imperfeito: ["tinha", "tinha", "tínhamos", "tinham"]
+  },
+  haver: {
+    presente: ["hei", "há", "havemos", "hão"],
+    perfeito: ["houve", "houve", "houvemos", "houveram"],
+    imperfeito: ["havia", "havia", "havíamos", "haviam"],
+    en: {
+      presente: ["I have", "there is / are", "we have", "they have"],
+      perfeito: ["I had", "there was / were", "we had", "they had"],
+      imperfeito: ["I used to have", "there was / were", "we used to have", "they used to have"]
+    }
+  },
+  ir: {
+    presente: ["vou", "vai", "vamos", "vão"],
+    perfeito: ["fui", "foi", "fomos", "foram"],
+    imperfeito: ["ia", "ia", "íamos", "iam"]
+  },
+  vir: {
+    presente: ["venho", "vem", "vimos", "vêm"],
+    perfeito: ["vim", "veio", "viemos", "vieram"],
+    imperfeito: ["vinha", "vinha", "vínhamos", "vinham"]
+  },
+  fazer: {
+    presente: ["faço", "faz", "fazemos", "fazem"],
+    perfeito: ["fiz", "fez", "fizemos", "fizeram"],
+    imperfeito: ["fazia", "fazia", "fazíamos", "faziam"]
+  },
+  dar: {
+    presente: ["dou", "dá", "damos", "dão"],
+    perfeito: ["dei", "deu", "demos", "deram"],
+    imperfeito: ["dava", "dava", "dávamos", "davam"]
+  },
+  ver: {
+    presente: ["vejo", "vê", "vemos", "veem"],
+    perfeito: ["vi", "viu", "vimos", "viram"],
+    imperfeito: ["via", "via", "víamos", "viam"]
+  },
+  poder: {
+    presente: ["posso", "pode", "podemos", "podem"],
+    perfeito: ["pude", "pôde", "pudemos", "puderam"],
+    imperfeito: ["podia", "podia", "podíamos", "podiam"]
+  },
+  querer: {
+    presente: ["quero", "quer", "queremos", "querem"],
+    perfeito: ["quis", "quis", "quisemos", "quiseram"],
+    imperfeito: ["queria", "queria", "queríamos", "queriam"]
+  },
+  saber: {
+    presente: ["sei", "sabe", "sabemos", "sabem"],
+    perfeito: ["soube", "soube", "soubemos", "souberam"],
+    imperfeito: ["sabia", "sabia", "sabíamos", "sabiam"]
+  },
+  sair: {
+    presente: ["saio", "sai", "saímos", "saem"],
+    perfeito: ["saí", "saiu", "saímos", "saíram"],
+    imperfeito: ["saía", "saía", "saíamos", "saíam"]
+  },
+  dizer: {
+    presente: ["digo", "diz", "dizemos", "dizem"],
+    perfeito: ["disse", "disse", "dissemos", "disseram"],
+    imperfeito: ["dizia", "dizia", "dizíamos", "diziam"]
+  },
+  repetir: {
+    presente: ["repito", "repete", "repetimos", "repetem"],
+    perfeito: ["repeti", "repetiu", "repetimos", "repetiram"],
+    imperfeito: ["repetia", "repetia", "repetíamos", "repetiam"]
+  },
+  pedir: {
+    presente: ["peço", "pede", "pedimos", "pedem"],
+    perfeito: ["pedi", "pediu", "pedimos", "pediram"],
+    imperfeito: ["pedia", "pedia", "pedíamos", "pediam"]
+  },
+  dormir: {
+    presente: ["durmo", "dorme", "dormimos", "dormem"],
+    perfeito: ["dormi", "dormiu", "dormimos", "dormiram"],
+    imperfeito: ["dormia", "dormia", "dormíamos", "dormiam"]
+  },
+  ler: {
+    presente: ["leio", "lê", "lemos", "leem"],
+    perfeito: ["li", "leu", "lemos", "leram"],
+    imperfeito: ["lia", "lia", "líamos", "liam"]
+  },
+  ouvir: {
+    presente: ["ouço", "ouve", "ouvimos", "ouvem"],
+    perfeito: ["ouvi", "ouviu", "ouvimos", "ouviram"],
+    imperfeito: ["ouvia", "ouvia", "ouvíamos", "ouviam"]
+  },
+  conseguir: {
+    presente: ["consigo", "consegue", "conseguimos", "conseguem"],
+    perfeito: ["consegui", "conseguiu", "conseguimos", "conseguiram"],
+    imperfeito: ["conseguia", "conseguia", "conseguíamos", "conseguiam"]
+  },
+  trazer: {
+    presente: ["trago", "traz", "trazemos", "trazem"],
+    perfeito: ["trouxe", "trouxe", "trouxemos", "trouxeram"],
+    imperfeito: ["trazia", "trazia", "trazíamos", "traziam"]
+  },
+  cair: {
+    presente: ["caio", "cai", "caímos", "caem"],
+    perfeito: ["caí", "caiu", "caímos", "caíram"],
+    imperfeito: ["caía", "caía", "caíamos", "caíam"]
+  },
+  sentir: {
+    presente: ["sinto", "sente", "sentimos", "sentem"],
+    perfeito: ["senti", "sentiu", "sentimos", "sentiram"],
+    imperfeito: ["sentia", "sentia", "sentíamos", "sentiam"]
+  },
+  perder: {
+    presente: ["perco", "perde", "perdemos", "perdem"],
+    perfeito: ["perdi", "perdeu", "perdemos", "perderam"],
+    imperfeito: ["perdia", "perdia", "perdíamos", "perdiam"]
+  },
+  rir: {
+    presente: ["rio", "ri", "rimos", "riem"],
+    perfeito: ["ri", "riu", "rimos", "riram"],
+    imperfeito: ["ria", "ria", "ríamos", "riam"]
+  },
+  sorrir: {
+    presente: ["sorrio", "sorri", "sorrimos", "sorriem"],
+    perfeito: ["sorri", "sorriu", "sorrimos", "sorriram"],
+    imperfeito: ["sorria", "sorria", "sorríamos", "sorriam"]
+  },
+  seguir: {
+    presente: ["sigo", "segue", "seguimos", "seguem"],
+    perfeito: ["segui", "seguiu", "seguimos", "seguiram"],
+    imperfeito: ["seguia", "seguia", "seguíamos", "seguiam"]
+  }
+};
+
+function conjugateRegular(verb) {
+  const ending = verb.slice(-2);
+  const stem = verb.slice(0, -2);
+  const last = stem.slice(-1);
+  const stemBase = stem.slice(0, -1);
+
+  if (ending === "ar") {
+    let perfStem1 = stem;
+    if (last === "c") perfStem1 = stemBase + "qu";
+    else if (last === "g") perfStem1 = stemBase + "gu";
+    else if (last === "ç") perfStem1 = stemBase + "c";
+    return {
+      presente: [stem + "o", stem + "a", stem + "amos", stem + "am"],
+      perfeito: [perfStem1 + "ei", stem + "ou", stem + "amos", stem + "aram"],
+      imperfeito: [stem + "ava", stem + "ava", stem + "ávamos", stem + "avam"]
+    };
+  }
+
+  if (ending === "er") {
+    let presStem1 = stem;
+    if (last === "c") presStem1 = stemBase + "ç";
+    else if (last === "g") presStem1 = stemBase + "j";
+    return {
+      presente: [presStem1 + "o", stem + "e", stem + "emos", stem + "em"],
+      perfeito: [stem + "i", stem + "eu", stem + "emos", stem + "eram"],
+      imperfeito: [stem + "ia", stem + "ia", stem + "íamos", stem + "iam"]
+    };
+  }
+
+  if (ending === "ir") {
+    let presStem1 = stem;
+    if (last === "g") presStem1 = stemBase + "j";
+    return {
+      presente: [presStem1 + "o", stem + "e", stem + "imos", stem + "em"],
+      perfeito: [stem + "i", stem + "iu", stem + "imos", stem + "iram"],
+      imperfeito: [stem + "ia", stem + "ia", stem + "íamos", stem + "iam"]
+    };
+  }
+
+  return null;
+}
+
+function conjugate(verb) {
+  if (IRREGULAR[verb]) return IRREGULAR[verb];
+  return conjugateRegular(verb);
+}
+
+const EN_PRONOUNS = ["I", "he / she", "we", "they"];
+
+const IRREGULAR_EN_PAST = {
+  "have": "had", "go": "went", "come": "came", "do": "did", "give": "gave",
+  "see": "saw", "say": "said", "think": "thought", "take": "took", "put": "put",
+  "leave": "left", "meet": "met", "tell": "told", "read": "read", "write": "wrote",
+  "hear": "heard", "understand": "understood", "drive": "drove", "sleep": "slept",
+  "wake": "woke", "bring": "brought", "run": "ran", "fall": "fell", "feel": "felt",
+  "win": "won", "lose": "lost", "sell": "sold", "choose": "chose", "know": "knew",
+  "forget": "forgot", "speak": "spoke", "pay": "paid", "eat": "ate", "drink": "drank",
+  "buy": "bought", "stop": "stopped", "chat": "chatted", "can": "could", "must": "had to"
+};
+
+const IRREGULAR_EN_3SG = {
+  "be": "is", "have": "has", "do": "does", "go": "goes",
+  "can": "can", "must": "must", "should": "should"
+};
+
+const NON_INFLECTING_EN = new Set(["can", "must", "should"]);
+
+function extractPrimaryEn(enText) {
+  let s = enText.trim();
+  if (s.startsWith("to ")) s = s.slice(3);
+  const cuts = [",", "/", "("].map(c => s.indexOf(c)).filter(i => i >= 0);
+  if (cuts.length) s = s.slice(0, Math.min(...cuts));
+  return s.trim();
+}
+
+function splitEnPhrase(phrase) {
+  const parts = phrase.split(/\s+/);
+  return { head: parts[0], rest: parts.slice(1).join(" ") };
+}
+
+function regularPastEn(v) {
+  if (v.endsWith("e")) return v + "d";
+  if (/[^aeiou]y$/.test(v)) return v.slice(0, -1) + "ied";
+  return v + "ed";
+}
+
+function regular3sgEn(v) {
+  if (/[^aeiou]y$/.test(v)) return v.slice(0, -1) + "ies";
+  if (/(s|x|z|o)$/.test(v) || /(ch|sh)$/.test(v)) return v + "es";
+  return v + "s";
+}
+
+function joinHead(head, rest) {
+  return rest ? head + " " + rest : head;
+}
+
+function enPresent(phrase, personIdx) {
+  const { head, rest } = splitEnPhrase(phrase);
+  if (head === "be") {
+    const form = personIdx === 0 ? "am" : personIdx === 1 ? "is" : "are";
+    return joinHead(form, rest);
+  }
+  if (personIdx === 1) {
+    const form = IRREGULAR_EN_3SG[head] !== undefined ? IRREGULAR_EN_3SG[head] : regular3sgEn(head);
+    return joinHead(form, rest);
+  }
+  return joinHead(head, rest);
+}
+
+function enPast(phrase, personIdx) {
+  const { head, rest } = splitEnPhrase(phrase);
+  if (head === "be") {
+    const form = (personIdx === 2 || personIdx === 3) ? "were" : "was";
+    return joinHead(form, rest);
+  }
+  const form = IRREGULAR_EN_PAST[head] !== undefined ? IRREGULAR_EN_PAST[head] : regularPastEn(head);
+  return joinHead(form, rest);
+}
+
+function enImperfect(phrase, personIdx) {
+  const { head, rest } = splitEnPhrase(phrase);
+  if (head === "be") {
+    return joinHead("used to be", rest);
+  }
+  if (NON_INFLECTING_EN.has(head)) {
+    const form = IRREGULAR_EN_PAST[head] || head;
+    return joinHead(form, rest);
+  }
+  return joinHead("used to " + head, rest);
+}
+
+function conjugateEn(ptVerb, enText) {
+  const override = IRREGULAR[ptVerb] && IRREGULAR[ptVerb].en;
+  if (override) return override;
+
+  const phrase = extractPrimaryEn(enText);
+  if (!phrase) return null;
+
+  const build = fn => EN_PRONOUNS.map((p, i) => `${p} ${fn(phrase, i)}`);
+  return {
+    presente: build(enPresent),
+    perfeito: build(enPast),
+    imperfeito: build(enImperfect)
+  };
+}
+
+function buildConjugationPanel(verb, enText) {
+  const c = conjugate(verb);
+  const ce = conjugateEn(verb, enText);
+  const panel = document.createElement("div");
+  panel.className = "conjugation-panel";
+
+  if (!c) {
+    panel.innerHTML = '<span class="note-unknown">Conjugação não disponível.</span>';
+    return panel;
+  }
+
+  const body = document.createElement("div");
+  body.className = "conj-body";
+
+  TENSES.forEach(t => {
+    const block = document.createElement("div");
+    block.className = "conj-tense";
+
+    const title = document.createElement("div");
+    title.className = "conj-title";
+    title.textContent = t.label;
+    block.appendChild(title);
+
+    c[t.key].forEach((form, i) => {
+      const pron = document.createElement("span");
+      pron.className = "conj-pron";
+      pron.textContent = PRONOUNS[i];
+      block.appendChild(pron);
+
+      const forms = document.createElement("span");
+      forms.className = "conj-forms";
+
+      const formEl = document.createElement("span");
+      formEl.className = "conj-form";
+      formEl.textContent = form;
+      formEl.title = `Ouvir "${form}"`;
+      formEl.addEventListener("click", (e) => {
+        e.stopPropagation();
+        speak(form, null);
+      });
+      forms.appendChild(formEl);
+
+      if (ce && ce[t.key] && ce[t.key][i]) {
+        const enEl = document.createElement("span");
+        enEl.className = "conj-en";
+        enEl.textContent = ce[t.key][i];
+        forms.appendChild(enEl);
+      }
+
+      block.appendChild(forms);
+    });
+
+    body.appendChild(block);
+  });
+
+  panel.appendChild(body);
+  return panel;
+}
 
 let ptVoice = null;
 function loadVoices() {
@@ -501,6 +964,9 @@ function buildRow(num, pt, en, note, color) {
     speak(pt, speakBtn);
   });
 
+  const textWrap = document.createElement("div");
+  textWrap.className = "verb-text";
+
   const ptEl = document.createElement("span");
   ptEl.className = "verb-pt";
   ptEl.dataset.lang = "pt";
@@ -513,10 +979,27 @@ function buildRow(num, pt, en, note, color) {
   enEl.textContent = en;
   enEl.addEventListener("click", () => enEl.classList.toggle("hidden"));
 
+  textWrap.appendChild(ptEl);
+  textWrap.appendChild(enEl);
+
+  const conjBtn = document.createElement("button");
+  conjBtn.className = "conj-btn";
+  conjBtn.type = "button";
+  conjBtn.setAttribute("aria-label", `Conjugações de ${pt}`);
+  conjBtn.title = "Mostrar conjugações";
+  conjBtn.innerHTML = CHEVRON_SVG;
+  conjBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    row.classList.toggle("expanded");
+  });
+
+  const panel = buildConjugationPanel(pt, en);
+
   row.appendChild(numEl);
   row.appendChild(speakBtn);
-  row.appendChild(ptEl);
-  row.appendChild(enEl);
+  row.appendChild(textWrap);
+  row.appendChild(conjBtn);
+  row.appendChild(panel);
   return row;
 }
 
