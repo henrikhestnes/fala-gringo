@@ -26,7 +26,7 @@ the answer.
 | **Adjectives** | With agreement | 53 |
 | **Adverbs** | Frequency, manner, place, time | 28 |
 | **Connecting** | Prepositions, contractions, demonstratives, articles — fill the gap | 87 |
-| **Numbers & dates** | Numbers, weekdays, months, colours | 77 |
+| **Numbers** | Numbers, weekdays, months, colours | 77 |
 | **Glossary** | Everyday expressions | 34 |
 | **Sentences** | Full-sentence translation, incl. hypotheticals & wishes | 83 |
 | **★ Daily** | 7 cards a day, one per topic, deterministic from the date, 5 attempts each, shareable result | 7 |
