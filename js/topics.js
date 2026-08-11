@@ -266,7 +266,7 @@ const TOPICS = [
     groups: () => window.DATA_ADVERBS.groups,    build: buildAdverbCards },
   { id: 'connecting', label: 'Connecting', kind: 'quiz',
     groups: () => window.DATA_CONNECTING.groups, build: buildConnectingCards },
-  { id: 'numbers',    label: 'Numbers & dates', kind: 'quiz',
+  { id: 'numbers',    label: 'Numbers', kind: 'quiz',
     groups: () => window.DATA_NUMBERS.groups,    build: buildNumberCards },
   { id: 'glossary',   label: 'Glossary',   kind: 'quiz',
     groups: () => window.DATA_GLOSSARY.groups,   build: buildGlossaryCards },

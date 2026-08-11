@@ -4,7 +4,8 @@
    only, so the app makes zero network requests and works offline. */
 
 :root {
-  --bg: #fbfaf7;
+  --bg: #f6f0e2;
+  --bg-topbar: #ede5cf;
   --surface: #ffffff;
   --surface-2: #f5f3ed;
   --surface-3: #ebe8de;
@@ -39,6 +40,7 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #131412;
+    --bg-topbar: #0d0e0c;
     --surface: #1c1e1b;
     --surface-2: #232520;
     --surface-3: #2d302b;
@@ -68,6 +70,7 @@
 
 :root[data-theme="dark"] {
   --bg: #131412;
+  --bg-topbar: #0d0e0c;
   --surface: #1c1e1b;
   --surface-2: #232520;
   --surface-3: #2d302b;
@@ -114,7 +117,7 @@ button { cursor: pointer; touch-action: manipulation; }
   position: sticky;
   top: 0;
   z-index: 50;
-  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  background: color-mix(in srgb, var(--bg-topbar) 92%, transparent);
   backdrop-filter: saturate(1.4) blur(10px);
   border-bottom: 1px solid var(--border);
 }
@@ -131,10 +134,14 @@ button { cursor: pointer; touch-action: manipulation; }
 .brand {
   display: flex;
   align-items: center;
-  gap: .5rem;
-  font-weight: 700;
-  font-size: 1.02rem;
-  letter-spacing: -.01em;
+  gap: .55rem;
+  /* Jersey lettering: heavy condensed italic caps, still system fonts only. */
+  font-family: "Avenir Next Condensed", "Futura", "Trebuchet MS", var(--sans);
+  font-weight: 800;
+  font-style: italic;
+  font-size: 1.35rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
   margin-right: auto;
 }
 
@@ -186,14 +193,21 @@ button { cursor: pointer; touch-action: manipulation; }
   margin: 0 auto;
   padding: 0 1rem .5rem;
   display: flex;
-  gap: .35rem;
+  gap: .3rem;
   overflow-x: auto;
   scrollbar-width: none;
 }
 .tabs::-webkit-scrollbar { display: none; }
-/* On phones the 13 tabs scroll horizontally; on wider screens show them all. */
+/* On phones the 13 tabs scroll horizontally. On wider screens show them all:
+   one line whenever the viewport fits them, wrapping only when it must. */
 @media (min-width: 640px) {
-  .tabs { flex-wrap: wrap; }
+  .tabs {
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: none;
+    width: fit-content;
+    overflow-x: visible;
+  }
 }
 
 .tab {
@@ -201,8 +215,8 @@ button { cursor: pointer; touch-action: manipulation; }
   background: var(--surface);
   color: var(--text-2);
   border-radius: 999px;
-  padding: .32rem .75rem;
-  font-size: .8rem;
+  padding: .3rem .58rem;
+  font-size: .78rem;
   font-weight: 600;
   white-space: nowrap;
   display: flex;
