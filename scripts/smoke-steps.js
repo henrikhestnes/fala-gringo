@@ -4,7 +4,7 @@
 
 step('app boots and renders the Browse view', function () {
   var html = registry.view.innerHTML;
-  if (!/Verbos Úteis/.test(html)) throw new Error('browse view did not render');
+  if (!/<h1>Verbos<\/h1>/.test(html)) throw new Error('browse view did not render');
   var rows = (html.match(/class="verb-row"/g) || []).length;
   if (rows !== 124) throw new Error('expected 124 verb rows, got ' + rows);
   return rows + ' verb rows, ' + html.length + ' bytes of HTML';
@@ -260,6 +260,6 @@ step('subjuntivo drill accepts the trigger-prefixed answer', function () {
 
 step('an unknown hash falls back to Browse', function () {
   goTo('#nonsense');
-  if (!/Verbos Úteis/.test(registry.view.innerHTML)) throw new Error('did not fall back');
+  if (!/<h1>Verbos<\/h1>/.test(registry.view.innerHTML)) throw new Error('did not fall back');
   return 'ok';
 });

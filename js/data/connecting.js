@@ -1,5 +1,5 @@
 // Card data for the 'connecting' topic.
-// Ported from gjermundbae/portuguese-verb-flashcards (connecting.html).
+// Ported from the source flashcards repo credited in the README (connecting.html).
 window.DATA_CONNECTING = {
   groups: ["prepositions", "contractions", "demonstratives", "articles", "conjunctions"],
   cards: [

@@ -68,7 +68,7 @@ const Browse = (function () {
 
     view.innerHTML = '' +
       '<div class="view-head">' +
-        '<h1>Verbos Úteis</h1>' +
+        '<h1>Verbos</h1>' +
         '<p>' + V.verbs.length + ' verbs — tap any word to hide or reveal it</p>' +
       '</div>' +
       '<div class="controls" style="margin-bottom:1rem">' +

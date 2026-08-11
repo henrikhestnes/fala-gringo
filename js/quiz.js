@@ -1,6 +1,6 @@
 // The one drill engine, shared by all ten quiz topics.
 //
-// Core loop kept from gjermundbae/portuguese-verb-flashcards: a card answered
+// Core loop kept from the source flashcards repo (credited in the README): a card answered
 // wrongly is NOT marked known — it stays in the deck and comes back around until
 // you get it right. Batching is gone; a deck is always the whole topic (minus any
 // group chips you switch off).

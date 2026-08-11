@@ -1,5 +1,5 @@
 // Card data for the 'sentences' topic.
-// Ported from gjermundbae/portuguese-verb-flashcards (sentences.html).
+// Ported from the source flashcards repo credited in the README (sentences.html).
 window.DATA_SENTENCES = {
   groups: ["Present basics", "Ser vs Estar", "Past", "Prepositions", "Questions", "Time expressions", "Hypotheticals & wishes"],
   cards: [

@@ -1,5 +1,5 @@
 // Card data for the 'glossary' topic.
-// Ported from gjermundbae/portuguese-verb-flashcards (glossary.html).
+// Ported from the source flashcards repo credited in the README (glossary.html).
 window.DATA_GLOSSARY = {
   groups: [],
   cards: [
