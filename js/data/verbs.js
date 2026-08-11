@@ -1,4 +1,4 @@
-// The 124-verb superset: portuguese-study-tool's 105 verbs merged with the 95 from
+// The 124-verb superset: this repo's own 105 verbs merged with the 95 from
 // gjermundbae/portuguese-verb-flashcards (76 overlap). Forms for every verb were
 // cross-validated: the generated conjugations agree with their hand-written forms on
 // all 285 verb/tense pairs. Pronunciation hints and examples for the 29 study-only

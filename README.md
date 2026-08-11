@@ -1,8 +1,12 @@
-# Verbos Úteis
+# Se Eu Soubesse
+
+*"If only I knew…" — the imperfect subjunctive, and the feeling of every language
+learner.*
 
 A tool for learning everyday **Brazilian Portuguese** — the spoken carioca register
 you actually hear in Rio, not textbook European Portuguese. It is aimed at an
-English speaker: you are shown English and type the Portuguese.
+English speaker: you are shown English and type the Portuguese. (Formerly
+*Verbos Úteis*, a name the Browse tab keeps as its heading for the verb list.)
 
 Browse 124 verbs with their conjugations across three indicative tenses — plus the
 imperfect subjunctive on a 40-verb core — or drill any of eleven topics by typing
