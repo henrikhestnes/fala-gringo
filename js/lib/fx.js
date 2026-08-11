@@ -1,6 +1,6 @@
-// Canvas confetti burst for a flawless run. Adapted from the fireworks in
-// gjermundbae/portuguese-verb-flashcards, retimed and recoloured to the
-// Brazilian palette.
+// Canvas confetti burst for a flawless run. Adapted from the fireworks in the
+// source flashcards repo (credited in the README), retimed and recoloured to
+// the Brazilian palette.
 
 function launchFireworks() {
   if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;

@@ -1,5 +1,5 @@
 // Card data for the 'numbers' topic.
-// Ported from gjermundbae/portuguese-verb-flashcards (numbers_dates.html).
+// Ported from the source flashcards repo credited in the README (numbers_dates.html).
 window.DATA_NUMBERS = {
   groups: ["cardinal numbers", "ordinal numbers", "weekdays", "months", "colors"],
   groupLabels: {

@@ -1,5 +1,5 @@
 // Card data for the 'adjectives' topic.
-// Ported from gjermundbae/portuguese-verb-flashcards (adjectives.html).
+// Ported from the source flashcards repo credited in the README (adjectives.html).
 window.DATA_ADJECTIVES = {
   groups: ["quality", "size & age", "state & feeling", "practical"],
   cards: [

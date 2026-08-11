@@ -1,5 +1,5 @@
 // Card data for the 'nouns' topic.
-// Ported from gjermundbae/portuguese-verb-flashcards (nouns.html).
+// Ported from the source flashcards repo credited in the README (nouns.html).
 window.DATA_NOUNS = {
   groups: ["people", "home & food", "city & travel", "work & study", "time & nature", "animals", "insects", "clothing"],
   cards: [

@@ -1,5 +1,5 @@
 // Card data for the 'adverbs' topic.
-// Ported from gjermundbae/portuguese-verb-flashcards (adverbs.html).
+// Ported from the source flashcards repo credited in the README (adverbs.html).
 window.DATA_ADVERBS = {
   groups: ["time", "frequency", "place", "manner", "degree", "stance & sequence"],
   cards: [
