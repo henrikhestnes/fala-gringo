@@ -8,6 +8,26 @@
 // Handles the orthographic changes: -ar preterite 1sg c->qu / g->gu / ç->c,
 // -er present 1sg c->ç / g->j, -ir present 1sg g->j.
 
+/* Imperfect subjunctive, derived from the pretérito perfeito 3pl — a rule with NO
+   exceptions in Portuguese (falaram -> falasse, fizeram -> fizesse, foram -> fosse),
+   so unlike conjugateRegular this verifies irregular verbs too. The nós accent
+   depends on vowel quality: closed ê for the regular -er theme vowel (comêssemos,
+   devêssemos), open é for strong-preterite stems (fizéssemos, quiséssemos). */
+function subjImperfectFromPerfeito3pl(form3pl, infinitive) {
+  if (!/ram$/.test(form3pl)) return null;
+  const stem = form3pl.slice(0, -3);
+  const last = stem.slice(-1);
+  let accented;
+  if (last === 'e') {
+    const regularEr = infinitive.slice(-2) === 'er' && stem === infinitive.slice(0, -2) + 'e';
+    accented = stem.slice(0, -1) + (regularEr ? 'ê' : 'é');
+  } else {
+    const ACC = { a: 'á', i: 'í', o: 'ô' };
+    accented = stem.slice(0, -1) + (ACC[last] || last);
+  }
+  return [stem + 'sse', stem + 'sse', accented + 'ssemos', stem + 'ssem'];
+}
+
 function conjugateRegular(verb) {
   const ending = verb.slice(-2);
   const stem = verb.slice(0, -2);

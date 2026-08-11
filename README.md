@@ -4,8 +4,9 @@ A tool for learning everyday **Brazilian Portuguese** — the spoken carioca reg
 you actually hear in Rio, not textbook European Portuguese. It is aimed at an
 English speaker: you are shown English and type the Portuguese.
 
-Browse 124 verbs with their conjugations across three tenses, or drill any of ten
-topics by typing the answer.
+Browse 124 verbs with their conjugations across three indicative tenses — plus the
+imperfect subjunctive on a 40-verb core — or drill any of eleven topics by typing
+the answer.
 
 **Static site, no build step, no dependencies, no network requests.** Open
 `index.html` directly from disk or serve the repository root from GitHub Pages.
@@ -18,16 +19,34 @@ topics by typing the answer.
 | **Presente** | Verb drill, present tense | 492 |
 | **Passado** | Verb drill, pretérito perfeito | 492 |
 | **Imperfeito** | Verb drill, pretérito imperfeito | 492 |
+| **Subjuntivo** | Verb drill, imperfeito do subjuntivo — 40 core verbs | 160 |
 | **Nouns** | With gender and article | 83 |
 | **Adjectives** | With agreement | 53 |
 | **Adverbs** | Frequency, manner, place, time | 28 |
 | **Connecting** | Prepositions, contractions, demonstratives, articles — fill the gap | 87 |
 | **Numbers & dates** | Numbers, weekdays, months, colours | 77 |
 | **Glossary** | Everyday expressions | 34 |
-| **Sentences** | Full-sentence translation | 68 |
+| **Sentences** | Full-sentence translation, incl. hypotheticals & wishes | 83 |
 | **★ Daily** | 7 cards a day, one per topic, deterministic from the date, 5 attempts each, shareable result | 7 |
 
-1906 quiz cards in total.
+2081 quiz cards in total.
+
+### The imperfect subjunctive (Subjuntivo tab)
+
+The forms are the easy half: for **every** Portuguese verb, regular or irregular, the
+imperfect subjunctive derives from the pretérito perfeito 3pl — drop `-ram`, add
+`-sse / -sse / -ssemos / -ssem` (falaram → falasse, fizeram → fizesse, foram → fosse).
+The data checks verify all 160 stored forms against that rule.
+
+The hard half is knowing **when** to use it, so every gloss and example embeds a
+trigger: `se…` hypotheticals, `queria/gostaria que…` past wishes, `como se…` (as if),
+`era melhor que…`, `antes que…`. The drill accepts the bare form, `eu falasse`, and
+the trigger-prefixed `se/que eu falasse`. The Sentences tab's *Hypotheticals & wishes*
+group practices producing whole trigger sentences.
+
+It covers a curated 40-verb core (the verbs you actually reach for in hypotheticals)
+rather than all 124 — and `haver` stays out for the same reason it is not drilled
+elsewhere: only 3sg `houvesse` is live usage.
 
 ## How the drill works
 
@@ -80,12 +99,14 @@ They use the JavaScriptCore engine bundled with macOS. `verify.html` runs the
 same data checks in the browser — just open it.
 
 `scripts/check.jxa` and `verify.html` share `js/checks.js`, which asserts:
-124 verbs; 1488 forms with all three tenses; every drilled form has a form,
-meaning, pronunciation and example; every regular verb matches an independent
+124 verbs; 1488 forms with all three indicative tenses; every drilled form has a
+form, meaning, pronunciation and example; every regular verb matches an independent
 conjugation oracle (`js/conjugate.js`); every verb flagged irregular really is;
-every card's answer is among its own accepted answers; and **no ambiguous
-prompts** — identical, distinguished only by word order, or only partly
-qualified.
+40 complete subjunctive blocks whose forms all derive from the perfeito 3pl (a rule
+with no exceptions, so it verifies irregulars too) and whose examples all contain
+their form inside a trigger context; every card's answer is among its own accepted
+answers; and **no ambiguous prompts** — identical, distinguished only by word
+order, or only partly qualified.
 
 ## Layout
 

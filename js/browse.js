@@ -14,6 +14,7 @@ const Browse = (function () {
   function conjPanelHtml(verb) {
     const V = window.DATA_VERBS;
     const blocks = V.tenses.map(t => {
+      if (!verb.tenses[t.key]) return '';   // the subjunctive is optional per verb
       const lines = verb.tenses[t.key].map((r, i) =>
         '<div class="conj-line">' +
           '<span class="who">' + escapeHtml(V.personsShort[i]) + '</span>' +

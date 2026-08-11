@@ -10,10 +10,10 @@ step('app boots and renders the Browse view', function () {
   return rows + ' verb rows, ' + html.length + ' bytes of HTML';
 });
 
-step('tab strip lists all 12 tabs', function () {
+step('tab strip lists all 13 tabs', function () {
   var tabs = (registry.tabs.innerHTML.match(/data-tab="/g) || []).length;
-  if (tabs !== 12) throw new Error('got ' + tabs + ' tabs');
-  return '12 tabs incl. Browse + Daily';
+  if (tabs !== 13) throw new Error('got ' + tabs + ' tabs');
+  return '13 tabs incl. Browse + Daily';
 });
 
 step('Hard Mode is the default on a fresh profile', function () {
@@ -234,15 +234,28 @@ step('browse controls all run and keep 124 rows', function () {
   return 'shuffle/reset/hide/show all fine; 124 rows throughout';
 });
 
-step('browse renders all three tenses per verb with glosses', function () {
+step('browse renders all tenses per verb with glosses', function () {
   goTo('#browse');
   var html = registry.view.innerHTML;
-  ['Presente', 'Pretérito Perfeito', 'Pretérito Imperfeito'].forEach(function (t) {
+  ['Presente', 'Pretérito Perfeito', 'Pretérito Imperfeito',
+   'Imperfeito do Subjuntivo'].forEach(function (t) {
     if (html.indexOf(t) === -1) throw new Error('missing tense block: ' + t);
   });
   var panels = (html.match(/conjugation-panel/g) || []).length;
   if (panels !== 124) throw new Error('expected 124 panels, got ' + panels);
-  return '124 conjugation panels, all three tenses present';
+  var subj = (html.match(/Imperfeito do Subjuntivo/g) || []).length;
+  if (subj !== 40) throw new Error('expected 40 subjunctive blocks, got ' + subj);
+  return '124 conjugation panels; 40 carry the subjunctive';
+});
+
+step('subjuntivo drill accepts the trigger-prefixed answer', function () {
+  goTo('#subjuntivo');
+  var card = shownCard('subjuntivo');
+  registry.answerInput.value = 'se ' + card.answer;
+  registry.actionBtn.fire('click');
+  if (!/Correct/.test(registry.feedback.innerHTML))
+    throw new Error('rejected "se ' + card.answer + '"');
+  return '"se ' + card.answer + '" accepted';
 });
 
 step('an unknown hash falls back to Browse', function () {

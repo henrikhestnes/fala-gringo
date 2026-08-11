@@ -74,10 +74,13 @@ function buildVerbCards(tense, tenseLabel) {
 
   V.verbs.forEach(verb => {
     if (verb.quiz === false) return;
+    if (!verb.tenses[tense]) return;   // the subjunctive covers a curated subset
     verb.tenses[tense].forEach((row, i) => {
       const person = V.personsShort[i];
       const full = person + ' ' + row.form;
       const accepted = [row.form, full];
+      // the imperfect subjunctive is usually cited with its trigger word
+      if (tense === 'subjuntivo') accepted.push('se ' + full, 'que ' + full);
 
       // genuine BR synonyms (pôr/botar/colocar, caminhar/andar) accept each other
       (SYNONYMS[verb.pt] || []).forEach(other => {
@@ -252,6 +255,8 @@ const TOPICS = [
     build: () => buildVerbCards('perfeito', 'Pretérito Perfeito') },
   { id: 'imperfeito', label: 'Imperfeito', kind: 'quiz', groups: VERB_GROUPS,
     build: () => buildVerbCards('imperfeito', 'Pretérito Imperfeito') },
+  { id: 'subjuntivo', label: 'Subjuntivo', kind: 'quiz', groups: VERB_GROUPS,
+    build: () => buildVerbCards('subjuntivo', 'Imperfeito do Subjuntivo') },
 
   { id: 'nouns',      label: 'Nouns',      kind: 'quiz',
     groups: () => window.DATA_NOUNS.groups,      build: buildNounCards },
