@@ -1,7 +1,6 @@
-# Se Eu Soubesse
+# Fala Gringo
 
-*"If only I knew…" — the imperfect subjunctive, and the feeling of every language
-learner.*
+*"Fala, gringo!" — the Rio greeting, and exactly what this app makes you do.*
 
 A tool for learning everyday **Brazilian Portuguese** — the spoken carioca register
 you actually hear in Rio, not textbook European Portuguese. It is aimed at an
@@ -34,7 +33,10 @@ the answer.
 
 2081 quiz cards in total.
 
-### The imperfect subjunctive (Subjuntivo tab)
+### Se eu soubesse… — the imperfect subjunctive (Subjuntivo tab)
+
+*"If only I knew…" — the tense of hindsight, and the feeling of every language
+learner.*
 
 The forms are the easy half: for **every** Portuguese verb, regular or irregular, the
 imperfect subjunctive derives from the pretérito perfeito 3pl — drop `-ram`, add
