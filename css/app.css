@@ -138,21 +138,12 @@ button { cursor: pointer; touch-action: manipulation; }
   margin-right: auto;
 }
 
+/* Inline SVG Brazilian flag; fixed flag colors in both themes. */
 .brand-flag {
-  width: 22px;
-  height: 22px;
-  border-radius: 5px;
-  background: var(--green);
-  display: grid;
-  place-items: center;
-  flex: none;
-}
-.brand-flag i {
-  width: 11px; height: 11px;
-  background: var(--yellow);
-  transform: rotate(45deg);
+  width: 27px;
+  height: 19px;
   display: block;
-  border-radius: 1px;
+  flex: none;
 }
 
 .icon-btn {
@@ -200,6 +191,10 @@ button { cursor: pointer; touch-action: manipulation; }
   scrollbar-width: none;
 }
 .tabs::-webkit-scrollbar { display: none; }
+/* On phones the 13 tabs scroll horizontally; on wider screens show them all. */
+@media (min-width: 640px) {
+  .tabs { flex-wrap: wrap; }
+}
 
 .tab {
   border: 1px solid var(--border);
