@@ -22,6 +22,8 @@ window.DATA_VERBS = {
     { key: "presente",   label: "Presente" },
     { key: "perfeito",   label: "Pretérito Perfeito" },
     { key: "imperfeito", label: "Pretérito Imperfeito" },
+    // Optional per verb: a curated 40-verb subset carries the imperfect subjunctive.
+    { key: "subjuntivo", label: "Imperfeito do Subjuntivo" },
   ],
   synonyms: [
     ["botar", "colocar", "pôr"],
@@ -49,6 +51,12 @@ window.DATA_VERBS = {
           { form: "éramos", meaning: "we were / used to be (permanent)", pron: "EH-rah-moosh", example: "Nós éramos vizinhos na infância." },
           { form: "eram", meaning: "you all were / used to be (permanent)", pron: "EH-rahng", example: "Vocês eram amigos no colégio?" },
         ],
+        subjuntivo: [
+          { form: "fosse", meaning: "if I were (permanent)", pron: "FOH-see", example: "Se eu fosse rico, morava de frente pra praia." },
+          { form: "fosse", meaning: "if you were (permanent)", pron: "FOH-see", example: "Queria que você fosse mais paciente comigo." },
+          { form: "fôssemos", meaning: "if we were (permanent)", pron: "FOH-seh-moosh", example: "Ele fala como se nós fôssemos crianças." },
+          { form: "fossem", meaning: "if you all were (permanent)", pron: "FOH-seng", example: "Era melhor que vocês fossem honestos com ela." },
+        ],
       },
     },
     {
@@ -72,6 +80,12 @@ window.DATA_VERBS = {
           { form: "estávamos", meaning: "we used to be / were (temporary)", pron: "es-TAH-vah-moosh", example: "Nós estávamos na praia todo verão." },
           { form: "estavam", meaning: "you all used to be / were (temporary)", pron: "es-TAH-vahng", example: "Vocês estavam juntos naquela época?" },
         ],
+        subjuntivo: [
+          { form: "estivesse", meaning: "if I were (temporary)", pron: "es-chee-VEH-see", example: "Se eu estivesse aí, te ajudava com isso." },
+          { form: "estivesse", meaning: "if you were (temporary)", pron: "es-chee-VEH-see", example: "Gostaria que você estivesse na minha festa ontem." },
+          { form: "estivéssemos", meaning: "if we were (temporary)", pron: "es-chee-VEH-seh-moosh", example: "Era melhor que nós estivéssemos prontos às oito." },
+          { form: "estivessem", meaning: "if you all were (temporary)", pron: "es-chee-VEH-seng", example: "Ela agiu como se vocês estivessem errados." },
+        ],
       },
     },
     {
@@ -94,6 +108,12 @@ window.DATA_VERBS = {
           { form: "tinha", meaning: "you had / used to have", pron: "CHEE-nyah", example: "Você tinha bicicleta quando era criança?" },
           { form: "tínhamos", meaning: "we had / used to have", pron: "CHEE-nyah-moosh", example: "Nós tínhamos uma casa na praia." },
           { form: "tinham", meaning: "you all had / used to have", pron: "CHEE-nyahng", example: "Vocês tinham aula aos sábados?" },
+        ],
+        subjuntivo: [
+          { form: "tivesse", meaning: "if I had", pron: "chee-VEH-see", example: "Se eu tivesse dinheiro, comprava um carro novo." },
+          { form: "tivesse", meaning: "if you had", pron: "chee-VEH-see", example: "Queria que você tivesse mais tempo pra mim." },
+          { form: "tivéssemos", meaning: "if we had", pron: "chee-VEH-seh-moosh", example: "Se nós tivéssemos carro, a gente viajava mais." },
+          { form: "tivessem", meaning: "if you all had", pron: "chee-VEH-seng", example: "Ele falou como se vocês tivessem culpa de tudo." },
         ],
       },
     },
@@ -141,6 +161,12 @@ window.DATA_VERBS = {
           { form: "íamos", meaning: "we used to go / were going", pron: "EE-ah-moosh", example: "Nós íamos na padaria todo dia." },
           { form: "iam", meaning: "you all used to go / were going", pron: "EE-ahng", example: "Vocês iam à praia nos fins de semana?" },
         ],
+        subjuntivo: [
+          { form: "fosse", meaning: "if I went", pron: "FOH-see", example: "Se eu fosse de carro, chegava bem mais rápido." },
+          { form: "fosse", meaning: "if you went", pron: "FOH-see", example: "Queria que você fosse comigo ao médico amanhã." },
+          { form: "fôssemos", meaning: "if we went", pron: "FOH-seh-moosh", example: "Era melhor que nós fôssemos de ônibus pro centro." },
+          { form: "fossem", meaning: "if you all went", pron: "FOH-seng", example: "Se vocês fossem à festa, iam se divertir muito." },
+        ],
       },
     },
     {
@@ -163,6 +189,12 @@ window.DATA_VERBS = {
           { form: "vinha", meaning: "you used to come / were coming", pron: "VEE-nyah", example: "Você vinha de ônibus antes?" },
           { form: "vínhamos", meaning: "we used to come / were coming", pron: "VEE-nyah-moosh", example: "Nós vínhamos juntos para a aula." },
           { form: "vinham", meaning: "you all used to come / were coming", pron: "VEE-nyahng", example: "Vocês vinham sempre nesse horário?" },
+        ],
+        subjuntivo: [
+          { form: "viesse", meaning: "if I came", pron: "vee-EH-see", example: "Ela queria que eu viesse mais cedo pra casa." },
+          { form: "viesse", meaning: "if you came", pron: "vee-EH-see", example: "Se você viesse aqui hoje, a gente conversava melhor." },
+          { form: "viéssemos", meaning: "if we came", pron: "vee-EH-seh-moosh", example: "Era melhor que nós viéssemos de metrô, né?" },
+          { form: "viessem", meaning: "if you all came", pron: "vee-EH-seng", example: "Gostaria que vocês viessem jantar aqui em casa." },
         ],
       },
     },
@@ -187,6 +219,12 @@ window.DATA_VERBS = {
           { form: "fazíamos", meaning: "we used to do / make / were doing", pron: "fah-ZEE-ah-moosh", example: "Nós fazíamos festa no quintal." },
           { form: "faziam", meaning: "you all used to do / make / were doing", pron: "fah-ZEE-ahng", example: "Vocês faziam dever de casa à tarde?" },
         ],
+        subjuntivo: [
+          { form: "fizesse", meaning: "if I did / made", pron: "fee-ZEH-see", example: "Se eu fizesse dieta, perdia uns quilos rapidinho." },
+          { form: "fizesse", meaning: "if you did / made", pron: "fee-ZEH-see", example: "Queria que você fizesse o jantar hoje." },
+          { form: "fizéssemos", meaning: "if we did / made", pron: "fee-ZEH-seh-moosh", example: "Era melhor que nós fizéssemos isso juntos." },
+          { form: "fizessem", meaning: "if you all did / made", pron: "fee-ZEH-seng", example: "Ela agiu como se vocês fizessem tudo errado." },
+        ],
       },
     },
     {
@@ -209,6 +247,12 @@ window.DATA_VERBS = {
           { form: "dava", meaning: "you used to give / were giving", pron: "DAH-vah", example: "Você dava presente no aniversário dela?" },
           { form: "dávamos", meaning: "we used to give / were giving", pron: "DAH-vah-moosh", example: "Nós dávamos aula de reforço no sábado." },
           { form: "davam", meaning: "you all used to give / were giving", pron: "DAH-vahng", example: "Vocês davam café da manhã cedo?" },
+        ],
+        subjuntivo: [
+          { form: "desse", meaning: "if I gave", pron: "DEH-see", example: "Se eu desse mais atenção, ela ficava feliz." },
+          { form: "desse", meaning: "if you gave", pron: "DEH-see", example: "Queria que você desse uma olhada nisso pra mim." },
+          { form: "déssemos", meaning: "if we gave", pron: "DEH-seh-moosh", example: "Era melhor que nós déssemos o presente juntos." },
+          { form: "dessem", meaning: "if you all gave", pron: "DEH-seng", example: "Ele saiu antes que vocês dessem tchau." },
         ],
       },
     },
@@ -233,6 +277,12 @@ window.DATA_VERBS = {
           { form: "víamos", meaning: "we used to see / were seeing", pron: "VEE-ah-moosh", example: "Nós víamos o pôr do sol da varanda." },
           { form: "viam", meaning: "you all used to see / were seeing", pron: "VEE-ahng", example: "Vocês viam aquele programa na Globo?" },
         ],
+        subjuntivo: [
+          { form: "visse", meaning: "if I saw", pron: "VEE-see", example: "Se eu visse ele na rua, nem cumprimentava." },
+          { form: "visse", meaning: "if you saw", pron: "VEE-see", example: "Queria que você visse o pôr do sol daqui." },
+          { form: "víssemos", meaning: "if we saw", pron: "VEE-seh-moosh", example: "Ela escondeu tudo antes que nós víssemos a bagunça." },
+          { form: "vissem", meaning: "if you all saw", pron: "VEE-seng", example: "Era melhor que vocês vissem o filme no cinema." },
+        ],
       },
     },
     {
@@ -255,6 +305,12 @@ window.DATA_VERBS = {
           { form: "ficava", meaning: "you used to stay / remain / were staying", pron: "fee-KAH-vah", example: "Você ficava até tarde na festa?" },
           { form: "ficávamos", meaning: "we used to stay / remain / were staying", pron: "fee-KAH-vah-moosh", example: "Nós ficávamos no parque até o anoitecer." },
           { form: "ficavam", meaning: "you all used to stay / remain / were staying", pron: "fee-KAH-vahng", example: "Vocês ficavam com os avós no verão?" },
+        ],
+        subjuntivo: [
+          { form: "ficasse", meaning: "if I stayed / became", pron: "fee-KAH-see", example: "Ela queria que eu ficasse mais um pouco na festa." },
+          { form: "ficasse", meaning: "if you stayed / became", pron: "fee-KAH-see", example: "Se você ficasse em casa, a gente pedia pizza." },
+          { form: "ficássemos", meaning: "if we stayed / became", pron: "fee-KAH-seh-moosh", example: "Era melhor que nós ficássemos quietos na reunião." },
+          { form: "ficassem", meaning: "if you all stayed / became", pron: "fee-KAH-seng", example: "Saí antes que vocês ficassem bravos comigo." },
         ],
       },
     },
@@ -279,6 +335,12 @@ window.DATA_VERBS = {
           { form: "podíamos", meaning: "we used to be able to / could", pron: "poh-DJEE-ah-moosh", example: "Nós podíamos nadar na piscina do prédio." },
           { form: "podiam", meaning: "you all used to be able to / could", pron: "poh-DJEE-ahng", example: "Vocês podiam brincar na rua?" },
         ],
+        subjuntivo: [
+          { form: "pudesse", meaning: "if I could", pron: "poo-DEH-see", example: "Se eu pudesse, viajava o mundo inteiro." },
+          { form: "pudesse", meaning: "if you could", pron: "poo-DEH-see", example: "Queria que você pudesse vir na festa amanhã." },
+          { form: "pudéssemos", meaning: "if we could", pron: "poo-DEH-seh-moosh", example: "Seria ótimo se nós pudéssemos sair mais cedo hoje." },
+          { form: "pudessem", meaning: "if you all could", pron: "poo-DEH-seng", example: "Ele falou como se vocês pudessem adivinhar tudo." },
+        ],
       },
     },
     {
@@ -301,6 +363,12 @@ window.DATA_VERBS = {
           { form: "queria", meaning: "you used to want", pron: "keh-REE-ah", example: "Você queria um cachorro?" },
           { form: "queríamos", meaning: "we used to want", pron: "keh-REE-ah-moosh", example: "Nós queríamos viajar todo ano." },
           { form: "queriam", meaning: "you all used to want", pron: "keh-REE-ahng", example: "Vocês queriam morar em outro bairro?" },
+        ],
+        subjuntivo: [
+          { form: "quisesse", meaning: "if I wanted", pron: "kee-ZEH-see", example: "Se eu quisesse sair hoje, chamava você." },
+          { form: "quisesse", meaning: "if you wanted", pron: "kee-ZEH-see", example: "Você me olhou como se quisesse dizer algo." },
+          { form: "quiséssemos", meaning: "if we wanted", pron: "kee-ZEH-seh-moosh", example: "Se nós quiséssemos, podíamos viajar amanhã mesmo." },
+          { form: "quisessem", meaning: "if you all wanted", pron: "kee-ZEH-seng", example: "Queria que vocês quisessem participar da festa." },
         ],
       },
     },
@@ -325,6 +393,12 @@ window.DATA_VERBS = {
           { form: "precisávamos", meaning: "we used to need", pron: "preh-see-ZAH-vah-moosh", example: "Nós precisávamos estudar para a prova." },
           { form: "precisavam", meaning: "you all used to need", pron: "preh-see-ZAH-vahng", example: "Vocês precisavam de mais tempo?" },
         ],
+        subjuntivo: [
+          { form: "precisasse", meaning: "if I needed", pron: "preh-see-ZAH-see", example: "Se eu precisasse de ajuda, te ligava na hora." },
+          { form: "precisasse", meaning: "if you needed", pron: "preh-see-ZAH-see", example: "Ele agia como se você precisasse de babá." },
+          { form: "precisássemos", meaning: "if we needed", pron: "preh-see-ZAH-seh-moosh", example: "Se nós precisássemos de grana, pedíamos pro tio." },
+          { form: "precisassem", meaning: "if you all needed", pron: "preh-see-ZAH-seng", example: "Resolvi tudo antes que vocês precisassem se preocupar." },
+        ],
       },
     },
     {
@@ -347,6 +421,12 @@ window.DATA_VERBS = {
           { form: "devia", meaning: "you used to owe / should / were supposed to", pron: "deh-VEE-ah", example: "Você devia estudar mais nessa época?" },
           { form: "devíamos", meaning: "we used to owe / should / were supposed to", pron: "deh-VEE-ah-moosh", example: "Nós devíamos prestar mais atenção a isso." },
           { form: "deviam", meaning: "you all used to owe / should", pron: "deh-VEE-ahng", example: "Vocês deviam chegar mais cedo?" },
+        ],
+        subjuntivo: [
+          { form: "devesse", meaning: "if I had to / owed", pron: "deh-VEH-see", example: "Ele me cobra como se eu devesse milhões." },
+          { form: "devesse", meaning: "if you had to / owed", pron: "deh-VEH-see", example: "Se você devesse dinheiro, o banco já tinha ligado." },
+          { form: "devêssemos", meaning: "if we had to / owed", pron: "deh-VEH-seh-moosh", example: "Seria bom se nós devêssemos menos no cartão." },
+          { form: "devessem", meaning: "if you all had to / owed", pron: "deh-VEH-seng", example: "Paguei a conta antes que vocês devessem juros." },
         ],
       },
     },
@@ -371,6 +451,12 @@ window.DATA_VERBS = {
           { form: "sabíamos", meaning: "we used to know (a fact)", pron: "sah-BEE-ah-moosh", example: "Nós sabíamos a resposta sempre." },
           { form: "sabiam", meaning: "you all used to know (a fact)", pron: "sah-BEE-ahng", example: "Vocês sabiam que ele morava perto?" },
         ],
+        subjuntivo: [
+          { form: "soubesse", meaning: "if I knew (a fact)", pron: "soh-BEH-see", example: "Se eu soubesse disso antes, tinha te avisado." },
+          { form: "soubesse", meaning: "if you knew (a fact)", pron: "soh-BEH-see", example: "Saí de fininho antes que você soubesse da surpresa." },
+          { form: "soubéssemos", meaning: "if we knew (a fact)", pron: "soh-BEH-seh-moosh", example: "Era melhor que nós soubéssemos a verdade logo." },
+          { form: "soubessem", meaning: "if you all knew (a fact)", pron: "soh-BEH-seng", example: "Queria que vocês soubessem o quanto sou grato." },
+        ],
       },
     },
     {
@@ -393,6 +479,12 @@ window.DATA_VERBS = {
           { form: "conhecia", meaning: "you used to know / were acquainted with (a person/place)", pron: "koh-nyeh-SEE-ah", example: "Você conhecia a família dele?" },
           { form: "conhecíamos", meaning: "we used to know / were acquainted with (a person/place)", pron: "koh-nyeh-SEE-ah-moosh", example: "Nós conhecíamos aquele lugar desde criança." },
           { form: "conheciam", meaning: "you all used to know / were acquainted with (a person/place)", pron: "koh-nyeh-SEE-ahng", example: "Vocês conheciam a professora antes?" },
+        ],
+        subjuntivo: [
+          { form: "conhecesse", meaning: "if I knew (a person/place)", pron: "koh-nyeh-SEH-see", example: "Ela falava como se eu conhecesse todo mundo ali." },
+          { form: "conhecesse", meaning: "if you knew (a person/place)", pron: "koh-nyeh-SEH-see", example: "Queria que você conhecesse minha família no Natal." },
+          { form: "conhecêssemos", meaning: "if we knew (a person/place)", pron: "koh-nyeh-SEH-seh-moosh", example: "Se nós conhecêssemos o caminho, chegávamos mais rápido." },
+          { form: "conhecessem", meaning: "if you all knew (a person/place)", pron: "koh-nyeh-SEH-seng", example: "Era melhor que vocês conhecessem a cidade antes de mudar." },
         ],
       },
     },
@@ -417,6 +509,12 @@ window.DATA_VERBS = {
           { form: "achávamos", meaning: "we used to think / find (reckon)", pron: "ah-SHAH-vah-moosh", example: "Nós achávamos o lugar bonito." },
           { form: "achavam", meaning: "you all used to think / find (reckon)", pron: "ah-SHAH-vahng", example: "Vocês achavam difícil aprender inglês?" },
         ],
+        subjuntivo: [
+          { form: "achasse", meaning: "if I thought (reckon)", pron: "ah-SHAH-see", example: "Se eu achasse a ideia boa, falava logo." },
+          { form: "achasse", meaning: "if you thought (reckon)", pron: "ah-SHAH-see", example: "Queria que você achasse graça nas minhas piadas." },
+          { form: "achássemos", meaning: "if we thought (reckon)", pron: "ah-SHAH-seh-moosh", example: "Ela agiu como se nós achássemos tudo normal." },
+          { form: "achassem", meaning: "if you all thought (reckon)", pron: "ah-SHAH-seng", example: "Ele falou como se vocês achassem tudo muito fácil." },
+        ],
       },
     },
     {
@@ -440,6 +538,12 @@ window.DATA_VERBS = {
           { form: "pensávamos", meaning: "we used to think / were thinking (reflect)", pron: "pen-SAH-vah-moosh", example: "Nós pensávamos em nos mudar." },
           { form: "pensavam", meaning: "you all used to think (reflect)", pron: "pen-SAH-vahng", example: "Vocês pensavam muito antes de decidir?" },
         ],
+        subjuntivo: [
+          { form: "pensasse", meaning: "if I thought (reflect)", pron: "pen-SAH-see", example: "Se eu pensasse demais, não fazia nada." },
+          { form: "pensasse", meaning: "if you thought (reflect)", pron: "pen-SAH-see", example: "Era melhor que você pensasse antes de falar." },
+          { form: "pensássemos", meaning: "if we thought (reflect)", pron: "pen-SAH-seh-moosh", example: "Queria que nós pensássemos juntos numa solução." },
+          { form: "pensassem", meaning: "if you all thought (reflect)", pron: "pen-SAH-seng", example: "Ele falou como se vocês pensassem igual a ele." },
+        ],
       },
     },
     {
@@ -462,6 +566,12 @@ window.DATA_VERBS = {
           { form: "lembrava", meaning: "you used to remember / were remembering", pron: "lem-BRAH-vah", example: "Você lembrava o nome dos colegas?" },
           { form: "lembrávamos", meaning: "we used to remember / were remembering", pron: "lem-BRAH-vah-moosh", example: "Nós lembrávamos as receitas de cor." },
           { form: "lembravam", meaning: "you all used to remember", pron: "lem-BRAH-vahng", example: "Vocês lembravam das histórias antigas?" },
+        ],
+        subjuntivo: [
+          { form: "lembrasse", meaning: "if I remembered", pron: "lem-BRAH-see", example: "Se eu lembrasse do código, abria a porta." },
+          { form: "lembrasse", meaning: "if you remembered", pron: "lem-BRAH-see", example: "Queria que você lembrasse do nosso aniversário." },
+          { form: "lembrássemos", meaning: "if we remembered", pron: "lem-BRAH-seh-moosh", example: "Era melhor que nós lembrássemos disso mais cedo." },
+          { form: "lembrassem", meaning: "if you all remembered", pron: "lem-BRAH-seng", example: "Ele perguntou como se vocês lembrassem de tudo." },
         ],
       },
     },
@@ -578,6 +688,12 @@ window.DATA_VERBS = {
           { form: "morávamos", meaning: "we used to live / were living (reside)", pron: "moh-RAH-vah-moosh", example: "Nós morávamos em Copacabana naquela época." },
           { form: "moravam", meaning: "you all used to live / were living (reside)", pron: "moh-RAH-vahng", example: "Vocês moravam no mesmo prédio?" },
         ],
+        subjuntivo: [
+          { form: "morasse", meaning: "if I lived (reside)", pron: "moh-RAH-see", example: "Se eu morasse na praia, nadava todo dia." },
+          { form: "morasse", meaning: "if you lived (reside)", pron: "moh-RAH-see", example: "Queria que você morasse mais perto da gente." },
+          { form: "morássemos", meaning: "if we lived (reside)", pron: "moh-RAH-seh-moosh", example: "Ele fala como se nós morássemos num palácio." },
+          { form: "morassem", meaning: "if you all lived (reside)", pron: "moh-RAH-seng", example: "Era melhor que vocês morassem juntos pra dividir o aluguel." },
+        ],
       },
     },
     {
@@ -600,6 +716,12 @@ window.DATA_VERBS = {
           { form: "trabalhava", meaning: "you used to work / were working", pron: "trah-bah-LYAH-vah", example: "Você trabalhava depois da escola?" },
           { form: "trabalhávamos", meaning: "we used to work / were working", pron: "trah-bah-LYAH-vah-moosh", example: "Nós trabalhávamos juntos no verão." },
           { form: "trabalhavam", meaning: "you all used to work / were working", pron: "trah-bah-LYAH-vahng", example: "Vocês trabalhavam numa loja naquele bairro?" },
+        ],
+        subjuntivo: [
+          { form: "trabalhasse", meaning: "if I worked", pron: "trah-bah-LYAH-see", example: "Meu chefe queria que eu trabalhasse no feriado." },
+          { form: "trabalhasse", meaning: "if you worked", pron: "trah-bah-LYAH-see", example: "Se você trabalhasse menos, tinha mais tempo pra família." },
+          { form: "trabalhássemos", meaning: "if we worked", pron: "trah-bah-LYAH-seh-moosh", example: "Era melhor que nós trabalhássemos juntos nesse projeto." },
+          { form: "trabalhassem", meaning: "if you all worked", pron: "trah-bah-LYAH-seng", example: "Ele age como se vocês trabalhassem só pra ele." },
         ],
       },
     },
@@ -624,6 +746,12 @@ window.DATA_VERBS = {
           { form: "estudávamos", meaning: "we used to study / were studying", pron: "es-too-DAH-vah-moosh", example: "Nós estudávamos juntos na biblioteca." },
           { form: "estudavam", meaning: "you all used to study", pron: "es-too-DAH-vahng", example: "Vocês estudavam à noite?" },
         ],
+        subjuntivo: [
+          { form: "estudasse", meaning: "if I studied", pron: "es-too-DAH-see", example: "Se eu estudasse mais, passava fácil nessa prova." },
+          { form: "estudasse", meaning: "if you studied", pron: "es-too-DAH-see", example: "Sua mãe queria que você estudasse medicina, né?" },
+          { form: "estudássemos", meaning: "if we studied", pron: "es-too-DAH-seh-moosh", example: "A professora pediu que nós estudássemos o capítulo dois." },
+          { form: "estudassem", meaning: "if you all studied", pron: "es-too-DAH-seng", example: "Gostaria que vocês estudassem antes de sair pra rua." },
+        ],
       },
     },
     {
@@ -647,6 +775,12 @@ window.DATA_VERBS = {
           { form: "chegávamos", meaning: "we used to arrive / were arriving", pron: "sheh-GAH-vah-moosh", example: "Nós chegávamos cedo no trabalho." },
           { form: "chegavam", meaning: "you all used to arrive / were arriving", pron: "sheh-GAH-vahng", example: "Vocês chegavam de ônibus?" },
         ],
+        subjuntivo: [
+          { form: "chegasse", meaning: "if I arrived", pron: "sheh-GAH-see", example: "Ela agia como se eu chegasse sempre atrasado no trabalho." },
+          { form: "chegasse", meaning: "if you arrived", pron: "sheh-GAH-see", example: "Se você chegasse mais cedo, a gente almoçava junto." },
+          { form: "chegássemos", meaning: "if we arrived", pron: "sheh-GAH-seh-moosh", example: "Gostaria que nós chegássemos antes de escurecer." },
+          { form: "chegassem", meaning: "if you all arrived", pron: "sheh-GAH-seng", example: "Era melhor que vocês chegassem juntos na festa." },
+        ],
       },
     },
     {
@@ -669,6 +803,12 @@ window.DATA_VERBS = {
           { form: "saía", meaning: "you used to leave / go out / were leaving", pron: "sah-EE-ah", example: "Você saía para correr de manhã?" },
           { form: "saíamos", meaning: "we used to leave / go out / were leaving", pron: "sah-EE-ah-moosh", example: "Nós saíamos para jantar no sábado." },
           { form: "saíam", meaning: "you all used to leave / go out / were leaving", pron: "sah-EE-ahng", example: "Vocês saíam do trabalho às cinco?" },
+        ],
+        subjuntivo: [
+          { form: "saísse", meaning: "if I went out", pron: "sah-EE-see", example: "Minha mãe queria que eu saísse menos à noite." },
+          { form: "saísse", meaning: "if you went out", pron: "sah-EE-see", example: "Se você saísse do trabalho cedo, ia comigo ao show." },
+          { form: "saíssemos", meaning: "if we went out", pron: "sah-EE-seh-moosh", example: "Ele fechou a porta antes que nós saíssemos." },
+          { form: "saíssem", meaning: "if you all went out", pron: "sah-EE-seng", example: "Era como se vocês saíssem só pra me irritar." },
         ],
       },
     },
@@ -739,6 +879,12 @@ window.DATA_VERBS = {
           { form: "levávamos", meaning: "we used to take / carry / were taking", pron: "leh-VAH-vah-moosh", example: "Nós levávamos flores para a professora." },
           { form: "levavam", meaning: "you all used to take / carry / were taking", pron: "leh-VAH-vahng", example: "Vocês levavam a bicicleta na viagem?" },
         ],
+        subjuntivo: [
+          { form: "levasse", meaning: "if I took / carried", pron: "leh-VAH-see", example: "Se eu levasse o casaco, não passava frio agora." },
+          { form: "levasse", meaning: "if you took / carried", pron: "leh-VAH-see", example: "Gostaria que você levasse as crianças pra escola amanhã." },
+          { form: "levássemos", meaning: "if we took / carried", pron: "leh-VAH-seh-moosh", example: "Era melhor que nós levássemos um mapa nessa trilha amanhã." },
+          { form: "levassem", meaning: "if you all took / carried", pron: "leh-VAH-seng", example: "Guardei tudo antes que vocês levassem as caixas erradas." },
+        ],
       },
     },
     {
@@ -761,6 +907,12 @@ window.DATA_VERBS = {
           { form: "voltava", meaning: "you used to return / come back / were returning", pron: "vohl-TAH-vah", example: "Você voltava cedo da escola?" },
           { form: "voltávamos", meaning: "we used to return / come back / were returning", pron: "vohl-TAH-vah-moosh", example: "Nós voltávamos da praia todo domingo." },
           { form: "voltavam", meaning: "you all used to return / come back / were returning", pron: "vohl-TAH-vahng", example: "Vocês voltavam tarde da festa?" },
+        ],
+        subjuntivo: [
+          { form: "voltasse", meaning: "if I returned", pron: "vohl-TAH-see", example: "Se eu voltasse pro Rio, morava em Ipanema de novo." },
+          { form: "voltasse", meaning: "if you returned", pron: "vohl-TAH-see", example: "Gostaria que você voltasse pra casa mais cedo hoje." },
+          { form: "voltássemos", meaning: "if we returned", pron: "vohl-TAH-seh-moosh", example: "Ela queria que nós voltássemos antes da meia-noite." },
+          { form: "voltassem", meaning: "if you all returned", pron: "vohl-TAH-seng", example: "Era melhor que vocês voltassem de táxi hoje à noite." },
         ],
       },
     },
@@ -854,6 +1006,12 @@ window.DATA_VERBS = {
           { form: "falávamos", meaning: "we used to speak / talk / were talking", pron: "fah-LAH-vah-moosh", example: "Nós falávamos no telefone toda noite." },
           { form: "falavam", meaning: "you all used to speak / talk / were talking", pron: "fah-LAH-vahng", example: "Vocês falavam inglês em casa?" },
         ],
+        subjuntivo: [
+          { form: "falasse", meaning: "if I spoke", pron: "fah-LAH-see", example: "Se eu falasse inglês, arrumava emprego melhor." },
+          { form: "falasse", meaning: "if you spoke", pron: "fah-LAH-see", example: "Gostaria que você falasse mais baixo no telefone." },
+          { form: "falássemos", meaning: "if we spoke", pron: "fah-LAH-seh-moosh", example: "Era melhor que nós falássemos com ela pessoalmente." },
+          { form: "falassem", meaning: "if you all spoke", pron: "fah-LAH-seng", example: "Saí da sala antes que vocês falassem de mim." },
+        ],
       },
     },
     {
@@ -877,6 +1035,12 @@ window.DATA_VERBS = {
           { form: "dizíamos", meaning: "we used to say / were saying", pron: "djee-ZEE-ah-moosh", example: "Nós dizíamos piada na hora do almoço." },
           { form: "diziam", meaning: "you all used to say / were saying", pron: "djee-ZEE-ahng", example: "Vocês diziam que iam voltar cedo?" },
         ],
+        subjuntivo: [
+          { form: "dissesse", meaning: "if I said", pron: "djee-SEH-see", example: "Ele queria que eu dissesse sim na hora." },
+          { form: "dissesse", meaning: "if you said", pron: "djee-SEH-see", example: "Se você dissesse a verdade, ninguém brigava." },
+          { form: "disséssemos", meaning: "if we said", pron: "djee-SEH-seh-moosh", example: "Ela saiu antes que nós disséssemos qualquer coisa." },
+          { form: "dissessem", meaning: "if you all said", pron: "djee-SEH-seng", example: "Ele sorriu como se vocês dissessem algo engraçado." },
+        ],
       },
     },
     {
@@ -899,6 +1063,12 @@ window.DATA_VERBS = {
           { form: "perguntava", meaning: "you used to ask / were asking", pron: "pehr-goon-TAH-vah", example: "Você perguntava o preço antes de comprar?" },
           { form: "perguntávamos", meaning: "we used to ask / were asking", pron: "pehr-goon-TAH-vah-moosh", example: "Nós perguntávamos o caminho sempre." },
           { form: "perguntavam", meaning: "you all used to ask", pron: "pehr-goon-TAH-vahng", example: "Vocês perguntavam a opinião dos outros?" },
+        ],
+        subjuntivo: [
+          { form: "perguntasse", meaning: "if I asked", pron: "pehr-goon-TAH-see", example: "Se eu perguntasse o preço, você me falava?" },
+          { form: "perguntasse", meaning: "if you asked", pron: "pehr-goon-TAH-see", example: "Queria que você perguntasse antes de mexer nas minhas coisas." },
+          { form: "perguntássemos", meaning: "if we asked", pron: "pehr-goon-TAH-seh-moosh", example: "Era melhor que nós perguntássemos o caminho pra alguém." },
+          { form: "perguntassem", meaning: "if you all asked", pron: "pehr-goon-TAH-seng", example: "Saí de fininho antes que vocês perguntassem qualquer coisa." },
         ],
       },
     },
@@ -1130,6 +1300,12 @@ window.DATA_VERBS = {
           { form: "comprávamos", meaning: "we used to buy / were buying", pron: "kohm-PRAH-vah-moosh", example: "Nós comprávamos fruta no mercado." },
           { form: "compravam", meaning: "you all used to buy / were buying", pron: "kohm-PRAH-vahng", example: "Vocês compravam ingresso antecipado?" },
         ],
+        subjuntivo: [
+          { form: "comprasse", meaning: "if I bought", pron: "kohm-PRAH-see", example: "Se eu comprasse aquele apartamento, ficava sem dinheiro nenhum." },
+          { form: "comprasse", meaning: "if you bought", pron: "kohm-PRAH-see", example: "Queria que você comprasse pão na volta do trabalho." },
+          { form: "comprássemos", meaning: "if we bought", pron: "kohm-PRAH-seh-moosh", example: "Era melhor que nós comprássemos os ingressos hoje mesmo." },
+          { form: "comprassem", meaning: "if you all bought", pron: "kohm-PRAH-seng", example: "Gostaria que vocês comprassem os presentes com antecedência." },
+        ],
       },
     },
     {
@@ -1152,6 +1328,12 @@ window.DATA_VERBS = {
           { form: "pagava", meaning: "you used to pay / were paying", pron: "pah-GAH-vah", example: "Você pagava a passagem de ônibus?" },
           { form: "pagávamos", meaning: "we used to pay / were paying", pron: "pah-GAH-vah-moosh", example: "Nós pagávamos a conta dividida." },
           { form: "pagavam", meaning: "you all used to pay / were paying", pron: "pah-GAH-vahng", example: "Vocês pagavam em dinheiro?" },
+        ],
+        subjuntivo: [
+          { form: "pagasse", meaning: "if I paid", pron: "pah-GAH-see", example: "Se eu pagasse todas as contas hoje, ficava zerado." },
+          { form: "pagasse", meaning: "if you paid", pron: "pah-GAH-see", example: "Ela gostaria que você pagasse a sua parte logo." },
+          { form: "pagássemos", meaning: "if we paid", pron: "pah-GAH-seh-moosh", example: "Ele sumiu antes que nós pagássemos a conta do bar." },
+          { form: "pagassem", meaning: "if you all paid", pron: "pah-GAH-seng", example: "Queria que vocês pagassem o aluguel sem atraso." },
         ],
       },
     },
@@ -1198,6 +1380,12 @@ window.DATA_VERBS = {
           { form: "pedia", meaning: "you used to ask for / order", pron: "peh-DJEE-ah", example: "Você pedia ajuda quando precisava?" },
           { form: "pedíamos", meaning: "we used to ask for / order", pron: "peh-DJEE-ah-moosh", example: "Nós pedíamos comida no mesmo restaurante." },
           { form: "pediam", meaning: "you all used to ask for / order", pron: "peh-DJEE-ahng", example: "Vocês pediam refrigerante no almoço?" },
+        ],
+        subjuntivo: [
+          { form: "pedisse", meaning: "if I asked for / ordered", pron: "peh-DJEE-see", example: "Ela queria que eu pedisse desculpa pra ele." },
+          { form: "pedisse", meaning: "if you asked for / ordered", pron: "peh-DJEE-see", example: "Se você pedisse com jeitinho, ela deixava." },
+          { form: "pedíssemos", meaning: "if we asked for / ordered", pron: "peh-DJEE-seh-moosh", example: "Era melhor que nós pedíssemos uma pizza grande." },
+          { form: "pedissem", meaning: "if you all asked for / ordered", pron: "peh-DJEE-seng", example: "O garçom sumiu antes que vocês pedissem a sobremesa." },
         ],
       },
     },
@@ -1728,6 +1916,12 @@ window.DATA_VERBS = {
           { form: "dormíamos", meaning: "we used to sleep / were sleeping", pron: "dor-MEE-ah-moosh", example: "Nós dormíamos na rede na praia." },
           { form: "dormiam", meaning: "you all used to sleep / were sleeping", pron: "dor-MEE-ahng", example: "Vocês dormiam com a luz acesa?" },
         ],
+        subjuntivo: [
+          { form: "dormisse", meaning: "if I slept", pron: "dohr-MEE-see", example: "Ela queria que eu dormisse mais cedo durante a semana." },
+          { form: "dormisse", meaning: "if you slept", pron: "dohr-MEE-see", example: "Se você dormisse oito horas, acordava bem melhor." },
+          { form: "dormíssemos", meaning: "if we slept", pron: "dohr-MEE-seh-moosh", example: "Era melhor que nós dormíssemos antes da viagem longa." },
+          { form: "dormissem", meaning: "if you all slept", pron: "dohr-MEE-seng", example: "A casa parecia vazia, como se vocês dormissem fora." },
+        ],
       },
     },
     {
@@ -1958,6 +2152,12 @@ window.DATA_VERBS = {
           { form: "trazíamos", meaning: "we used to bring / were bringing", pron: "trah-ZEE-ah-moosh", example: "Nós trazíamos comida para a festa." },
           { form: "traziam", meaning: "you all used to bring / were bringing", pron: "trah-ZEE-ahng", example: "Vocês traziam novidades da viagem?" },
         ],
+        subjuntivo: [
+          { form: "trouxesse", meaning: "if I brought", pron: "troh-SEH-see", example: "Se eu trouxesse o guarda-chuva, não me molhava tanto." },
+          { form: "trouxesse", meaning: "if you brought", pron: "troh-SEH-see", example: "Queria que você trouxesse aquele bolo da sua mãe." },
+          { form: "trouxéssemos", meaning: "if we brought", pron: "troh-SEH-seh-moosh", example: "Era melhor que nós trouxéssemos comida de casa." },
+          { form: "trouxessem", meaning: "if you all brought", pron: "troh-SEH-seng", example: "Ele falou como se vocês trouxessem azar pro time." },
+        ],
       },
     },
     {
@@ -2027,6 +2227,12 @@ window.DATA_VERBS = {
           { form: "deixávamos", meaning: "we used to leave / let / were leaving", pron: "day-SHAH-vah-moosh", example: "Nós deixávamos o cachorro solto." },
           { form: "deixavam", meaning: "you all used to leave / let", pron: "day-SHAH-vahng", example: "Vocês deixavam a luz acesa?" },
         ],
+        subjuntivo: [
+          { form: "deixasse", meaning: "if I left / let", pron: "day-SHAH-see", example: "Se eu deixasse o carro em casa, chegava mais rápido." },
+          { form: "deixasse", meaning: "if you left / let", pron: "day-SHAH-see", example: "Queria que você deixasse a chave com o porteiro." },
+          { form: "deixássemos", meaning: "if we left / let", pron: "day-SHAH-seh-moosh", example: "Era melhor que nós deixássemos esse assunto pra amanhã." },
+          { form: "deixassem", meaning: "if you all left / let", pron: "day-SHAH-seng", example: "Saí de fininho antes que vocês deixassem a festa." },
+        ],
       },
     },
     {
@@ -2049,6 +2255,12 @@ window.DATA_VERBS = {
           { form: "passava", meaning: "you used to pass / spend / were passing (time)", pron: "pah-SAH-vah", example: "Você passava por aqui todo dia?" },
           { form: "passávamos", meaning: "we used to pass / spend / were passing (time)", pron: "pah-SAH-vah-moosh", example: "Nós passávamos o verão na praia." },
           { form: "passavam", meaning: "you all used to pass / spend / were passing (time)", pron: "pah-SAH-vahng", example: "Vocês passavam muito tempo juntos?" },
+        ],
+        subjuntivo: [
+          { form: "passasse", meaning: "if I passed / spent (time)", pron: "pah-SAH-see", example: "Ela queria que eu passasse o fim de semana lá." },
+          { form: "passasse", meaning: "if you passed / spent (time)", pron: "pah-SAH-see", example: "Se você passasse lá em casa, a gente conversava melhor." },
+          { form: "passássemos", meaning: "if we passed / spent (time)", pron: "pah-SAH-seh-moosh", example: "Era melhor que nós passássemos na padaria antes do almoço." },
+          { form: "passassem", meaning: "if you all passed / spent (time)", pron: "pah-SAH-seng", example: "Gostaria que vocês passassem mais tempo com a vovó." },
         ],
       },
     },
@@ -2602,6 +2814,12 @@ window.DATA_VERBS = {
           { form: "gostávamos", meaning: "we used to like", pron: "goh-STAH-vah-moosh", example: "Nós gostávamos de ir ao parque." },
           { form: "gostavam", meaning: "you all used to like", pron: "goh-STAH-vahng", example: "Vocês gostavam daquele professor?" },
         ],
+        subjuntivo: [
+          { form: "gostasse", meaning: "if I liked", pron: "gohs-TAH-see", example: "Se eu gostasse de festa, saía toda sexta." },
+          { form: "gostasse", meaning: "if you liked", pron: "gohs-TAH-see", example: "Queria que você gostasse de samba como eu gosto." },
+          { form: "gostássemos", meaning: "if we liked", pron: "gohs-TAH-seh-moosh", example: "Ela cozinhou como se nós gostássemos de comida apimentada." },
+          { form: "gostassem", meaning: "if you all liked", pron: "gohs-TAH-seng", example: "Se vocês gostassem do filme, a gente via a sequência." },
+        ],
       },
     },
     {
@@ -2625,6 +2843,12 @@ window.DATA_VERBS = {
           { form: "amávamos", meaning: "we used to love / were loving", pron: "ah-MAH-vah-moosh", example: "Nós amávamos passar o domingo na praia." },
           { form: "amavam", meaning: "you all used to love / were loving", pron: "ah-MAH-vahng", example: "Vocês amavam esse lugar?" },
         ],
+        subjuntivo: [
+          { form: "amasse", meaning: "if I loved", pron: "ah-MAH-see", example: "Se eu amasse menos essa cidade, já tinha mudado." },
+          { form: "amasse", meaning: "if you loved", pron: "ah-MAH-see", example: "Queria que você amasse esse time como eu amo." },
+          { form: "amássemos", meaning: "if we loved", pron: "ah-MAH-seh-moosh", example: "Ele falava como se nós amássemos trabalhar de domingo." },
+          { form: "amassem", meaning: "if you all loved", pron: "ah-MAH-seng", example: "Se vocês amassem esse bairro, não iam embora." },
+        ],
       },
     },
     {
@@ -2647,6 +2871,12 @@ window.DATA_VERBS = {
           { form: "ajudava", meaning: "you used to help / were helping", pron: "ah-zhoo-DAH-vah", example: "Você ajudava os seus colegas na escola?" },
           { form: "ajudávamos", meaning: "we used to help / were helping", pron: "ah-zhoo-DAH-vah-moosh", example: "Nós ajudávamos a vizinha com as compras." },
           { form: "ajudavam", meaning: "you all used to help / were helping", pron: "ah-zhoo-DAH-vahng", example: "Vocês ajudavam na festa da escola?" },
+        ],
+        subjuntivo: [
+          { form: "ajudasse", meaning: "if I helped", pron: "ah-zhoo-DAH-see", example: "Ela pediu que eu ajudasse na mudança no sábado." },
+          { form: "ajudasse", meaning: "if you helped", pron: "ah-zhoo-DAH-see", example: "Se você ajudasse em casa, sua mãe reclamava menos." },
+          { form: "ajudássemos", meaning: "if we helped", pron: "ah-zhoo-DAH-seh-moosh", example: "Era melhor que nós ajudássemos a organizar a festa." },
+          { form: "ajudassem", meaning: "if you all helped", pron: "ah-zhoo-DAH-seng", example: "Queria que vocês ajudassem o vovô com as compras." },
         ],
       },
     },
@@ -2763,6 +2993,12 @@ window.DATA_VERBS = {
           { form: "encontrávamos", meaning: "we used to meet / find", pron: "en-kohn-TRAH-vah-moosh", example: "Nós encontrávamos lugar para sentar." },
           { form: "encontravam", meaning: "you all used to meet / find", pron: "en-kohn-TRAH-vahng", example: "Vocês encontravam tempo para estudar?" },
         ],
+        subjuntivo: [
+          { form: "encontrasse", meaning: "if I found / met", pron: "en-kohn-TRAH-see", example: "Se eu encontrasse suas chaves, te avisava na hora." },
+          { form: "encontrasse", meaning: "if you found / met", pron: "en-kohn-TRAH-see", example: "Queria que você encontrasse um trabalho perto de casa." },
+          { form: "encontrássemos", meaning: "if we found / met", pron: "en-kohn-TRAH-seh-moosh", example: "Era melhor que nós encontrássemos um lugar mais tranquilo." },
+          { form: "encontrassem", meaning: "if you all found / met", pron: "en-kohn-TRAH-seng", example: "Vocês agiram como se encontrassem dinheiro no chão todo dia." },
+        ],
       },
     },
     {
@@ -2785,6 +3021,12 @@ window.DATA_VERBS = {
           { form: "esperava", meaning: "you used to wait / hope", pron: "es-peh-RAH-vah", example: "Você esperava a sua mãe na porta da escola?" },
           { form: "esperávamos", meaning: "we used to wait / hope", pron: "es-peh-RAH-vah-moosh", example: "Nós esperávamos o filme começar." },
           { form: "esperavam", meaning: "you all used to wait / hope", pron: "es-peh-RAH-vahng", example: "Vocês esperavam muito tempo no banco?" },
+        ],
+        subjuntivo: [
+          { form: "esperasse", meaning: "if I waited / hoped", pron: "es-peh-RAH-see", example: "Se eu esperasse mais um pouco, pegava o ônibus das oito." },
+          { form: "esperasse", meaning: "if you waited / hoped", pron: "es-peh-RAH-see", example: "Queria que você esperasse a gente na saída do metrô." },
+          { form: "esperássemos", meaning: "if we waited / hoped", pron: "es-peh-RAH-seh-moosh", example: "Era melhor que nós esperássemos a chuva passar primeiro." },
+          { form: "esperassem", meaning: "if you all waited / hoped", pron: "es-peh-RAH-seng", example: "Cheguei antes que vocês esperassem demais por mim." },
         ],
       },
     },

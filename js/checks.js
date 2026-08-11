@@ -68,6 +68,48 @@ function runChecks() {
     return bad.length ? bad.slice(0, 8).join('\n') : true;
   });
 
+  check('40 verbs carry a complete subjuntivo block', () => {
+    const bad = [];
+    let n = 0;
+    V.verbs.forEach(v => {
+      const rows = v.tenses.subjuntivo;
+      if (!rows) return;
+      n++;
+      if (rows.length !== 4) { bad.push(v.pt + ' (rows)'); return; }
+      rows.forEach((r, i) => {
+        if (!r.form || !r.meaning || !r.pron || !r.example) bad.push(v.pt + '/' + i);
+      });
+    });
+    if (bad.length) return bad.slice(0, 8).join(', ');
+    return n === 40 ? true : 'got ' + n + ' verbs with subjuntivo';
+  });
+
+  check('every subjuntivo form derives from the perfeito 3pl', () => {
+    // This rule has no exceptions in Portuguese, so it verifies irregulars too.
+    const bad = [];
+    V.verbs.forEach(v => {
+      if (!v.tenses.subjuntivo) return;
+      const expect = subjImperfectFromPerfeito3pl(v.tenses.perfeito[3].form, v.pt);
+      if (!expect) { bad.push(v.pt + ' (no 3pl rule)'); return; }
+      const stored = v.tenses.subjuntivo.map(r => r.form).join(',');
+      if (stored !== expect.join(',')) bad.push(v.pt + ': ' + stored + ' vs ' + expect.join(','));
+    });
+    return bad.length ? bad.slice(0, 8).join('\n') : true;
+  });
+
+  check('every subjuntivo example uses its form inside a trigger context', () => {
+    const TRIGGER = /(^|[ ,("“])(se|que|como se|antes que|talvez)\s/i;
+    const bad = [];
+    V.verbs.forEach(v => {
+      if (!v.tenses.subjuntivo) return;
+      v.tenses.subjuntivo.forEach((r, i) => {
+        if (r.example.indexOf(r.form) === -1) bad.push(v.pt + '/' + i + ' (form missing)');
+        else if (!TRIGGER.test(r.example)) bad.push(v.pt + '/' + i + ' (no trigger)');
+      });
+    });
+    return bad.length ? bad.slice(0, 8).join(', ') : true;
+  });
+
   check('verbs flagged irregular really are irregular', () => {
     const wrong = [];
     V.verbs.forEach(v => {
