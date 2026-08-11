@@ -1,0 +1,79 @@
+// Headless runner for js/checks.js, using the JavaScriptCore engine that ships
+// with macOS — no Node, no npm, nothing to install:
+//
+//   osascript -l JavaScript scripts/check.jxa
+//
+// verify.html runs the exact same checks in the browser.
+
+ObjC.import('Foundation');
+
+function read(path) {
+  const s = $.NSString.stringWithContentsOfFileEncodingError(
+    $(path), $.NSUTF8StringEncoding, null);
+  if (!s || s.isNil()) throw new Error('cannot read ' + path);
+  return ObjC.unwrap(s);
+}
+
+function scriptDir() {
+  const cwd = ObjC.unwrap($.NSFileManager.defaultManager.currentDirectoryPath);
+  return cwd;
+}
+
+const ROOT = scriptDir();
+const FILES = [
+  'js/lib/text.js',
+  'js/conjugate.js',
+  'js/data/verbs.js',
+  'js/data/nouns.js',
+  'js/data/adjectives.js',
+  'js/data/adverbs.js',
+  'js/data/connecting.js',
+  'js/data/numbers.js',
+  'js/data/glossary.js',
+  'js/data/sentences.js',
+  'js/topics.js',
+  'js/checks.js'
+];
+
+// the data files assign onto `window`; give them one
+var window = this;
+var geval = eval;
+
+// All files are concatenated into ONE evaluation: top-level `const`/`let` inside an
+// eval do not outlive that eval, so loading them separately would hide TOPICS etc.
+var sources = [];
+var loadFailed = false;
+FILES.forEach(function (f) {
+  try {
+    sources.push('/* ' + f + ' */\n' + read(ROOT + '/' + f));
+  } catch (e) {
+    console.log('READ ERROR  ' + f + ': ' + ((e && e.message) || e));
+    loadFailed = true;
+  }
+});
+
+var results = null;
+if (!loadFailed) {
+  try {
+    results = geval(sources.join('\n;\n') + '\n;runChecks();');
+  } catch (e) {
+    console.log('EVAL ERROR: ' + ((e && e.message) || e));
+    loadFailed = true;
+  }
+}
+
+if (loadFailed || !results) {
+  console.log('\nAborting: one or more files failed to parse or execute.');
+} else {
+  const failed = results.filter(r => !r.ok);
+  results.forEach(r => {
+    console.log((r.ok ? '  ok  ' : 'FAIL  ') + r.name);
+    if (r.detail) {
+      r.detail.split('\n').forEach(line => console.log('        ' + line));
+    }
+  });
+  console.log('');
+  console.log(failed.length
+    ? 'FAILED: ' + failed.length + ' of ' + results.length + ' checks'
+    : 'PASSED: all ' + results.length + ' checks');
+}

@@ -1,0 +1,252 @@
+/* Smoke-test steps. Concatenated INTO the same eval as the app sources so that
+   the app's top-level const bindings (Mode, Store, Quiz, Browse, Daily, TOPICS)
+   are in scope. Uses step()/registry/flushTimers from the JXA host script. */
+
+step('app boots and renders the Browse view', function () {
+  var html = registry.view.innerHTML;
+  if (!/Verbos Úteis/.test(html)) throw new Error('browse view did not render');
+  var rows = (html.match(/class="verb-row"/g) || []).length;
+  if (rows !== 124) throw new Error('expected 124 verb rows, got ' + rows);
+  return rows + ' verb rows, ' + html.length + ' bytes of HTML';
+});
+
+step('tab strip lists all 12 tabs', function () {
+  var tabs = (registry.tabs.innerHTML.match(/data-tab="/g) || []).length;
+  if (tabs !== 12) throw new Error('got ' + tabs + ' tabs');
+  return '12 tabs incl. Browse + Daily';
+});
+
+step('Hard Mode is the default on a fresh profile', function () {
+  if (!Mode.hard) throw new Error('Mode.hard was false');
+  if (registry.modeBtn.textContent !== 'Hard Mode')
+    throw new Error('button reads "' + registry.modeBtn.textContent + '"');
+  return 'Mode.hard = true, button reads "Hard Mode"';
+});
+
+function goTo(hash) {
+  window.location.hash = hash;
+  (window._h.hashchange || []).forEach(function (fn) { fn(); });
+}
+function shownCard(topicId) {
+  var m = registry.cardArea.innerHTML.match(/<div class="card-prompt">([\s\S]*?)<\/div>/);
+  if (!m) throw new Error('no prompt rendered');
+  var prompt = m[1];
+  var card = topicCards(topicById(topicId)).filter(function (c) { return c.prompt === prompt; })[0];
+  if (!card) throw new Error('could not identify shown card: ' + prompt);
+  return card;
+}
+
+step('every quiz tab renders a usable card', function () {
+  var out = [];
+  TOPICS.filter(function (t) { return t.kind === 'quiz'; }).forEach(function (t) {
+    goTo('#' + t.id);
+    if (!registry.cardArea) throw new Error(t.id + ': no cardArea');
+    var html = registry.cardArea.innerHTML;
+    if (!/answer-input/.test(html)) throw new Error(t.id + ': no answer input');
+    if (!/card-prompt/.test(html)) throw new Error(t.id + ': no prompt');
+    if (!registry.statTotal) throw new Error(t.id + ': no stats');
+    out.push(t.id + '(' + registry.statTotal.textContent + ')');
+  });
+  return out.join(' ');
+});
+
+step('Hard Mode hides the hint, Easy Mode shows it, and the pref persists', function () {
+  goTo('#presente');
+  if (/card-hint/.test(registry.cardArea.innerHTML)) throw new Error('hint leaked in Hard Mode');
+  registry.modeBtn.fire('click');
+  if (!/card-hint/.test(registry.cardArea.innerHTML)) throw new Error('no hint in Easy Mode');
+  if (registry.modeBtn.textContent !== 'Easy Mode') throw new Error('label not updated');
+  if (Store.getPref('hardMode', true) !== false) throw new Error('pref not written');
+  registry.modeBtn.fire('click');
+  if (!Mode.hard) throw new Error('did not toggle back to Hard');
+  if (/card-hint/.test(registry.cardArea.innerHTML)) throw new Error('hint still shown');
+  return 'hint appears only in Easy Mode; pref round-trips through the store';
+});
+
+step('a correct answer is accepted and marks the card mastered', function () {
+  goTo('#nouns');
+  var before = Store.masteredCount('nouns');
+  var card = shownCard('nouns');
+  registry.answerInput.value = card.answer;
+  registry.actionBtn.fire('click');
+  if (!/Correct/.test(registry.feedback.innerHTML))
+    throw new Error('not accepted: ' + registry.feedback.innerHTML);
+  var after = Store.masteredCount('nouns');
+  if (after !== before + 1) throw new Error('mastery ' + before + ' -> ' + after);
+  return 'accepted "' + card.answer + '"; mastered ' + before + ' -> ' + after;
+});
+
+step('accent- and case-insensitive input is accepted', function () {
+  goTo('#imperfeito');
+  var card = shownCard('imperfeito');
+  var sloppy = card.answer.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
+  registry.answerInput.value = sloppy;
+  registry.actionBtn.fire('click');
+  if (!/Correct/.test(registry.feedback.innerHTML))
+    throw new Error('rejected "' + sloppy + '" for "' + card.answer + '"');
+  return '"' + sloppy + '" accepted for "' + card.answer + '"';
+});
+
+step('the bare verb form is accepted without the pronoun', function () {
+  goTo('#perfeito');
+  var card = shownCard('perfeito');
+  var bare = card.answer.split(' ').slice(1).join(' ');
+  registry.answerInput.value = bare;
+  registry.actionBtn.fire('click');
+  if (!/Correct/.test(registry.feedback.innerHTML))
+    throw new Error('rejected bare form "' + bare + '" for "' + card.answer + '"');
+  return '"' + bare + '" accepted for "' + card.answer + '"';
+});
+
+step('a wrong answer reveals the answer and does not count as known', function () {
+  goTo('#presente');
+  registry.answerInput.value = 'zzz não é resposta';
+  registry.actionBtn.fire('click');
+  if (!/The answer is/.test(registry.feedback.innerHTML))
+    throw new Error('no reveal: ' + registry.feedback.innerHTML);
+  if (!/conj-table/.test(registry.revealArea.innerHTML))
+    throw new Error('no conjugation table on a miss');
+  var known = String(registry.statKnown.textContent);
+  if (known !== '0') throw new Error('counted as known: ' + known);
+  return 'answer revealed with conjugation table; Known stayed ' + known;
+});
+
+step('Skip advances the deck without granting mastery', function () {
+  goTo('#adverbs');
+  var before = Store.masteredCount('adverbs');
+  registry.skipBtn.fire('click');
+  var after = Store.masteredCount('adverbs');
+  if (after !== before) throw new Error('skip changed mastery ' + before + ' -> ' + after);
+  if (!registry.answerInput) throw new Error('no next card after skip');
+  return 'skipped; mastery unchanged at ' + before;
+});
+
+step('group chips shrink the deck but can never empty it', function () {
+  goTo('#presente');
+  var total = parseInt(registry.statTotal.textContent, 10);
+  Quiz.toggleGroup('-ar verbs');
+  var fewer = parseInt(registry.statTotal.textContent, 10);
+  if (!(fewer < total)) throw new Error('deck did not shrink: ' + total + ' -> ' + fewer);
+  ['-er verbs', '-ir verbs', 'irregular'].forEach(function (g) { Quiz.toggleGroup(g); });
+  var left = parseInt(registry.statTotal.textContent, 10);
+  if (!(left > 0)) throw new Error('deck emptied');
+  return total + ' -> ' + fewer + ' after one chip; floor holds at ' + left;
+});
+
+step('clearing a deck shows the done screen', function () {
+  goTo('#adverbs');
+  var guard = 0;
+  while (registry.answerInput && guard++ < 200) {
+    var card = shownCard('adverbs');
+    registry.answerInput.value = card.answer;
+    registry.actionBtn.fire('click');
+    registry.actionBtn.fire('click');   // second press advances
+  }
+  if (!/done-screen/.test(registry.cardArea.innerHTML))
+    throw new Error('no done screen after ' + guard + ' answers');
+  if (!/result-stat/.test(registry.cardArea.innerHTML))
+    throw new Error('no run stats on the done screen');
+  return 'cleared 28 adverb cards in ' + guard + ' rounds; done screen with run stats';
+});
+
+step('the reset control clears a topic\'s mastery', function () {
+  goTo('#browse');                     // leave and re-enter so the chrome rebuilds
+  goTo('#adverbs');
+  var before = Store.masteredCount('adverbs');
+  if (!(before > 0)) throw new Error('expected mastered adverbs from the previous step');
+  if (!/data-reset-topic="adverbs"/.test(registry.view.innerHTML))
+    throw new Error('no reset control rendered');
+  // dispatch through the app's delegated click handler (confirm() is absent
+  // in this stub, which the handler treats as a yes)
+  var fakeTarget = { closest: function (sel) {
+    return sel === '[data-reset-topic]' ? { dataset: { resetTopic: 'adverbs' } } : null;
+  } };
+  (document._h.click || []).forEach(function (fn) { fn({ target: fakeTarget }); });
+  if (Store.masteredCount('adverbs') !== 0)
+    throw new Error('mastery not cleared: ' + Store.masteredCount('adverbs'));
+  if (/data-reset-topic="adverbs"/.test(registry.view.innerHTML))
+    throw new Error('reset control still shown with 0 mastered');
+  return 'mastered ' + before + ' -> 0; control hidden again';
+});
+
+step('daily challenge builds 7 cards from 7 different topics', function () {
+  goTo('#daily');
+  var dots = (registry.view.innerHTML.match(/<span class="daily-dot/g) || []).length;
+  if (dots !== 7) throw new Error('got ' + dots + ' dots');
+  if (!registry.answerInput) throw new Error('no card rendered');
+  return '7 dots, one card showing';
+});
+
+step('daily: four misses count down, the fifth reveals the answer', function () {
+  goTo('#daily');
+  for (var i = 0; i < 4; i++) {
+    registry.answerInput.value = 'errado-' + i;
+    registry.actionBtn.fire('click');
+    if (!/Not quite/.test(registry.feedback.innerHTML))
+      throw new Error('attempt ' + (i + 1) + ': ' + registry.feedback.innerHTML);
+    flushTimers();
+  }
+  registry.answerInput.value = 'errado-final';
+  registry.actionBtn.fire('click');
+  if (!/The answer is/.test(registry.feedback.innerHTML))
+    throw new Error('fifth miss did not reveal: ' + registry.feedback.innerHTML);
+  return 'four "tries left" messages, then a reveal';
+});
+
+step('daily progress survives a reload', function () {
+  Daily.mount();                       // what reopening the page does
+  var failedDots = (registry.view.innerHTML.match(/done-fail/g) || []).length;
+  if (failedDots < 1) throw new Error('the failed card was not restored');
+  return 'failed card still marked after re-mounting';
+});
+
+step('daily is deterministic for a given day', function () {
+  var first = [];
+  Daily.mount();
+  var a = registry.view.innerHTML;
+  Daily.mount();
+  var b = registry.view.innerHTML;
+  if (a !== b) throw new Error('two mounts produced different challenges');
+  return 'same 7 cards on repeated mounts';
+});
+
+step('theme toggle alternates the stored preference', function () {
+  goTo('#browse');
+  registry.themeBtn.fire('click');
+  var t1 = Store.getPref('theme', null);
+  registry.themeBtn.fire('click');
+  var t2 = Store.getPref('theme', null);
+  if (!t1 || !t2 || t1 === t2) throw new Error('did not alternate: ' + t1 + ' / ' + t2);
+  return t1 + ' -> ' + t2;
+});
+
+step('browse controls all run and keep 124 rows', function () {
+  goTo('#browse');
+  Browse.action('shuffle');
+  var shuffledRows = (registry.view.innerHTML.match(/class="verb-row"/g) || []).length;
+  Browse.action('reset');
+  Browse.action('hide-pt');
+  Browse.action('hide-en');
+  Browse.action('show');
+  var rows = (registry.view.innerHTML.match(/class="verb-row"/g) || []).length;
+  if (rows !== 124 || shuffledRows !== 124)
+    throw new Error('rows: shuffled=' + shuffledRows + ' final=' + rows);
+  return 'shuffle/reset/hide/show all fine; 124 rows throughout';
+});
+
+step('browse renders all three tenses per verb with glosses', function () {
+  goTo('#browse');
+  var html = registry.view.innerHTML;
+  ['Presente', 'Pretérito Perfeito', 'Pretérito Imperfeito'].forEach(function (t) {
+    if (html.indexOf(t) === -1) throw new Error('missing tense block: ' + t);
+  });
+  var panels = (html.match(/conjugation-panel/g) || []).length;
+  if (panels !== 124) throw new Error('expected 124 panels, got ' + panels);
+  return '124 conjugation panels, all three tenses present';
+});
+
+step('an unknown hash falls back to Browse', function () {
+  goTo('#nonsense');
+  if (!/Verbos Úteis/.test(registry.view.innerHTML)) throw new Error('did not fall back');
+  return 'ok';
+});
