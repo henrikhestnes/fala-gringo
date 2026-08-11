@@ -9,7 +9,7 @@ const Daily = (function () {
   const SIZE = 7;
   const MAX_ATTEMPTS = 5;
   const EPOCH = new Date(2026, 7, 11);   // 11 Aug 2026 = Daily #1
-  const SHARE_URL = 'henrikhestnes.github.io/portuguese-study-tool#daily';
+  const SHARE_URL = 'henrikhestnes.github.io/se-eu-soubesse#daily';
 
   let cards = [];
   let attempts = [];
@@ -119,7 +119,7 @@ const Daily = (function () {
   }
 
   function shareString() {
-    const lines = ['Verbos Úteis — Daily #' + dailyNumber() + ' (' + formatDate() + ')'];
+    const lines = ['Se Eu Soubesse — Daily #' + dailyNumber() + ' (' + formatDate() + ')'];
     lines.push(cards.map((c, i) => resultDots(i)).join(''));
     const solvedCount = cards.filter((c, i) => solved[i]).length;
     lines.push(solvedCount + '/' + cards.length + ' solved');
