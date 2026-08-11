@@ -735,3 +735,12 @@ footer a { color: var(--text-2); }
   .verb-row { grid-template-columns: 1.8rem 1.7rem 1fr 1.7rem; }
   .verb-text { flex-direction: column; gap: .1rem; }
 }
+
+/* The gringo himself: sunburned, Brazil cap, sunglasses. */
+.brand-gringo {
+  width: 24px;
+  height: 24px;
+  display: block;
+  flex: none;
+  margin-left: .1rem;
+}
