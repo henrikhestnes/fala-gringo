@@ -154,7 +154,7 @@ const Daily = (function () {
         '<div class="card-sub">' + escapeHtml(card.sub) + ' · ' +
           formatCount(left, 'try', 'tries') + ' left</div>' +
         '<div class="input-row">' +
-          '<input class="answer-input" id="answerInput" type="text" placeholder="type here…" ' +
+          '<input class="answer-input" id="answerInput" type="text" placeholder="fala aí…" ' +
             'autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" ' +
             'enterkeyhint="go" />' +
           '<button class="check-btn" id="actionBtn" type="button" aria-label="Check answer">&rarr;</button>' +
@@ -206,7 +206,7 @@ const Daily = (function () {
       input.classList.add('correct');
       document.getElementById('actionBtn').classList.add('go-green');
       feedback.className = 'feedback ok';
-      feedback.innerHTML = '✓ Correct! <strong>' + escapeHtml(card.answer) + '</strong>' +
+      feedback.innerHTML = '✓ ' + praiseWord() + ' <strong>' + escapeHtml(card.answer) + '</strong>' +
         (card.pron ? '<span class="pron-tag">' + escapeHtml(card.pron) + '</span>' : '') +
         (card.speak ? speakButton(card.speak, card.answer) : '');
       document.getElementById('revealArea').innerHTML = card.reveal || '';
@@ -222,7 +222,7 @@ const Daily = (function () {
       save();
       input.classList.add('wrong', 'shake');
       feedback.className = 'feedback err';
-      feedback.innerHTML = '✗ Not quite — ' +
+      feedback.innerHTML = '✗ ' + missWord() + ' ' +
         formatCount(MAX_ATTEMPTS - attempts[current], 'try', 'tries') + ' left';
       setTimeout(() => {
         input.classList.remove('wrong', 'shake');
@@ -296,7 +296,7 @@ const Daily = (function () {
       dotsHtml() +
       '<div class="card done-screen">' +
         '<div class="trophy">' + trophy + '</div>' +
-        '<h2>' + (allFirst ? 'Perfeito!' : (solvedCount === cards.length ? 'All solved!' : 'Done for today')) + '</h2>' +
+        '<h2>' + (allFirst ? 'Perfeito!' : (solvedCount === cards.length ? 'Fechou!' : 'Por hoje é isso')) + '</h2>' +
         '<p>' + solvedCount + ' of ' + cards.length + ' solved · ' +
           formatCount(firstTry, 'on the first try') + '</p>' +
         '<div class="share-box" id="shareBox">' + escapeHtml(shareString()) + '</div>' +

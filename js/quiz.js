@@ -130,7 +130,7 @@ const Quiz = (function () {
         (card.target ? '<div class="card-target">' + card.target + '</div>' : '') +
         '<div class="card-sub">' + escapeHtml(card.sub) + '</div>' +
         '<div class="input-row">' +
-          '<input class="answer-input" id="answerInput" type="text" placeholder="type here…" ' +
+          '<input class="answer-input" id="answerInput" type="text" placeholder="fala aí…" ' +
             'autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" ' +
             'enterkeyhint="go" />' +
           '<button class="check-btn" id="actionBtn" type="button" aria-label="Check answer">&rarr;</button>' +
@@ -153,7 +153,7 @@ const Quiz = (function () {
   }
 
   function renderDone(area) {
-    const title = perfect ? 'Perfeito!' : 'Deck complete!';
+    const title = perfect ? 'Perfeito!' : 'Fechou!';
     area.innerHTML = '' +
       '<div class="card done-screen">' +
         '<div class="trophy">' + (perfect ? '🎆' : '🏆') + '</div>' +
@@ -199,7 +199,7 @@ const Quiz = (function () {
       input.classList.add('correct');
       btn.classList.add('go-green');
       feedback.className = 'feedback ok';
-      feedback.innerHTML = '✓ Correct! <strong>' + escapeHtml(card.answer) + '</strong>' + pron + say;
+      feedback.innerHTML = '✓ ' + praiseWord() + ' <strong>' + escapeHtml(card.answer) + '</strong>' + pron + say;
       revealArea.innerHTML = card.reveal || '';
       known.add(current);
       Store.markMastered(topic.id, card.id);
@@ -211,7 +211,7 @@ const Quiz = (function () {
       setTimeout(() => input.classList.remove('shake'), 340);
       btn.classList.add('go-red');
       feedback.className = 'feedback err';
-      feedback.innerHTML = '✗ The answer is <strong>' + escapeHtml(card.answer) + '</strong>' + pron + say;
+      feedback.innerHTML = '✗ ' + missWord() + ' The answer is <strong>' + escapeHtml(card.answer) + '</strong>' + pron + say;
       revealArea.innerHTML = card.reveal || '';
     }
 

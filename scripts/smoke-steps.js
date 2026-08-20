@@ -16,11 +16,11 @@ step('tab strip lists all 14 tabs', function () {
   return '14 tabs incl. Browse + Daily';
 });
 
-step('Hard Mode is the default on a fresh profile', function () {
+step('Hard Mode (Modo Raiz) is the default on a fresh profile', function () {
   if (!Mode.hard) throw new Error('Mode.hard was false');
-  if (registry.modeBtn.textContent !== 'Hard Mode')
+  if (registry.modeBtn.textContent !== 'Modo Raiz')
     throw new Error('button reads "' + registry.modeBtn.textContent + '"');
-  return 'Mode.hard = true, button reads "Hard Mode"';
+  return 'Mode.hard = true, button reads "Modo Raiz"';
 });
 
 function goTo(hash) {
@@ -55,7 +55,7 @@ step('Hard Mode hides the hint, Easy Mode shows it, and the pref persists', func
   if (/card-hint/.test(registry.cardArea.innerHTML)) throw new Error('hint leaked in Hard Mode');
   registry.modeBtn.fire('click');
   if (!/card-hint/.test(registry.cardArea.innerHTML)) throw new Error('no hint in Easy Mode');
-  if (registry.modeBtn.textContent !== 'Easy Mode') throw new Error('label not updated');
+  if (registry.modeBtn.textContent !== 'Modo Nutella') throw new Error('label not updated');
   if (Store.getPref('hardMode', true) !== false) throw new Error('pref not written');
   registry.modeBtn.fire('click');
   if (!Mode.hard) throw new Error('did not toggle back to Hard');
@@ -69,7 +69,7 @@ step('a correct answer is accepted and marks the card mastered', function () {
   var card = shownCard('nouns');
   registry.answerInput.value = card.answer;
   registry.actionBtn.fire('click');
-  if (!/Correct/.test(registry.feedback.innerHTML))
+  if (!/✓/.test(registry.feedback.innerHTML))
     throw new Error('not accepted: ' + registry.feedback.innerHTML);
   var after = Store.masteredCount('nouns');
   if (after !== before + 1) throw new Error('mastery ' + before + ' -> ' + after);
@@ -82,7 +82,7 @@ step('accent- and case-insensitive input is accepted', function () {
   var sloppy = card.answer.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
   registry.answerInput.value = sloppy;
   registry.actionBtn.fire('click');
-  if (!/Correct/.test(registry.feedback.innerHTML))
+  if (!/✓/.test(registry.feedback.innerHTML))
     throw new Error('rejected "' + sloppy + '" for "' + card.answer + '"');
   return '"' + sloppy + '" accepted for "' + card.answer + '"';
 });
@@ -93,7 +93,7 @@ step('the bare verb form is accepted without the pronoun', function () {
   var bare = card.answer.split(' ').slice(1).join(' ');
   registry.answerInput.value = bare;
   registry.actionBtn.fire('click');
-  if (!/Correct/.test(registry.feedback.innerHTML))
+  if (!/✓/.test(registry.feedback.innerHTML))
     throw new Error('rejected bare form "' + bare + '" for "' + card.answer + '"');
   return '"' + bare + '" accepted for "' + card.answer + '"';
 });
@@ -182,7 +182,7 @@ step('daily: four misses count down, the fifth reveals the answer', function () 
   for (var i = 0; i < 4; i++) {
     registry.answerInput.value = 'errado-' + i;
     registry.actionBtn.fire('click');
-    if (!/Not quite/.test(registry.feedback.innerHTML))
+    if (!/left/.test(registry.feedback.innerHTML) || !/✗/.test(registry.feedback.innerHTML))
       throw new Error('attempt ' + (i + 1) + ': ' + registry.feedback.innerHTML);
     flushTimers();
   }
@@ -253,7 +253,7 @@ step('subjuntivo drill accepts the trigger-prefixed answer', function () {
   var card = shownCard('subjuntivo');
   registry.answerInput.value = 'se ' + card.answer;
   registry.actionBtn.fire('click');
-  if (!/Correct/.test(registry.feedback.innerHTML))
+  if (!/✓/.test(registry.feedback.innerHTML))
     throw new Error('rejected "se ' + card.answer + '"');
   return '"se ' + card.answer + '" accepted';
 });
@@ -265,7 +265,7 @@ step('pronominal drill accepts every declared answer variant', function () {
   // and the loosest alt elsewhere — the variant most likely to regress
   registry.answerInput.value = card.accepted[card.accepted.length - 1];
   registry.actionBtn.fire('click');
-  if (!/Correct/.test(registry.feedback.innerHTML))
+  if (!/✓/.test(registry.feedback.innerHTML))
     throw new Error('rejected "' + card.accepted[card.accepted.length - 1] +
                     '" for "' + card.answer + '"');
   return '"' + card.accepted[card.accepted.length - 1] + '" accepted for "' + card.answer + '"';

@@ -45,12 +45,13 @@
 
   function updateModeButton() {
     const btn = document.getElementById('modeBtn');
-    // aria-pressed reflects Hard Mode, which is the default state
+    // aria-pressed reflects Hard Mode, which is the default state.
+    // "Raiz vs Nutella" is Brazil's own meme for hardcore vs soft.
     btn.setAttribute('aria-pressed', Mode.hard ? 'true' : 'false');
-    btn.textContent = Mode.hard ? 'Hard Mode' : 'Easy Mode';
+    btn.textContent = Mode.hard ? 'Modo Raiz' : 'Modo Nutella';
     btn.title = Mode.hard
-      ? 'Hard Mode: the Portuguese is hidden. Tap for Easy Mode.'
-      : 'Easy Mode: the Portuguese infinitive is shown as a hint. Tap for Hard Mode.';
+      ? 'Modo Raiz (hardcore): no Portuguese shown. Tap for Modo Nutella.'
+      : 'Modo Nutella (soft): the Portuguese infinitive is shown as a hint. Tap for Modo Raiz.';
   }
 
   /* -------------------------------------------------------------- routing */
