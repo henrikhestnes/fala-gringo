@@ -58,7 +58,7 @@ The key design decision: instead of one drill engine per topic (each topic's raw
 
 ## Correctness invariants (enforced by the checks)
 
-- **No ambiguous prompts.** Hard Mode (the default) shows no Portuguese at all, so no English prompt may be satisfiable by two different answers. This is why glosses carry qualifiers — `to be (permanent)` vs `to be (temporary)`, `to know (a fact)` vs `to know (a person/place)`. Adding a card means checking its prompt is unique; the checks fail otherwise.
+- **No ambiguous prompts.** Hard Mode (the default; labelled "Modo Raiz" in the UI, with Easy Mode as "Modo Nutella") shows no Portuguese at all, so no English prompt may be satisfiable by two different answers. This is why glosses carry qualifiers — `to be (permanent)` vs `to be (temporary)`, `to know (a fact)` vs `to know (a person/place)`. Adding a card means checking its prompt is unique; the checks fail otherwise.
 - Every drilled form has a form, meaning, pronunciation, and example.
 - Every regular verb matches the conjugation oracle; every verb flagged `irregular` really is irregular.
 - Every imperfect-subjunctive form derives from the pretérito perfeito 3pl (drop `-ram`, add `-sse/-sse/-ssemos/-ssem` — a rule with no exceptions), and every subjunctive example contains its form inside a trigger context (`se…`, `como se…`, `queria que…`).

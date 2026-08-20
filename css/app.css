@@ -1,9 +1,18 @@
-/* Verbos Úteis — design tokens and components.
+/* Fala Gringo — design tokens and components.
    Palette derives from the Brazilian flag already used by the favicon and
    theme-color: green #009c3b, yellow #ffdf00, deep blue #002776. System fonts
-   only, so the app makes zero network requests and works offline. */
+   only, so the app makes zero network requests and works offline.
+   Signature: the Calçadão de Copacabana wave (Burle Marx's boardwalk pavement)
+   as an inline-SVG band under the header and, faintly, in the progress track. */
 
 :root {
+  /* Jersey lettering: heavy condensed italic caps, still system fonts only. */
+  --display: "Avenir Next Condensed", "Futura", "Trebuchet MS", system-ui, sans-serif;
+
+  /* Calçadão wave tiles (72x12, two full periods, tileable). */
+  --calcadao: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='12' viewBox='0 0 72 12'%3E%3Cpath d='M0 6Q9 1 18 6T36 6T54 6T72 6' fill='none' stroke='%231a1a17' stroke-width='4'/%3E%3C/svg%3E");
+  --calcadao-faint: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='12' viewBox='0 0 72 12'%3E%3Cpath d='M0 6Q9 1 18 6T36 6T54 6T72 6' fill='none' stroke='%231a1a17' stroke-width='4' stroke-opacity='.28'/%3E%3C/svg%3E");
+
   --bg: #f6f0e2;
   --bg-topbar: #ede5cf;
   --surface: #ffffff;
@@ -39,6 +48,9 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
+    --calcadao: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='12' viewBox='0 0 72 12'%3E%3Cpath d='M0 6Q9 1 18 6T36 6T54 6T72 6' fill='none' stroke='%23f0eee8' stroke-width='4'/%3E%3C/svg%3E");
+    --calcadao-faint: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='12' viewBox='0 0 72 12'%3E%3Cpath d='M0 6Q9 1 18 6T36 6T54 6T72 6' fill='none' stroke='%23f0eee8' stroke-width='4' stroke-opacity='.25'/%3E%3C/svg%3E");
+
     --bg: #131412;
     --bg-topbar: #0d0e0c;
     --surface: #1c1e1b;
@@ -69,6 +81,9 @@
 }
 
 :root[data-theme="dark"] {
+  --calcadao: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='12' viewBox='0 0 72 12'%3E%3Cpath d='M0 6Q9 1 18 6T36 6T54 6T72 6' fill='none' stroke='%23f0eee8' stroke-width='4'/%3E%3C/svg%3E");
+  --calcadao-faint: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='12' viewBox='0 0 72 12'%3E%3Cpath d='M0 6Q9 1 18 6T36 6T54 6T72 6' fill='none' stroke='%23f0eee8' stroke-width='4' stroke-opacity='.25'/%3E%3C/svg%3E");
+
   --bg: #131412;
   --bg-topbar: #0d0e0c;
   --surface: #1c1e1b;
@@ -124,7 +139,16 @@ button { cursor: pointer; touch-action: manipulation; }
   z-index: 50;
   background: color-mix(in srgb, var(--bg-topbar) 92%, transparent);
   backdrop-filter: saturate(1.4) blur(10px);
-  border-bottom: 1px solid var(--border);
+}
+/* The calçadão: a Copacabana-boardwalk wave band closes the header on every
+   screen — the app's one piece of Rio scenery, doing the border's job. */
+.topbar::after {
+  content: "";
+  display: block;
+  height: 9px;
+  background-image: var(--calcadao);
+  background-repeat: repeat-x;
+  background-size: auto 9px;
 }
 
 .topbar-inner {
@@ -140,8 +164,7 @@ button { cursor: pointer; touch-action: manipulation; }
   display: flex;
   align-items: center;
   gap: .55rem;
-  /* Jersey lettering: heavy condensed italic caps, still system fonts only. */
-  font-family: "Avenir Next Condensed", "Futura", "Trebuchet MS", var(--sans);
+  font-family: var(--display);
   font-weight: 800;
   font-style: italic;
   font-size: 1.35rem;
@@ -267,7 +290,16 @@ main { max-width: 880px; width: 100%; margin: 0 auto; padding: 1.1rem 1rem 4rem;
 .narrow { max-width: 600px; margin: 0 auto; }
 
 .view-head { text-align: center; margin-bottom: 1rem; }
-.view-head h1 { font-size: 1.35rem; letter-spacing: -.02em; margin-bottom: .15rem; }
+/* Topic titles wear the same jersey lettering as the wordmark. */
+.view-head h1 {
+  font-family: var(--display);
+  font-style: italic;
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 1.6rem;
+  letter-spacing: .045em;
+  margin-bottom: .15rem;
+}
 .view-head p { color: var(--text-2); font-size: .88rem; }
 .view-head .reset-link {
   background: none; border: none; padding: 0;
@@ -335,10 +367,15 @@ main { max-width: 880px; width: 100%; margin: 0 auto; padding: 1.1rem 1rem 4rem;
 }
 
 .progress-row { display: flex; align-items: center; gap: .6rem; margin-bottom: 1.1rem; }
+/* The track is the calçadão, faintly — filling the bar walks the boardwalk. */
 .progress-bg {
   flex: 1;
-  height: 7px;
-  background: var(--surface-3);
+  height: 9px;
+  background-color: var(--surface-3);
+  background-image: var(--calcadao-faint);
+  background-repeat: repeat-x;
+  background-position: left center;
+  background-size: auto 9px;
   border-radius: 999px;
   overflow: hidden;
 }
@@ -570,7 +607,15 @@ main { max-width: 880px; width: 100%; margin: 0 auto; padding: 1.1rem 1rem 4rem;
 
 .done-screen { text-align: center; }
 .trophy { font-size: 2.8rem; line-height: 1; margin-bottom: .4rem; }
-.done-screen h2 { font-size: 1.3rem; margin-bottom: .2rem; }
+.done-screen h2 {
+  font-family: var(--display);
+  font-style: italic;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .045em;
+  font-size: 1.5rem;
+  margin-bottom: .2rem;
+}
 .done-screen p { color: var(--text-2); font-size: .9rem; }
 .result-stats {
   display: grid;
@@ -756,6 +801,13 @@ footer {
   line-height: 1.7;
 }
 footer a { color: var(--text-2); }
+/* The crossed-out words are European Portuguese — a joke for learners only. */
+footer s { text-decoration-color: var(--red); opacity: .8; }
+
+@media (prefers-reduced-motion: reduce) {
+  .shake { animation: none; }
+  * { transition-duration: .01ms !important; }
+}
 
 @media (max-width: 460px) {
   .card-prompt { font-size: 1.24rem; }

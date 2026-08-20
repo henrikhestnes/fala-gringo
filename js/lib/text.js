@@ -39,6 +39,13 @@ function formatCount(n, singular, plural) {
   return n + ' ' + (n === 1 ? singular : (plural || singular + 's'));
 }
 
+/* The app's voice: rotating carioca exclamations for hits and misses.
+   Plain strings, safe to inline into feedback HTML without escaping. */
+const PRAISE_WORDS = ['Boa, gringo!', 'Aí sim!', 'Mandou bem!', 'É isso aí!', 'Tá virando carioca!', 'Show de bola!'];
+const MISS_WORDS = ['Quase!', 'Não foi dessa vez…', 'Relaxa, acontece.', 'Eita…'];
+function praiseWord() { return PRAISE_WORDS[Math.floor(Math.random() * PRAISE_WORDS.length)]; }
+function missWord() { return MISS_WORDS[Math.floor(Math.random() * MISS_WORDS.length)]; }
+
 /* mulberry32 — deterministic PRNG for the daily challenge. */
 function seededRandom(seed) {
   return function () {
