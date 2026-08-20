@@ -110,6 +110,92 @@ function buildVerbCards(tense, tenseLabel) {
   return cards;
 }
 
+/* ----------------------------------------------------- pronominal verbs ---- */
+
+const PRONOMINAL_TENSE_LABEL = { presente: 'Presente', perfeito: 'Pretérito Perfeito' };
+const PRONOMINAL_TENSE_GROUP = { presente: 'presente', perfeito: 'passado' };
+
+/* Same markup as verbConjTable, but for forms that carry their clitic. */
+function pronominalConjTable(verb, tense, currentIndex) {
+  const rows = verb.tenses[tense].map((r, i) =>
+    '<tr' + (i === currentIndex ? ' class="is-current"' : '') + '>' +
+    '<td class="conj-pronoun">' + escapeHtml(V.personsShort[i]) + '</td>' +
+    '<td class="conj-form">' + escapeHtml(r.form) + '</td>' +
+    '<td class="conj-pron">' + escapeHtml(r.pron) + '</td></tr>').join('');
+  return '<div class="conj-table-wrapper"><div class="conj-table-label">' +
+         escapeHtml(verb.pt + ' — ' + PRONOMINAL_TENSE_LABEL[tense]) + '</div>' +
+         '<table class="conj-table">' + rows + '</table></div>';
+}
+
+function buildPronominalCards() {
+  const D = window.DATA_PRONOMINAL;
+  const cards = [];
+
+  // which-pronoun gap cards (same fill-the-gap shape as the connecting topic)
+  D.gaps.forEach(c => {
+    const filled = c.pt.replace(/\{([^}]*)\}/g, '$1');
+    const blanked = escapeHtml(c.pt).replace(/\{[^}]*\}/g, '<span class="blank">____</span>');
+    cards.push({
+      id: c.pt,
+      group: 'pronouns',
+      meta: 'which pronoun?',
+      hint: c.hint || '',
+      prompt: escapeHtml(c.en),
+      target: blanked,
+      sub: 'Fill the gap with the right pronoun',
+      accepted: [c.answer].concat(c.alts || []),
+      answer: c.answer,
+      pron: '',
+      speak: filled,
+      reveal: exampleBlock(filled, c.en) + tipBlock(c.tip ? escapeHtml(c.tip) : '')
+    });
+  });
+
+  // conjugation drills — the clitic is part of every stored form
+  D.verbs.forEach(verb => {
+    Object.keys(verb.tenses).forEach(tense => {
+      verb.tenses[tense].forEach((row, i) => {
+        const person = V.personsShort[i];
+        const full = person + ' ' + row.form;
+        cards.push({
+          id: verb.pt + '|' + tense + '|' + i,
+          group: PRONOMINAL_TENSE_GROUP[tense],
+          meta: PRONOMINAL_TENSE_LABEL[tense],
+          hint: verb.pt,
+          prompt: escapeHtml(row.meaning),
+          sub: 'Type the Portuguese — "' + person + ' …" or just the pronoun + verb',
+          accepted: [row.form, full],
+          answer: full,
+          pron: row.pron,
+          speak: full,
+          reveal: exampleBlock(row.example) +
+                  (verb.tip ? tipBlock(escapeHtml(verb.tip)) : '') +
+                  pronominalConjTable(verb, tense, i)
+        });
+      });
+    });
+  });
+
+  // everyday phrases, typed whole
+  D.phrases.forEach(c => {
+    cards.push({
+      id: c.pt,
+      group: 'phrases',
+      meta: 'phrase',
+      hint: c.hint || '',
+      prompt: escapeHtml(c.en),
+      sub: 'Translate into Portuguese',
+      accepted: [c.pt].concat(c.alts || []),
+      answer: c.pt,
+      pron: c.pron || '',
+      speak: c.pt,
+      reveal: tipBlock(c.tip ? escapeHtml(c.tip) : '')
+    });
+  });
+
+  return cards;
+}
+
 /* ------------------------------------------------------------ non-verbs ---- */
 
 function buildNounCards() {
@@ -257,6 +343,8 @@ const TOPICS = [
     build: () => buildVerbCards('imperfeito', 'Pretérito Imperfeito') },
   { id: 'subjuntivo', label: 'Subjuntivo', kind: 'quiz', groups: VERB_GROUPS,
     build: () => buildVerbCards('subjuntivo', 'Imperfeito do Subjuntivo') },
+  { id: 'pronominal', label: 'Pronominais', kind: 'quiz',
+    groups: () => window.DATA_PRONOMINAL.groups, build: buildPronominalCards },
 
   { id: 'nouns',      label: 'Nouns',      kind: 'quiz',
     groups: () => window.DATA_NOUNS.groups,      build: buildNounCards },

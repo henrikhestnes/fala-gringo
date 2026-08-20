@@ -10,10 +10,10 @@ step('app boots and renders the Browse view', function () {
   return rows + ' verb rows, ' + html.length + ' bytes of HTML';
 });
 
-step('tab strip lists all 13 tabs', function () {
+step('tab strip lists all 14 tabs', function () {
   var tabs = (registry.tabs.innerHTML.match(/data-tab="/g) || []).length;
-  if (tabs !== 13) throw new Error('got ' + tabs + ' tabs');
-  return '13 tabs incl. Browse + Daily';
+  if (tabs !== 14) throw new Error('got ' + tabs + ' tabs');
+  return '14 tabs incl. Browse + Daily';
 });
 
 step('Hard Mode is the default on a fresh profile', function () {
@@ -256,6 +256,19 @@ step('subjuntivo drill accepts the trigger-prefixed answer', function () {
   if (!/Correct/.test(registry.feedback.innerHTML))
     throw new Error('rejected "se ' + card.answer + '"');
   return '"se ' + card.answer + '" accepted';
+});
+
+step('pronominal drill accepts every declared answer variant', function () {
+  goTo('#pronominal');
+  var card = shownCard('pronominal');
+  // the last accepted entry is the pronoun-prefixed form on conjugation cards
+  // and the loosest alt elsewhere — the variant most likely to regress
+  registry.answerInput.value = card.accepted[card.accepted.length - 1];
+  registry.actionBtn.fire('click');
+  if (!/Correct/.test(registry.feedback.innerHTML))
+    throw new Error('rejected "' + card.accepted[card.accepted.length - 1] +
+                    '" for "' + card.answer + '"');
+  return '"' + card.accepted[card.accepted.length - 1] + '" accepted for "' + card.answer + '"';
 });
 
 step('an unknown hash falls back to Browse', function () {

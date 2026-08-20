@@ -24,6 +24,7 @@ const FILES = [
   'js/lib/text.js',
   'js/conjugate.js',
   'js/data/verbs.js',
+  'js/data/pronominal.js',
   'js/data/nouns.js',
   'js/data/adjectives.js',
   'js/data/adverbs.js',
