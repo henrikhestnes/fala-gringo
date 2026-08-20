@@ -123,9 +123,57 @@ function runChecks() {
     return wrong.length ? 'flagged irregular but regular: ' + wrong.join(', ') : true;
   });
 
+  /* --------------------------------------------------- pronominal verbs --- */
+
+  const P = window.DATA_PRONOMINAL;
+
+  check('every pronominal form carries its clitic, pron and example', () => {
+    const CLITICS = ['me', 'se', 'nos', 'se'];
+    const bad = [];
+    P.verbs.forEach(v => Object.keys(v.tenses).forEach(t => {
+      const rows = v.tenses[t];
+      if (rows.length !== 4) { bad.push(v.pt + '/' + t + ' (rows)'); return; }
+      rows.forEach((r, i) => {
+        if (!r.form || !r.meaning || !r.pron || !r.example)
+          bad.push(v.pt + '/' + t + '/' + i + ' (incomplete)');
+        else if (r.form.split(' ')[0] !== CLITICS[i])
+          bad.push(v.pt + '/' + t + '/' + i + ' "' + r.form + '"');
+        else if (r.example.indexOf(r.form) === -1)
+          bad.push(v.pt + '/' + t + '/' + i + ' (example lacks form)');
+      });
+    }));
+    return bad.length ? bad.slice(0, 8).join(', ') : true;
+  });
+
+  check('regular pronominal verbs match the conjugation oracle', () => {
+    const bad = [];
+    P.verbs.forEach(v => {
+      if (v.irregular) return;
+      const g = conjugateRegular(v.pt.replace(/^se /, ''));
+      if (!g) { bad.push(v.pt + ' (no rule)'); return; }
+      Object.keys(v.tenses).forEach(t => {
+        const stored = v.tenses[t].map(r => r.form.split(' ').slice(1).join(' ')).join(',');
+        const oracle = g[t].join(',');
+        if (stored !== oracle) bad.push(v.pt + '/' + t + ': ' + stored + ' vs ' + oracle);
+      });
+    });
+    return bad.length ? bad.slice(0, 8).join('\n') : true;
+  });
+
+  check('every pronominal gap has exactly one slot and its answer fits', () => {
+    const bad = [];
+    P.gaps.forEach(c => {
+      const slots = (c.pt.match(/\{[^}]*\}/g) || []);
+      if (slots.length !== 1) bad.push(c.pt + ' (slots)');
+      else if (slots[0] !== '{' + c.answer + '}') bad.push(c.pt + ' vs "' + c.answer + '"');
+    });
+    return bad.length ? bad.slice(0, 8).join(', ') : true;
+  });
+
   /* ------------------------------------------------------------- topics --- */
 
-  check('all 10 quiz topics build cards', () => {
+  check('all 12 quiz topics build cards', () => {
+    if (quizTopics.length !== 12) return 'expected 12 quiz topics, got ' + quizTopics.length;
     const counts = quizTopics.map(t => t.label + '=' + topicCards(t).length);
     const empty = quizTopics.filter(t => topicCards(t).length === 0);
     return empty.length ? 'empty: ' + empty.map(t => t.id).join(', ')

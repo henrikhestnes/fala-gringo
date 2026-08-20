@@ -39,7 +39,7 @@ Classic `<script>` tags, **deliberately not ES modules**: the app must keep work
 ```
 index.html          shell: top bar, tab strip, <main>
 css/app.css         design tokens + components (light + dark themes)
-js/data/*.js        one file per topic — 8 different card schemas
+js/data/*.js        one file per topic — 9 different card schemas
 js/topics.js        registry — normalises all schemas into ONE card shape
 js/quiz.js          the single drill engine, shared by all drill topics
 js/browse.js        the verb list tab

@@ -1,7 +1,7 @@
 // One global Daily Challenge spanning every topic.
 //
 // The source repo had a separate daily per verb tense. Here there is a single
-// challenge of 7 cards drawn from all ten topics — at most one card per topic, so
+// challenge of 7 cards drawn from all twelve topics — at most one card per topic, so
 // a day covers different concepts rather than seven conjugations of the same kind.
 // Deterministic from the calendar date, 5 attempts per card, resumable.
 
