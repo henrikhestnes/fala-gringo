@@ -277,43 +277,70 @@ step('an unknown hash falls back to Browse', function () {
   return 'ok';
 });
 
-step('Foco mode drills the whole conjugation of a missed verb', function () {
-  Store.resetTopic('imperfeito');        // clear strength recorded by earlier steps
-  goTo('#imperfeito');
-  if (!/data-focus/.test(registry.view.innerHTML)) throw new Error('no Foco chip rendered');
-  var missed = shownCard('imperfeito');
-  registry.answerInput.value = 'zzz errado';
-  registry.actionBtn.fire('click');      // miss -> the card turns shaky
-  var lex = String(missed.id).split('|')[0];
-  var expected = topicCards(topicById('imperfeito')).filter(function (c) {
-    return String(c.id).split('|')[0] === lex;
-  }).length;
-  Quiz.toggleFocus();                    // on
+step('Foco is the default and a fresh topic is all "needing work"', function () {
+  Store.resetTopic('adverbs');           // clear anything earlier steps recorded
+  goTo('#adverbs');
+  if (!/chip focus active/.test(registry.view.innerHTML))
+    throw new Error('Foco chip not active by default');
   var total = parseInt(registry.statTotal.textContent, 10);
-  if (total !== expected)
-    throw new Error('Foco deck has ' + total + ' cards, expected all ' +
-                    expected + ' forms of "' + lex + '"');
-  return 'missed one form of "' + lex + '"; Foco deck = its ' + expected + ' forms';
+  var all = topicCards(topicById('adverbs')).length;
+  if (total !== all) throw new Error('fresh Foco deck ' + total + ', expected all ' + all);
+  return 'chip active on a fresh profile; deck holds all ' + all + ' cards';
 });
 
-step('three straight correct answers graduate a verb out of Foco', function () {
-  for (var run = 0; run < 3; run++) {
-    var guard = 0;
-    while (registry.answerInput && guard++ < 30) {
-      var c = shownCard('imperfeito');
-      registry.answerInput.value = c.answer;
-      registry.actionBtn.fire('click');  // check
-      registry.actionBtn.fire('click');  // advance
-    }
-    if (!/done-screen/.test(registry.cardArea.innerHTML))
-      throw new Error('run ' + (run + 1) + ' did not reach the done screen');
-    registry.againBtn.fire('click');     // rebuild the (shrinking) Foco deck
+step('one clean pass empties the Foco deck until reviews fall due', function () {
+  var guard = 0;
+  while (registry.answerInput && guard++ < 60) {
+    var c = shownCard('adverbs');
+    registry.answerInput.value = c.answer;
+    registry.actionBtn.fire('click');    // check
+    registry.actionBtn.fire('click');    // advance
   }
-  if (!/Nada na mira/.test(registry.cardArea.innerHTML))
-    throw new Error('Foco deck did not empty after three clean runs');
-  Quiz.toggleFocus();                    // off again
+  if (!/done-screen/.test(registry.cardArea.innerHTML))
+    throw new Error('did not clear the deck in ' + guard + ' rounds');
+  registry.againBtn.fire('click');       // rebuild: everything mastered + fresh
+  if (!/Tudo em dia/.test(registry.cardArea.innerHTML))
+    throw new Error('deck did not empty after mastering everything');
+  Quiz.toggleFocus();                    // off -> the full deck must come back
   if (!registry.answerInput) throw new Error('full deck did not come back');
-  return 'verb graduated after a 3-streak; full deck restored on toggle-off';
+  Quiz.toggleFocus();                    // back to the default for later steps
+  return 'mastered everything -> "Tudo em dia"; toggle-off still drills all';
+});
+
+step('a miss pulls the whole conjugation back into Foco', function () {
+  Store.resetTopic('imperfeito');
+  var cards = topicCards(topicById('imperfeito'));
+  cards.forEach(function (c) {           // simulate a fully mastered, fresh topic
+    Store.markMastered('imperfeito', c.id);
+    Store.recordAnswer('imperfeito', c.id, true);
+  });
+  var missed = cards[0];
+  Store.recordAnswer('imperfeito', missed.id, false);
+  goTo('#browse'); goTo('#imperfeito');
+  var lex = String(missed.id).split('|')[0];
+  var expected = cards.filter(function (c) {
+    return String(c.id).split('|')[0] === lex;
+  }).length;
+  var total = parseInt(registry.statTotal.textContent, 10);
+  if (total !== expected)
+    throw new Error('deck has ' + total + ' cards, expected the ' +
+                    expected + ' forms of "' + lex + '"');
+  for (var i = 0; i < FOCUS_STREAK; i++) Store.recordAnswer('imperfeito', missed.id, true);
+  goTo('#browse'); goTo('#imperfeito');
+  if (!/Tudo em dia/.test(registry.cardArea.innerHTML))
+    throw new Error('verb did not graduate after a ' + FOCUS_STREAK + '-streak');
+  return 'miss -> the ' + expected + ' forms of "' + lex + '"; 3-streak -> empty again';
+});
+
+step('a mastered card comes back for review once it goes stale', function () {
+  var cards = topicCards(topicById('imperfeito'));
+  var snap = Store.snapshot();
+  snap.strength.imperfeito[cards[5].id].t -= (REVIEW_DAYS + 1);
+  Store.applySynced(snap);
+  goTo('#browse'); goTo('#imperfeito');
+  var total = parseInt(registry.statTotal.textContent, 10);
+  if (total !== 1) throw new Error('expected exactly the stale card, got ' + total);
+  return '"' + cards[5].id + '" resurfaced after ' + REVIEW_DAYS + '+ days';
 });
 
 step('sync is inert without fetch and the button shows the off state', function () {
@@ -339,15 +366,16 @@ step('the footer shows the app version', function () {
 
 step('sync merge is conservative: union mastery, keep cards shaky', function () {
   var a = { mastered: { nouns: { x: 1 } },
-            strength: { presente: { 'ser|0': { s: 3, m: 1 }, 'ir|2': { s: 2, m: 2 } } },
+            strength: { presente: { 'ser|0': { s: 3, m: 1, t: 20660 }, 'ir|2': { s: 2, m: 2 } } },
             daily: { '20260821': { attempts: [1, 0], failed: [false, false], solved: [true, false], current: 1 } } };
   var b = { mastered: { nouns: { y: 1 } },
-            strength: { presente: { 'ser|0': { s: 0, m: 1 } } },
+            strength: { presente: { 'ser|0': { s: 0, m: 1, t: 20655 } } },
             daily: { '20260821': { attempts: [1, 2], failed: [false, true], solved: [true, false], current: 1 } } };
   var m = Sync._merge(a, b);
   if (!m.mastered.nouns.x || !m.mastered.nouns.y) throw new Error('mastery not unioned');
   var ser = m.strength.presente['ser|0'];
-  if (ser.s !== 0 || ser.m !== 1) throw new Error('ser|0 merged to ' + JSON.stringify(ser));
+  if (ser.s !== 0 || ser.m !== 1 || ser.t !== 20660)
+    throw new Error('ser|0 merged to ' + JSON.stringify(ser));
   var ir = m.strength.presente['ir|2'];
   if (ir.s !== 2 || ir.m !== 2) throw new Error('one-sided entry not kept: ' + JSON.stringify(ir));
   var d = m.daily['20260821'];

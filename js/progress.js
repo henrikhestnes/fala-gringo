@@ -8,6 +8,10 @@ const STORE_KEY = 'pvs:v1';
    as shaky and drops out of the Foco deck. */
 const FOCUS_STREAK = 3;
 
+/* Days a mastered card stays out of the Foco deck before it comes back for
+   review; one correct answer resets the clock, a miss makes it shaky again. */
+const REVIEW_DAYS = 7;
+
 const Store = (function () {
   const empty = { mastered: {}, daily: {}, prefs: {}, strength: {} };
   let state;
@@ -65,14 +69,15 @@ const Store = (function () {
       save();
     },
 
-    /* --- per-card strength: consecutive-correct streak + lifetime misses.
-       A single correct answer proves little, so a card stays "shaky" from its
-       first miss until it has been answered correctly FOCUS_STREAK times in a
-       row. Feeds the Foco deck filter in quiz.js. --- */
+    /* --- per-card strength: consecutive-correct streak, lifetime misses, and
+       the day (epoch days) of the last correct answer. A single correct answer
+       proves little, so a card stays "shaky" from its first miss until it has
+       been answered correctly FOCUS_STREAK times in a row. Feeds the Foco deck
+       filter in quiz.js. --- */
     recordAnswer(topicId, cardId, correct) {
       if (!state.strength[topicId]) state.strength[topicId] = {};
       const s = state.strength[topicId][cardId] || { s: 0, m: 0 };
-      if (correct) s.s += 1;
+      if (correct) { s.s += 1; s.t = Math.floor(Date.now() / 86400000); }
       else { s.s = 0; s.m += 1; }
       state.strength[topicId][cardId] = s;
       save();
@@ -81,6 +86,16 @@ const Store = (function () {
       const t = state.strength[topicId];
       const s = t && t[cardId];
       return !!(s && s.m > 0 && s.s < FOCUS_STREAK);
+    },
+    /* Foco deck membership: never answered correctly, currently shaky, or
+       mastered but not confirmed within the last REVIEW_DAYS. */
+    needsWork(topicId, cardId) {
+      const m = state.mastered[topicId];
+      if (!(m && m[cardId])) return true;                     // never succeeded
+      const e = state.strength[topicId] && state.strength[topicId][cardId];
+      if (e && e.m > 0 && e.s < FOCUS_STREAK) return true;    // shaky
+      return !(e && e.t) ||                                   // review due
+             Math.floor(Date.now() / 86400000) - e.t >= REVIEW_DAYS;
     },
 
     /* --- sync (js/lib/sync.js): the synced sections out as a deep copy, and

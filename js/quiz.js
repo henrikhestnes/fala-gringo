@@ -2,8 +2,8 @@
 //
 // Core loop kept from the source flashcards repo (credited in the README): a card answered
 // wrongly is NOT marked known — it stays in the deck and comes back around until
-// you get it right. Batching is gone; a deck is always the whole topic (minus any
-// group chips you switch off).
+// you get it right. Batching is gone; a deck is the whole topic minus any group
+// chips you switch off, filtered to the Foco cards while the 🎯 chip is on (the default).
 
 const Quiz = (function () {
   let topic = null;
@@ -26,7 +26,7 @@ const Quiz = (function () {
   }
 
   function focusOn() {
-    return !!Store.getPref('focus', false);
+    return Store.getPref('focus', true) !== false;
   }
 
   /* Verb card ids are "verb|index" (pronominal: "verb|tense|index"), so the part
@@ -36,13 +36,15 @@ const Quiz = (function () {
     return String(card.id).split('|')[0];
   }
 
-  /* The Foco deck: every card the learner has missed and not yet re-proven with
-     a FOCUS_STREAK of correct answers — plus, because getting one form right
-     doesn't mean the conjugation is known, every other card sharing its lexeme. */
+  /* The Foco deck (the default): every card needing work — never answered
+     correctly, shaky (missed and no FOCUS_STREAK since; plus, because getting
+     one form right doesn't mean the conjugation is known, every other card
+     sharing a shaky card's lexeme), or mastered but due for review after
+     REVIEW_DAYS. Switching the chip off drills the whole topic. */
   function focusCards(cards) {
     const weak = new Set();
     cards.forEach(c => { if (Store.isShaky(topic.id, c.id)) weak.add(lexeme(c)); });
-    return cards.filter(c => weak.has(lexeme(c)));
+    return cards.filter(c => weak.has(lexeme(c)) || Store.needsWork(topic.id, c.id));
   }
 
   function filteredCards() {
@@ -79,8 +81,10 @@ const Quiz = (function () {
       '" data-group="' + escapeHtml(g) + '">' + escapeHtml(g) + '</button>').join('');
     const shaky = focusCards(topicCards(topic)).length;
     const focusChip = '<button class="chip focus' + (focusOn() ? ' active' : '') +
-      '" data-focus="1" title="Only the cards you have missed, until each is answered right ' +
-      FOCUS_STREAK + ' times in a row">🎯 Foco' + (shaky ? ' · ' + shaky : '') + '</button>';
+      '" data-focus="1" title="The cards needing work: new, missed (until answered right ' +
+      FOCUS_STREAK + ' times in a row) and reviews due after ' + REVIEW_DAYS +
+      ' days. Switch off to drill the whole deck.">🎯 Foco' +
+      (shaky ? ' · ' + shaky : '') + '</button>';
     const total = topicCards(topic).length;
     const mastered = Store.masteredCount(topic.id);
     return '' +
@@ -133,9 +137,9 @@ const Quiz = (function () {
 
     if (deck.length === 0) {
       area.innerHTML = focusOn()
-        ? '<div class="card empty"><h2>Nada na mira 🎯</h2>' +
-          '<p>Nothing shaky here — a card lands in Foco when you miss it and leaves after ' +
-          FOCUS_STREAK + ' straight correct answers. Tap the Foco chip to drill the full deck.</p></div>'
+        ? '<div class="card empty"><h2>Tudo em dia! 🎯</h2>' +
+          '<p>Every card here is mastered and fresh. Reviews come due after ' +
+          REVIEW_DAYS + ' days — or switch the Foco chip off to drill the whole deck now.</p></div>'
         : '<div class="card empty"><h2>No cards</h2>' +
           '<p>Every category is switched off — turn one back on above.</p></div>';
       return;
