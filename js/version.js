@@ -5,8 +5,9 @@
 // from disk it is the file's mtime, so the label says "updated").
 //
 // 1.0 the app · 1.1 Foco mode · 1.2 cross-device sync · 1.3 Foco by default + spaced review
+// 1.4 three-state theme (auto follows the system)
 
-const APP_VERSION = '1.3.0';
+const APP_VERSION = '1.4.0';
 
 (function () {
   const el = document.getElementById('buildInfo');
