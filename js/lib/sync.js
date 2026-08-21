@@ -12,7 +12,7 @@
 // merged state a couple of seconds after an answer. Because every sync merges,
 // a push lost to a closed tab or a dead connection heals on the next load.
 
-const SYNC_URL = '';   // ← your deployed worker, e.g. 'https://fala-gringo-sync.you.workers.dev'
+const SYNC_URL = 'https://fala-gringo-sync.henrik-hestnes.workers.dev';   // scheme required: without it fetch() treats this as a relative path
 
 const Sync = (function () {
   let pushTimer = 0;
