@@ -4,8 +4,12 @@
 
 const STORE_KEY = 'pvs:v1';
 
+/* Correct answers in a row (since the last miss) before a card stops counting
+   as shaky and drops out of the Foco deck. */
+const FOCUS_STREAK = 3;
+
 const Store = (function () {
-  const empty = { mastered: {}, daily: {}, prefs: {} };
+  const empty = { mastered: {}, daily: {}, prefs: {}, strength: {} };
   let state;
 
   function load() {
@@ -16,7 +20,8 @@ const Store = (function () {
       return {
         mastered: parsed.mastered && typeof parsed.mastered === 'object' ? parsed.mastered : {},
         daily: parsed.daily && typeof parsed.daily === 'object' ? parsed.daily : {},
-        prefs: parsed.prefs && typeof parsed.prefs === 'object' ? parsed.prefs : {}
+        prefs: parsed.prefs && typeof parsed.prefs === 'object' ? parsed.prefs : {},
+        strength: parsed.strength && typeof parsed.strength === 'object' ? parsed.strength : {}
       };
     } catch (e) {
       return JSON.parse(JSON.stringify(empty));
@@ -25,6 +30,8 @@ const Store = (function () {
 
   function save() {
     try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* ignore */ }
+    // js/lib/sync.js loads after this file; before then there is nothing to notify
+    if (typeof Sync !== 'undefined') Sync.onLocalChange();
   }
 
   state = load();
@@ -48,11 +55,45 @@ const Store = (function () {
     },
     resetTopic(topicId) {
       delete state.mastered[topicId];
+      delete state.strength[topicId];
       save();
     },
     resetAll() {
       state.mastered = {};
       state.daily = {};
+      state.strength = {};
+      save();
+    },
+
+    /* --- per-card strength: consecutive-correct streak + lifetime misses.
+       A single correct answer proves little, so a card stays "shaky" from its
+       first miss until it has been answered correctly FOCUS_STREAK times in a
+       row. Feeds the Foco deck filter in quiz.js. --- */
+    recordAnswer(topicId, cardId, correct) {
+      if (!state.strength[topicId]) state.strength[topicId] = {};
+      const s = state.strength[topicId][cardId] || { s: 0, m: 0 };
+      if (correct) s.s += 1;
+      else { s.s = 0; s.m += 1; }
+      state.strength[topicId][cardId] = s;
+      save();
+    },
+    isShaky(topicId, cardId) {
+      const t = state.strength[topicId];
+      const s = t && t[cardId];
+      return !!(s && s.m > 0 && s.s < FOCUS_STREAK);
+    },
+
+    /* --- sync (js/lib/sync.js): the synced sections out as a deep copy, and
+       the merged result back in. Prefs are deliberately per-device. --- */
+    snapshot() {
+      return JSON.parse(JSON.stringify({
+        mastered: state.mastered, strength: state.strength, daily: state.daily
+      }));
+    },
+    applySynced(data) {
+      state.mastered = data.mastered && typeof data.mastered === 'object' ? data.mastered : {};
+      state.strength = data.strength && typeof data.strength === 'object' ? data.strength : {};
+      state.daily = data.daily && typeof data.daily === 'object' ? data.daily : {};
       save();
     },
 

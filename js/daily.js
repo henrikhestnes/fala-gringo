@@ -211,14 +211,16 @@ const Daily = (function () {
         (card.speak ? speakButton(card.speak, card.answer) : '');
       document.getElementById('revealArea').innerHTML = card.reveal || '';
       Store.markMastered(card.topic, card.id);
+      Store.recordAnswer(card.topic, card.id, true);
       save();
       requestAnimationFrame(() => {
         const t = document.querySelector('.conj-table-wrapper');
         if (t) t.classList.add('visible');
       });
     } else if (attempts[current] >= MAX_ATTEMPTS) {
-      failCard();
+      failCard();          // records the miss
     } else {
+      Store.recordAnswer(card.topic, card.id, false);
       save();
       input.classList.add('wrong', 'shake');
       feedback.className = 'feedback err';
@@ -243,6 +245,7 @@ const Daily = (function () {
   function failCard() {
     const entry = cards[current];
     const card = entry.card;
+    Store.recordAnswer(card.topic, card.id, false);
     failed[current] = true;
     answered = true;
     if (attempts[current] === 0) attempts[current] = 1;

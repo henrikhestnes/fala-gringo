@@ -333,6 +333,12 @@ main { max-width: 880px; width: 100%; margin: 0 auto; padding: 1.1rem 1rem 4rem;
   border-color: var(--blue);
   color: var(--blue-ink);
 }
+/* the Foco chip goes yellow, not blue: it changes WHAT is drilled, not which group */
+.chip.focus.active {
+  background: var(--yellow-soft);
+  border-color: var(--yellow);
+  color: var(--yellow-ink);
+}
 
 /* ---------- stats + progress ---------- */
 

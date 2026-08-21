@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-**Fala Gringo** is a study tool for **beginner–intermediate Portuguese** learners: an English speaker is shown English and types the Portuguese. It is a static site — no build step, no dependencies, no network requests. Open `index.html` directly from disk or serve the repo root.
+**Fala Gringo** is a study tool for **beginner–intermediate Portuguese** learners: an English speaker is shown English and types the Portuguese. It is a static site — no build step, no dependencies; the only network requests are the optional progress sync (`js/lib/sync.js`), which stays off until `SYNC_URL` is set there. Open `index.html` directly from disk or serve the repo root.
 
 ### ⚠️ Brazilian Portuguese ONLY
 
@@ -44,11 +44,12 @@ js/topics.js        registry — normalises all schemas into ONE card shape
 js/quiz.js          the single drill engine, shared by all drill topics
 js/browse.js        the verb list tab
 js/daily.js         daily challenge (deterministic from the date)
-js/progress.js      localStorage (single key `pvs:v1`): mastery, prefs, daily results
+js/progress.js      localStorage (single key `pvs:v1`): mastery, per-card strength (Foco), prefs, daily results
 js/conjugate.js     regular-conjugation oracle — used by checks only, not the app
 js/checks.js        shared assertions (used by check.jxa and verify.html)
 js/app.js           hash router + delegated events
-js/lib/             text.js (normalize/shuffle), tts.js, fx.js
+js/lib/             text.js (normalize/shuffle), tts.js, fx.js, sync.js (optional cross-device sync)
+sync-worker/        Cloudflare Worker + KV backend for sync — deployed separately, see its README
 scripts/            check.jxa, smoke.jxa (+ smoke-steps.js)
 ```
 
@@ -70,4 +71,6 @@ The key design decision: instead of one drill engine per topic (each topic's raw
 
 - Non-verb card content and the hand-written verb pronunciations/examples come from [gjermundbae/portuguese-verb-flashcards](https://github.com/gjermundbae/portuguese-verb-flashcards). The 29 verbs unique to this repo have **generated** pronunciations/examples (348 forms) — worth spot-checking, especially stress placement.
 - A wrong answer never clears a card — it returns to the deck until answered correctly. There is no batching: a deck is always the whole topic minus deselected category chips.
+- **Foco mode** (🎯 chip on every drill tab, pref `focus`): drills only "shaky" cards — ones missed at least once and not yet re-answered correctly `FOCUS_STREAK` (3) times in a row. On verb topics one shaky form pulls the verb's whole conjugation for that tense into the deck (card ids share a `verb|` prefix). Both the drills and the Daily record answers into the strength stats.
 - The Daily tab is deterministic from the date: 7 cards, one per topic, 5 attempts each.
+- **Sync** (⇅ button, `js/lib/sync.js` + `sync-worker/`): pull-merge-push of `{mastered, strength, daily}` keyed by a secret sync code; prefs are per-device on purpose. Merging is conservative (mastered unioned, misses kept, streak = min) so syncing can never falsely graduate a card out of Foco. With `SYNC_URL` empty the whole feature is inert.

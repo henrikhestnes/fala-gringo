@@ -25,11 +25,32 @@ const Quiz = (function () {
     return acceptedFor(card).has(normalize(value));
   }
 
+  function focusOn() {
+    return !!Store.getPref('focus', false);
+  }
+
+  /* Verb card ids are "verb|index" (pronominal: "verb|tense|index"), so the part
+     before the first "|" groups a conjugation; non-verb ids have no "|" and each
+     card stands alone. */
+  function lexeme(card) {
+    return String(card.id).split('|')[0];
+  }
+
+  /* The Foco deck: every card the learner has missed and not yet re-proven with
+     a FOCUS_STREAK of correct answers — plus, because getting one form right
+     doesn't mean the conjugation is known, every other card sharing its lexeme. */
+  function focusCards(cards) {
+    const weak = new Set();
+    cards.forEach(c => { if (Store.isShaky(topic.id, c.id)) weak.add(lexeme(c)); });
+    return cards.filter(c => weak.has(lexeme(c)));
+  }
+
   function filteredCards() {
-    const cards = topicCards(topic);
+    let cards = topicCards(topic);
     const groups = topicGroups(topic);
-    if (!groups.length || !activeGroups) return cards;
-    return cards.filter(c => activeGroups.has(c.group));
+    if (groups.length && activeGroups) cards = cards.filter(c => activeGroups.has(c.group));
+    if (focusOn()) cards = focusCards(cards);
+    return cards;
   }
 
   function buildDeck() {
@@ -56,6 +77,10 @@ const Quiz = (function () {
     const chips = groups.map(g =>
       '<button class="chip' + (activeGroups && activeGroups.has(g) ? ' active' : '') +
       '" data-group="' + escapeHtml(g) + '">' + escapeHtml(g) + '</button>').join('');
+    const shaky = focusCards(topicCards(topic)).length;
+    const focusChip = '<button class="chip focus' + (focusOn() ? ' active' : '') +
+      '" data-focus="1" title="Only the cards you have missed, until each is answered right ' +
+      FOCUS_STREAK + ' times in a row">🎯 Foco' + (shaky ? ' · ' + shaky : '') + '</button>';
     const total = topicCards(topic).length;
     const mastered = Store.masteredCount(topic.id);
     return '' +
@@ -68,7 +93,7 @@ const Quiz = (function () {
             escapeHtml(topic.id) + '">reset</button>'
           : '') + '</p>' +
       '</div>' +
-      (groups.length ? '<div class="filters" id="filterRow">' + chips + '</div>' : '') +
+      '<div class="filters" id="filterRow">' + focusChip + chips + '</div>' +
       '<div class="stats">' +
         '<div class="stat"><div class="stat-num" id="statTotal">0</div><div class="stat-lbl">Total</div></div>' +
         '<div class="stat"><div class="stat-num green" id="statKnown">0</div><div class="stat-lbl">Known</div></div>' +
@@ -107,8 +132,12 @@ const Quiz = (function () {
     const area = document.getElementById('cardArea');
 
     if (deck.length === 0) {
-      area.innerHTML = '<div class="card empty"><h2>No cards</h2>' +
-        '<p>Every category is switched off — turn one back on above.</p></div>';
+      area.innerHTML = focusOn()
+        ? '<div class="card empty"><h2>Nada na mira 🎯</h2>' +
+          '<p>Nothing shaky here — a card lands in Foco when you miss it and leaves after ' +
+          FOCUS_STREAK + ' straight correct answers. Tap the Foco chip to drill the full deck.</p></div>'
+        : '<div class="card empty"><h2>No cards</h2>' +
+          '<p>Every category is switched off — turn one back on above.</p></div>';
       return;
     }
 
@@ -203,9 +232,11 @@ const Quiz = (function () {
       revealArea.innerHTML = card.reveal || '';
       known.add(current);
       Store.markMastered(topic.id, card.id);
+      Store.recordAnswer(topic.id, card.id, true);
       updateStats();
     } else {
       stats.errors++;
+      Store.recordAnswer(topic.id, card.id, false);
       perfect = false;
       input.classList.add('wrong', 'shake');
       setTimeout(() => input.classList.remove('shake'), 340);
@@ -250,6 +281,12 @@ const Quiz = (function () {
     buildDeck();
   }
 
+  function toggleFocus() {
+    Store.setPref('focus', !focusOn());
+    document.getElementById('view').dataset.topic = '';  // force chrome rebuild
+    buildDeck();
+  }
+
   return {
     mount: mount,
     rerender: function () {
@@ -257,6 +294,7 @@ const Quiz = (function () {
       render();
     },
     toggleGroup: toggleGroup,
+    toggleFocus: toggleFocus,
     isActive: () => !!topic
   };
 })();

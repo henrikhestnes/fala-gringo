@@ -22,6 +22,12 @@
       </svg>
       Fala Gringo</span>
     <button class="mode-btn" id="modeBtn" type="button" aria-pressed="true">Modo Raiz</button>
+    <button class="icon-btn" id="syncBtn" type="button" aria-label="Sync progress between devices" title="Sync progress between devices">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M8 3v14m0 0-4-4m4 4 4-4"></path>
+        <path d="M16 21V7m0 0-4 4m4-4 4 4"></path>
+      </svg>
+    </button>
     <button class="icon-btn" id="themeBtn" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
         <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path>
@@ -42,7 +48,8 @@
 <div class="toast" id="toast"></div>
 
 <!-- Classic scripts, no ES modules: the app works opened as a local file and on
-     GitHub Pages alike, with no build step and no external requests. -->
+     GitHub Pages alike, with no build step. The only network requests are the
+     optional progress sync (js/lib/sync.js), off until SYNC_URL is set there. -->
 <script src="js/lib/text.js"></script>
 <script src="js/lib/tts.js"></script>
 <script src="js/lib/fx.js"></script>
@@ -61,5 +68,6 @@
 <script src="js/browse.js"></script>
 <script src="js/daily.js"></script>
 <script src="js/app.js"></script>
+<script src="js/lib/sync.js"></script>
 </body>
 </html>

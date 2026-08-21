@@ -131,7 +131,7 @@ window.SpeechSynthesisUtterance = function () {};
 function flushTimers() { const t = timers.splice(0); t.forEach(fn => { try { fn(); } catch (e) {} }); }
 
 // shell elements that index.html provides
-['view', 'tabs', 'toast', 'modeBtn', 'themeBtn'].forEach(id => { registry[id] = new El(id); });
+['view', 'tabs', 'toast', 'modeBtn', 'themeBtn', 'syncBtn'].forEach(id => { registry[id] = new El(id); });
 
 /* ------------------------------------------------------------- load app -- */
 
@@ -139,7 +139,7 @@ const FILES = [
   'js/lib/text.js', 'js/lib/tts.js', 'js/lib/fx.js', 'js/progress.js',
   'js/data/verbs.js', 'js/data/pronominal.js', 'js/data/nouns.js', 'js/data/adjectives.js', 'js/data/adverbs.js',
   'js/data/connecting.js', 'js/data/numbers.js', 'js/data/glossary.js', 'js/data/sentences.js',
-  'js/topics.js', 'js/quiz.js', 'js/browse.js', 'js/daily.js', 'js/app.js'
+  'js/topics.js', 'js/quiz.js', 'js/browse.js', 'js/daily.js', 'js/app.js', 'js/lib/sync.js'
 ];
 
 var results = [];

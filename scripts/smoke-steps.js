@@ -276,3 +276,71 @@ step('an unknown hash falls back to Browse', function () {
   if (!/<h1>Verbos<\/h1>/.test(registry.view.innerHTML)) throw new Error('did not fall back');
   return 'ok';
 });
+
+step('Foco mode drills the whole conjugation of a missed verb', function () {
+  Store.resetTopic('imperfeito');        // clear strength recorded by earlier steps
+  goTo('#imperfeito');
+  if (!/data-focus/.test(registry.view.innerHTML)) throw new Error('no Foco chip rendered');
+  var missed = shownCard('imperfeito');
+  registry.answerInput.value = 'zzz errado';
+  registry.actionBtn.fire('click');      // miss -> the card turns shaky
+  var lex = String(missed.id).split('|')[0];
+  var expected = topicCards(topicById('imperfeito')).filter(function (c) {
+    return String(c.id).split('|')[0] === lex;
+  }).length;
+  Quiz.toggleFocus();                    // on
+  var total = parseInt(registry.statTotal.textContent, 10);
+  if (total !== expected)
+    throw new Error('Foco deck has ' + total + ' cards, expected all ' +
+                    expected + ' forms of "' + lex + '"');
+  return 'missed one form of "' + lex + '"; Foco deck = its ' + expected + ' forms';
+});
+
+step('three straight correct answers graduate a verb out of Foco', function () {
+  for (var run = 0; run < 3; run++) {
+    var guard = 0;
+    while (registry.answerInput && guard++ < 30) {
+      var c = shownCard('imperfeito');
+      registry.answerInput.value = c.answer;
+      registry.actionBtn.fire('click');  // check
+      registry.actionBtn.fire('click');  // advance
+    }
+    if (!/done-screen/.test(registry.cardArea.innerHTML))
+      throw new Error('run ' + (run + 1) + ' did not reach the done screen');
+    registry.againBtn.fire('click');     // rebuild the (shrinking) Foco deck
+  }
+  if (!/Nada na mira/.test(registry.cardArea.innerHTML))
+    throw new Error('Foco deck did not empty after three clean runs');
+  Quiz.toggleFocus();                    // off again
+  if (!registry.answerInput) throw new Error('full deck did not come back');
+  return 'verb graduated after a 3-streak; full deck restored on toggle-off';
+});
+
+step('sync is inert without a configured endpoint', function () {
+  if (typeof Sync === 'undefined') throw new Error('Sync not defined');
+  Sync.onLocalChange();                  // must schedule nothing and not throw
+  registry.syncBtn.fire('click');        // no SYNC_URL -> setup toast, no prompt
+  flushTimers();
+  if (registry.toast.textContent.indexOf('backend') === -1)
+    throw new Error('no setup hint shown: "' + registry.toast.textContent + '"');
+  return 'no network attempted; toast points at sync-worker/README.md';
+});
+
+step('sync merge is conservative: union mastery, keep cards shaky', function () {
+  var a = { mastered: { nouns: { x: 1 } },
+            strength: { presente: { 'ser|0': { s: 3, m: 1 }, 'ir|2': { s: 2, m: 2 } } },
+            daily: { '20260821': { attempts: [1, 0], failed: [false, false], solved: [true, false], current: 1 } } };
+  var b = { mastered: { nouns: { y: 1 } },
+            strength: { presente: { 'ser|0': { s: 0, m: 1 } } },
+            daily: { '20260821': { attempts: [1, 2], failed: [false, true], solved: [true, false], current: 1 } } };
+  var m = Sync._merge(a, b);
+  if (!m.mastered.nouns.x || !m.mastered.nouns.y) throw new Error('mastery not unioned');
+  var ser = m.strength.presente['ser|0'];
+  if (ser.s !== 0 || ser.m !== 1) throw new Error('ser|0 merged to ' + JSON.stringify(ser));
+  var ir = m.strength.presente['ir|2'];
+  if (ir.s !== 2 || ir.m !== 2) throw new Error('one-sided entry not kept: ' + JSON.stringify(ir));
+  var d = m.daily['20260821'];
+  if (d.attempts[1] !== 2 || d.failed[1] !== true || d.solved[0] !== true)
+    throw new Error('daily merged to ' + JSON.stringify(d));
+  return 'graduated-on-A but just-missed-on-B stays shaky; daily merged element-wise';
+});
