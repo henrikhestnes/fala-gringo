@@ -26,7 +26,9 @@ const Quiz = (function () {
   }
 
   function focusOn() {
-    return Store.getPref('focus', true) !== false;
+    // the pre-1.3 'focus' pref belonged to the opt-in-filter era and is
+    // deliberately ignored: everyone starts in the new default (Foco on)
+    return Store.getPref('foco', true) !== false;
   }
 
   /* Verb card ids are "verb|index" (pronominal: "verb|tense|index"), so the part
@@ -286,7 +288,7 @@ const Quiz = (function () {
   }
 
   function toggleFocus() {
-    Store.setPref('focus', !focusOn());
+    Store.setPref('foco', !focusOn());
     document.getElementById('view').dataset.topic = '';  // force chrome rebuild
     buildDeck();
   }

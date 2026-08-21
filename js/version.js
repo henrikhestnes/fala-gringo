@@ -7,7 +7,7 @@
 // 1.0 the app · 1.1 Foco mode · 1.2 cross-device sync · 1.3 Foco by default + spaced review
 // 1.4 three-state theme (auto follows the system)
 
-const APP_VERSION = '1.4.0';
+const APP_VERSION = '1.4.1';
 
 (function () {
   const el = document.getElementById('buildInfo');
