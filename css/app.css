@@ -195,6 +195,28 @@ button { cursor: pointer; touch-action: manipulation; }
 .icon-btn:active { transform: scale(.92); }
 .icon-btn svg { width: 17px; height: 17px; }
 
+/* sync button status: off = dimmed + amber dot (attention), error = pulsing
+   red dot (alarm), healthy = plain. */
+#syncBtn { position: relative; }
+#syncBtn.sync-off { opacity: .6; }
+#syncBtn.sync-off::after,
+#syncBtn.sync-error::after {
+  content: "";
+  position: absolute;
+  top: 2px; right: 2px;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid var(--bg-topbar);
+}
+#syncBtn.sync-off::after { background: var(--yellow); }
+#syncBtn.sync-error::after {
+  background: var(--red);
+  animation: sync-pulse 1.6s ease-in-out infinite;
+}
+@keyframes sync-pulse {
+  50% { transform: scale(1.45); opacity: .55; }
+}
+
 .mode-btn {
   border: 1.5px solid var(--border);
   background: var(--surface);

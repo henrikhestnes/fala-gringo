@@ -20,6 +20,8 @@ const Sync = (function () {
   let pushTimer = 0;
   let lastPushAt = 0;
   let lastPushed = '';   // last JSON known to be on the server; skips no-op pushes
+  let status = 'ok';     // 'ok' | 'error' — meaningful only while sync is on
+  let lastSyncAt = 0;
 
   const canFetch = typeof fetch === 'function';   // absent in the smoke-test stub
 
@@ -28,6 +30,28 @@ const Sync = (function () {
   function endpoint() { return SYNC_URL.replace(/\/+$/, '') + '/' + code(); }
 
   function toast(msg) { if (typeof showToast === 'function') showToast(msg); }
+
+  /* Three button states: off = dimmed with an amber dot (attention, not alarm —
+     off is a legitimate resting state), on-and-healthy = plain, on-but-failing
+     = pulsing red dot. The dangerous state is the loud one. */
+  function updateButton() {
+    const btn = document.getElementById('syncBtn');
+    if (!btn) return;
+    const st = enabled() ? status : 'off';
+    btn.className = 'icon-btn sync-' + st;
+    let title;
+    if (st === 'off') title = 'Sync is off — tap to link your devices';
+    else if (st === 'error') title = 'Last sync failed — will retry';
+    else if (!lastSyncAt) title = 'Syncing…';
+    else {
+      const min = Math.round((Date.now() - lastSyncAt) / 60000);
+      title = min < 1 ? 'Synced just now' : 'Synced ' + min + ' min ago';
+    }
+    btn.setAttribute('title', title);
+  }
+
+  function markOk() { status = 'ok'; lastSyncAt = Date.now(); updateButton(); }
+  function markError() { status = 'error'; updateButton(); }
 
   function newCode() {
     let s = '';
@@ -90,11 +114,17 @@ const Sync = (function () {
   function pull() {
     if (!enabled()) return Promise.resolve();
     return fetch(endpoint(), { cache: 'no-store' })
-      .then(res => (res.ok ? res.json() : null))
+      .then(res => {
+        // an HTTP error is NOT an empty remote: merging with {} and pushing
+        // could overwrite progress the server actually holds — bail instead
+        if (!res.ok) throw new Error('http ' + res.status);
+        return res.json();
+      })
       .then(remote => {
         const local = Store.snapshot();
         const merged = mergeStates(local, remote || { mastered: {}, strength: {}, daily: {} });
         const mergedJson = JSON.stringify(merged);
+        markOk();
         if (mergedJson !== JSON.stringify(local)) {
           Store.applySynced(merged);          // save() schedules the push back up
           if (window.App) App.refresh();
@@ -105,7 +135,7 @@ const Sync = (function () {
           lastPushed = mergedJson;
         }
       })
-      .catch(() => { /* offline — the next load heals */ });
+      .catch(() => { markError(); /* offline — the next load heals */ });
   }
 
   function push() {
@@ -120,8 +150,9 @@ const Sync = (function () {
       body: body,
       cache: 'no-store',
       keepalive: true          // lets the flush-on-close request outlive the page
-    }).then(res => { if (res.ok) lastPushed = body; })
-      .catch(() => { /* offline — the next answer reschedules */ });
+    }).then(res => {
+      if (res.ok) { lastPushed = body; markOk(); } else { markError(); }
+    }).catch(() => { markError(); /* offline — the next answer reschedules */ });
   }
 
   /* Throttle, don't debounce: the first change after a quiet spell pushes in
@@ -160,6 +191,8 @@ const Sync = (function () {
       if (!/^[a-z0-9]{16,64}$/.test(c)) { toast('That code does not look right'); return; }
       Store.setPref('syncCode', c);
       lastPushed = '';
+      lastSyncAt = 0;
+      updateButton();
       pull().then(schedulePush);
       window.prompt(
         'Sync is ON. This code is the key to your progress — copy it, keep it ' +
@@ -171,12 +204,26 @@ const Sync = (function () {
       if (ans !== null && ans.trim().toLowerCase() === 'off') {
         Store.setPref('syncCode', '');
         toast('Sync off on this device');
+        updateButton();
       }
     }
   }
 
   const btn = document.getElementById('syncBtn');
   if (btn) btn.addEventListener('click', manage);
+  updateButton();
+  // keep the "Synced N min ago" tooltip honest (setInterval is absent in the smoke stub)
+  if (typeof setInterval === 'function') setInterval(updateButton, 60000);
+
+  // one-time discovery nudge: on the third visit with sync still off, say the
+  // button exists — then never mention it again
+  if (SYNC_URL && canFetch && !code()) {
+    const visits = Store.getPref('syncNudge', 0) + 1;
+    if (visits <= 3) Store.setPref('syncNudge', visits);
+    if (visits === 3) {
+      setTimeout(() => toast('⇅ can sync your progress between devices — tap it to set up'), 1200);
+    }
+  }
 
   pull();   // merge in whatever the other devices did since last time
 
