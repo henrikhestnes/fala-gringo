@@ -316,14 +316,18 @@ step('three straight correct answers graduate a verb out of Foco', function () {
   return 'verb graduated after a 3-streak; full deck restored on toggle-off';
 });
 
-step('sync is inert without a configured endpoint', function () {
+step('sync is inert without fetch and the button shows the off state', function () {
   if (typeof Sync === 'undefined') throw new Error('Sync not defined');
   Sync.onLocalChange();                  // must schedule nothing and not throw
-  registry.syncBtn.fire('click');        // no SYNC_URL -> setup toast, no prompt
+  if (registry.syncBtn.className !== 'icon-btn sync-off')
+    throw new Error('button class is "' + registry.syncBtn.className + '"');
+  if (!/tap to link/.test(registry.syncBtn.getAttribute('title') || ''))
+    throw new Error('off-state tooltip missing');
+  registry.syncBtn.fire('click');        // no fetch in the stub -> setup toast, no prompt
   flushTimers();
   if (registry.toast.textContent.indexOf('backend') === -1)
     throw new Error('no setup hint shown: "' + registry.toast.textContent + '"');
-  return 'no network attempted; toast points at sync-worker/README.md';
+  return 'no network attempted; off state dot + tooltip rendered';
 });
 
 step('sync merge is conservative: union mastery, keep cards shaky', function () {
