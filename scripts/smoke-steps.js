@@ -210,14 +210,21 @@ step('daily is deterministic for a given day', function () {
   return 'same 7 cards on repeated mounts';
 });
 
-step('theme toggle alternates the stored preference', function () {
+step('theme cycles auto -> light -> dark -> auto', function () {
   goTo('#browse');
+  if (Store.getPref('theme', null) !== null)
+    throw new Error('a fresh profile should follow the system');
   registry.themeBtn.fire('click');
   var t1 = Store.getPref('theme', null);
   registry.themeBtn.fire('click');
   var t2 = Store.getPref('theme', null);
-  if (!t1 || !t2 || t1 === t2) throw new Error('did not alternate: ' + t1 + ' / ' + t2);
-  return t1 + ' -> ' + t2;
+  registry.themeBtn.fire('click');
+  var t3 = Store.getPref('theme', null);
+  if (t1 !== 'light' || t2 !== 'dark' || t3 !== null)
+    throw new Error('cycle was ' + t1 + ' / ' + t2 + ' / ' + t3);
+  if (!/follows the system/.test(registry.themeBtn.getAttribute('title') || ''))
+    throw new Error('auto-state tooltip missing');
+  return 'three taps round-trip back to following the system';
 });
 
 step('browse controls all run and keep 124 rows', function () {
