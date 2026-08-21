@@ -15,6 +15,22 @@ const Quiz = (function () {
   let stats = { errors: 0, hardSolved: 0 };
   let activeGroups = null;
 
+  /* mic mode (the 🎤 chip): hands-free spoken answers */
+  let micTimer = 0;    // pending auto-advance
+  let micGen = 0;      // bumped by stopVoice(); stale async callbacks check it
+  let micRetries = 0;  // silent listens in a row on the current card
+
+  const MIC_RETRIES = 3;       // silent listens before pausing with a resume button
+  const MIC_NEXT_OK = 1100;    // ms after the answer audio before auto-advancing
+  const MIC_NEXT_MISS = 3200;  // longer on a miss — time to read the reveal
+  const MIC_ERROR_TEXT = {
+    'no-speech': 'Não ouvi nada',
+    'not-allowed': 'Mic blocked — allow microphone access (needs https or localhost)',
+    'service-not-allowed': 'Mic blocked — allow microphone access (needs https or localhost)',
+    'audio-capture': 'No microphone found',
+    'network': 'Speech service unreachable — are you online?'
+  };
+
   function acceptedFor(card) {
     const set = new Set();
     card.accepted.forEach(a => set.add(normalize(a)));
@@ -29,6 +45,11 @@ const Quiz = (function () {
     // the pre-1.3 'focus' pref belonged to the opt-in-filter era and is
     // deliberately ignored: everyone starts in the new default (Foco on)
     return Store.getPref('foco', true) !== false;
+  }
+
+  function micOn() {
+    return typeof Stt !== 'undefined' && Stt.supported() &&
+           Store.getPref('mic', false) === true;
   }
 
   /* Verb card ids are "verb|index" (pronominal: "verb|tense|index"), so the part
@@ -87,6 +108,11 @@ const Quiz = (function () {
       FOCUS_STREAK + ' times in a row) and reviews due after ' + REVIEW_DAYS +
       ' days. Switch off to drill the whole deck.">🎯 Foco' +
       (shaky ? ' · ' + shaky : '') + '</button>';
+    const micChip = (typeof Stt !== 'undefined' && Stt.supported())
+      ? '<button class="chip mic' + (micOn() ? ' active' : '') +
+        '" data-mic="1" title="Mic mode: speak the answer instead of typing — it is ' +
+        'recognized, submitted and read back, and the deck advances hands-free.">🎤 Falar</button>'
+      : '';
     const total = topicCards(topic).length;
     const mastered = Store.masteredCount(topic.id);
     return '' +
@@ -99,7 +125,7 @@ const Quiz = (function () {
             escapeHtml(topic.id) + '">reset</button>'
           : '') + '</p>' +
       '</div>' +
-      '<div class="filters" id="filterRow">' + focusChip + chips + '</div>' +
+      '<div class="filters" id="filterRow">' + focusChip + micChip + chips + '</div>' +
       '<div class="stats">' +
         '<div class="stat"><div class="stat-num" id="statTotal">0</div><div class="stat-lbl">Total</div></div>' +
         '<div class="stat"><div class="stat-num green" id="statKnown">0</div><div class="stat-lbl">Known</div></div>' +
@@ -127,6 +153,7 @@ const Quiz = (function () {
   /* ---------------------------------------------------------------- render */
 
   function render() {
+    stopVoice();   // every re-render invalidates the mic + pending auto-advance
     const view = document.getElementById('view');
     if (!document.getElementById('cardArea') || view.dataset.topic !== topic.id) {
       view.dataset.topic = topic.id;
@@ -170,6 +197,7 @@ const Quiz = (function () {
             'enterkeyhint="go" />' +
           '<button class="check-btn" id="actionBtn" type="button" aria-label="Check answer">&rarr;</button>' +
         '</div>' +
+        (micOn() ? '<div class="mic-status" id="micStatus"></div>' : '') +
         '<div class="feedback" id="feedback"></div>' +
         '<div id="revealArea"></div>' +
       '</div>' +
@@ -184,7 +212,12 @@ const Quiz = (function () {
     document.getElementById('skipBtn').addEventListener('click', skipCard);
     document.getElementById('restartBtn').addEventListener('click', buildDeck);
     input.addEventListener('keydown', e => { if (e.key === 'Enter') handleAction(); });
-    focusAnswerInput(input);
+    if (micOn()) {
+      micRetries = 0;
+      startMic();   // hands-free: no input focus, so no mobile keyboard pops up
+    } else {
+      focusAnswerInput(input);
+    }
   }
 
   function renderDone(area) {
@@ -207,6 +240,66 @@ const Quiz = (function () {
     if (perfect) launchFireworks();
   }
 
+  /* -------------------------------------------------------------- mic mode */
+  /* Hands-free loop: the card renders, the mic listens (js/lib/stt.js), the
+     recognized speech is graded through checkAnswer(), the answer is read out,
+     and the deck advances by itself. Typing stays live the whole time. */
+
+  function stopVoice() {
+    micGen++;
+    if (micTimer) { clearTimeout(micTimer); micTimer = 0; }
+    if (typeof Stt !== 'undefined') Stt.abort();
+  }
+
+  function setMicStatus(html) {
+    const el = document.getElementById('micStatus');
+    if (el) el.innerHTML = html;
+  }
+
+  function startMic() {
+    const card = deck[current];
+    const gen = micGen;
+    setMicStatus('<span class="mic-dot"></span>Ouvindo… fala aí' +
+      (card.allowEmpty ? ' — diga “nada” se nada falta na lacuna' : ''));
+    Stt.listen({
+      onInterim: t => {
+        if (gen !== micGen || answered) return;
+        const input = document.getElementById('answerInput');
+        if (input) input.value = t;
+      },
+      onResult: alts => {
+        if (gen !== micGen || answered) return;
+        micRetries = 0;
+        const input = document.getElementById('answerInput');
+        if (!input) return;
+        const match = micAnswer(card, alts);
+        input.value = match !== null ? match : alts[0] || '';
+        if (!input.value.trim() && !card.allowEmpty) { startMic(); return; }
+        checkAnswer();
+      },
+      onError: code => {
+        if (gen !== micGen || answered) return;
+        if (code === 'no-speech' && micRetries < MIC_RETRIES) { micRetries++; startMic(); return; }
+        setMicStatus('<button type="button" class="mic-resume" data-mic-resume="1">🎤 ' +
+          escapeHtml(MIC_ERROR_TEXT[code] || 'Mic error (' + code + ')') +
+          ' — tap to listen again</button>');
+      }
+    });
+  }
+
+  function toggleMic() {
+    Store.setPref('mic', Store.getPref('mic', false) !== true);
+    document.getElementById('view').dataset.topic = '';  // force chrome rebuild
+    buildDeck();
+  }
+
+  function resumeMic() {
+    if (!micOn() || answered || !document.getElementById('answerInput')) return;
+    stopVoice();
+    micRetries = 0;
+    startMic();
+  }
+
   /* ---------------------------------------------------------------- answer */
 
   function handleAction() {
@@ -223,13 +316,16 @@ const Quiz = (function () {
     // connecting-word cards where the right answer is "nothing" accept an empty box
     if (!input.value.trim() && !card.allowEmpty) return;
 
+    if (micOn()) stopVoice();   // a typed answer can land while the mic still listens
+
     answered = true;
     input.disabled = true;
 
     const pron = card.pron ? '<span class="pron-tag">' + escapeHtml(card.pron) + '</span>' : '';
     const say = card.speak ? speakButton(card.speak, card.answer) : '';
 
-    if (isCorrect(card, input.value)) {
+    const ok = isCorrect(card, input.value);
+    if (ok) {
       if (Mode.hard) stats.hardSolved++;
       input.classList.add('correct');
       btn.classList.add('go-green');
@@ -257,6 +353,17 @@ const Quiz = (function () {
       if (t) t.classList.add('visible');
     });
     setTimeout(() => btn.focus(), 0);
+
+    if (micOn()) {
+      setMicStatus('');
+      // hands-free: read the answer out, then move on by itself
+      const gen = micGen;
+      speak(card.speak || card.answer, null, () => {
+        if (gen !== micGen) return;
+        micTimer = setTimeout(() => { if (gen === micGen) advance(); },
+                              ok ? MIC_NEXT_OK : MIC_NEXT_MISS);
+      });
+    }
   }
 
   function advance() {
@@ -301,6 +408,9 @@ const Quiz = (function () {
     },
     toggleGroup: toggleGroup,
     toggleFocus: toggleFocus,
+    toggleMic: toggleMic,
+    resumeMic: resumeMic,
+    stopVoice: stopVoice,
     isActive: () => !!topic
   };
 })();

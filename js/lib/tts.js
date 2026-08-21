@@ -26,8 +26,8 @@ if (typeof window !== 'undefined' && window.speechSynthesis) {
   speechSynthesis.onvoiceschanged = loadVoices;
 }
 
-function speak(text, btn) {
-  if (!window.speechSynthesis || !text) return;
+function speak(text, btn, onDone) {
+  if (!window.speechSynthesis || !text) { if (onDone) onDone(); return; }
   speechSynthesis.cancel();
   document.querySelectorAll('.speak-btn.playing').forEach(b => b.classList.remove('playing'));
 
@@ -36,11 +36,15 @@ function speak(text, btn) {
   utterance.rate = 0.9;
   if (ptVoice) utterance.voice = ptVoice;
 
-  if (btn) {
-    btn.classList.add('playing');
-    utterance.onend = () => btn.classList.remove('playing');
-    utterance.onerror = () => btn.classList.remove('playing');
-  }
+  // onDone (mic mode's auto-advance) fires exactly once, whether the utterance
+  // finishes or is cancelled by a later speak()
+  const done = () => {
+    if (btn) btn.classList.remove('playing');
+    if (onDone) { const cb = onDone; onDone = null; cb(); }
+  };
+  if (btn) btn.classList.add('playing');
+  utterance.onend = done;
+  utterance.onerror = done;
 
   speechSynthesis.speak(utterance);
 }

@@ -49,7 +49,7 @@ js/conjugate.js     regular-conjugation oracle — used by checks only, not the 
 js/checks.js        shared assertions (used by check.jxa and verify.html)
 js/app.js           hash router + delegated events
 js/version.js       APP_VERSION shown in the footer — bump it in every commit with a user-visible change (patch: fixes/content, minor: feature); the "updated" date comes free from document.lastModified
-js/lib/             text.js (normalize/shuffle), tts.js, fx.js, sync.js (optional cross-device sync)
+js/lib/             text.js (normalize/shuffle), tts.js, stt.js (mic-mode speech recognition + spoken-answer matching), fx.js, sync.js (optional cross-device sync)
 sync-worker/        Cloudflare Worker + KV backend for sync — deployed separately, see its README
 scripts/            check.jxa, smoke.jxa (+ smoke-steps.js)
 ```
@@ -73,5 +73,6 @@ The key design decision: instead of one drill engine per topic (each topic's raw
 - Non-verb card content and the hand-written verb pronunciations/examples come from [gjermundbae/portuguese-verb-flashcards](https://github.com/gjermundbae/portuguese-verb-flashcards). The 29 verbs unique to this repo have **generated** pronunciations/examples (348 forms) — worth spot-checking, especially stress placement.
 - A wrong answer never clears a card — it returns to the deck until answered correctly. There is no batching: a deck is always the whole topic minus deselected category chips.
 - **Foco mode** (🎯 chip on every drill tab, pref `foco` — the abandoned `focus` key is pre-1.3 and ignored, **on by default**): the deck is every card needing work — never answered correctly, "shaky" (missed and not yet re-answered correctly `FOCUS_STREAK` (3) times in a row; on verb topics one shaky form pulls the verb's whole conjugation for that tense into the deck, card ids share a `verb|` prefix), or mastered but unconfirmed for `REVIEW_DAYS` (7) days. Switching the chip off drills the whole topic. Both the drills and the Daily record answers into the strength stats.
+- **Mic mode** (🎤 Falar chip on every drill tab, pref `mic`, off by default): hands-free loop — the mic listens (Web Speech API `SpeechRecognition`, pt-BR, in `js/lib/stt.js`), the recognized speech is auto-submitted through the normal `checkAnswer()`, the answer is read back via TTS, and the deck auto-advances. Recognizer digits are expanded to Portuguese number words (`"20"` → `vinte`, `"3º"` → `terceiro`), and saying "nada" on an empty-gap connecting card counts as the empty answer. The chip renders only where the API exists (Chrome/Edge/Safari — not Firefox); the mic itself needs https or localhost, so from `file://` the feature degrades to a visible "blocked" message. The Daily tab has no mic mode.
 - The Daily tab is deterministic from the date: 7 cards, one per topic, 5 attempts each.
 - **Sync** (⇅ button, `js/lib/sync.js` + `sync-worker/`): pull-merge-push of `{mastered, strength, daily}` keyed by a secret sync code; prefs are per-device on purpose. Merging is conservative (mastered unioned, misses kept, streak = min) so syncing can never falsely graduate a card out of Foco. With `SYNC_URL` empty the whole feature is inert.
