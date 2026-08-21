@@ -88,6 +88,9 @@
       return;
     }
 
+    const foco = e.target.closest('.chip[data-focus]');
+    if (foco) { Quiz.toggleFocus(); return; }
+
     const chip = e.target.closest('.chip[data-group]');
     if (chip) { Quiz.toggleGroup(chip.dataset.group); return; }
 
@@ -133,4 +136,7 @@
   applyTheme();
   updateModeButton();
   route();
+
+  // sync.js re-renders through this after pulling remote progress
+  window.App = { refresh: route };
 })();
