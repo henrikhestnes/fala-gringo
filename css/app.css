@@ -831,6 +831,13 @@ footer {
 footer a { color: var(--text-2); }
 /* The crossed-out words are European Portuguese — a joke for learners only. */
 footer s { text-decoration-color: var(--red); opacity: .8; }
+footer .build-info {
+  display: block;
+  margin-top: .3rem;
+  font-family: var(--mono);
+  font-size: .68rem;
+  opacity: .75;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .shake { animation: none; }

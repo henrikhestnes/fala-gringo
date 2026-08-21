@@ -48,6 +48,7 @@ js/progress.js      localStorage (single key `pvs:v1`): mastery, per-card streng
 js/conjugate.js     regular-conjugation oracle — used by checks only, not the app
 js/checks.js        shared assertions (used by check.jxa and verify.html)
 js/app.js           hash router + delegated events
+js/version.js       APP_VERSION shown in the footer — bump it in every commit with a user-visible change (patch: fixes/content, minor: feature); the "updated" date comes free from document.lastModified
 js/lib/             text.js (normalize/shuffle), tts.js, fx.js, sync.js (optional cross-device sync)
 sync-worker/        Cloudflare Worker + KV backend for sync — deployed separately, see its README
 scripts/            check.jxa, smoke.jxa (+ smoke-steps.js)
