@@ -5,9 +5,9 @@
 // from disk it is the file's mtime, so the label says "updated").
 //
 // 1.0 the app · 1.1 Foco mode · 1.2 cross-device sync · 1.3 Foco by default + spaced review
-// 1.4 three-state theme (auto follows the system)
+// 1.4 three-state theme (auto follows the system) · 1.5 mic mode (hands-free spoken answers)
 
-const APP_VERSION = '1.4.1';
+const APP_VERSION = '1.5.0';
 
 (function () {
   const el = document.getElementById('buildInfo');

@@ -390,3 +390,64 @@ step('sync merge is conservative: union mastery, keep cards shaky', function () 
     throw new Error('daily merged to ' + JSON.stringify(d));
   return 'graduated-on-A but just-missed-on-B stays shaky; daily merged element-wise';
 });
+
+/* Deliver a final recognition result into whatever the app is listening with
+   (the stub's fake SpeechRecognition records itself in window._activeRec). */
+function fireRecResult(text) {
+  var rec = window._activeRec;
+  if (!rec || !rec.onresult) throw new Error('no active recognition');
+  var res = [{ transcript: text }];
+  res.isFinal = true;
+  rec.onresult({ results: [res] });
+}
+
+step('mic chip renders with SpeechRecognition present and defaults off', function () {
+  goTo('#nouns');
+  if (!/data-mic=/.test(registry.view.innerHTML))
+    throw new Error('mic chip missing (the stub provides the API)');
+  if (/chip mic active/.test(registry.view.innerHTML))
+    throw new Error('mic mode on by default');
+  if (window._activeRec) throw new Error('listening while the mode is off');
+  return 'chip present, inactive, nothing listening';
+});
+
+step('mic mode: recognized speech auto-submits and auto-advances', function () {
+  goTo('#nouns');
+  Quiz.toggleMic();
+  if (!/chip mic active/.test(registry.view.innerHTML)) throw new Error('chip not active');
+  if (!window._activeRec) throw new Error('mic did not start listening');
+  if (!registry.micStatus || !/Ouvindo/.test(registry.micStatus.innerHTML))
+    throw new Error('no listening status shown');
+  var card = shownCard('nouns');
+  fireRecResult(card.answer);
+  if (!/✓/.test(registry.feedback.innerHTML))
+    throw new Error('spoken answer rejected: ' + registry.feedback.innerHTML);
+  flushTimers();   // TTS is a no-op in the stub, so the advance timer is already queued
+  if (!registry.answerInput) throw new Error('did not advance to the next card');
+  if (!window._activeRec) throw new Error('mic not listening again on the next card');
+  return 'spoke "' + card.answer + '"; accepted, advanced, listening again';
+});
+
+step('mic matching expands recognizer digits into number words', function () {
+  var cards = topicCards(topicById('numbers'));
+  var vinte = cards.filter(function (c) { return c.answer === 'vinte'; })[0];
+  if (micAnswer(vinte, ['20']) !== 'vinte')
+    throw new Error('"20" resolved to ' + JSON.stringify(micAnswer(vinte, ['20'])));
+  if (micAnswer(vinte, ['30']) !== null) throw new Error('"30" wrongly accepted for vinte');
+  var third = cards.filter(function (c) { return c.answer === 'terceiro'; })[0];
+  if (micAnswer(third, ['3º']) !== 'terceiro') throw new Error('ordinal "3º" not matched');
+  var empty = topicCards(topicById('connecting')).filter(function (c) { return c.allowEmpty; })[0];
+  if (!empty || micAnswer(empty, ['nada']) !== '')
+    throw new Error('spoken "nada" did not map to the empty answer');
+  return '"20" -> vinte, "3º" -> terceiro, "30" stays wrong, "nada" -> empty gap';
+});
+
+step('mic mode switches off cleanly', function () {
+  goTo('#nouns');
+  Quiz.toggleMic();
+  if (window._activeRec) throw new Error('still listening after toggle-off');
+  if (Store.getPref('mic', null) !== false) throw new Error('pref not written');
+  if (/mic-status/.test(registry.cardArea.innerHTML))
+    throw new Error('mic status still rendered');
+  return 'listening stopped, status gone, pref = false';
+});

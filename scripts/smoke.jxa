@@ -128,6 +128,14 @@ window.localStorage = (function () {
   };
 })();
 window.SpeechSynthesisUtterance = function () {};
+// captured by stt.js at load; steps drive recognition by hand via window._activeRec
+window.SpeechRecognition = function () {
+  const self = this;
+  this.start = function () { window._activeRec = self; };
+  this.stop = function () {};
+  this.abort = function () { if (window._activeRec === self) window._activeRec = null; };
+};
+window._activeRec = null;
 function flushTimers() { const t = timers.splice(0); t.forEach(fn => { try { fn(); } catch (e) {} }); }
 
 // shell elements that index.html provides
@@ -136,7 +144,7 @@ function flushTimers() { const t = timers.splice(0); t.forEach(fn => { try { fn(
 /* ------------------------------------------------------------- load app -- */
 
 const FILES = [
-  'js/lib/text.js', 'js/lib/tts.js', 'js/lib/fx.js', 'js/progress.js',
+  'js/lib/text.js', 'js/lib/tts.js', 'js/lib/stt.js', 'js/lib/fx.js', 'js/progress.js',
   'js/data/verbs.js', 'js/data/pronominal.js', 'js/data/nouns.js', 'js/data/adjectives.js', 'js/data/adverbs.js',
   'js/data/connecting.js', 'js/data/numbers.js', 'js/data/glossary.js', 'js/data/sentences.js',
   'js/topics.js', 'js/quiz.js', 'js/browse.js', 'js/daily.js', 'js/app.js', 'js/lib/sync.js',

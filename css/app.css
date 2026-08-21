@@ -570,6 +570,43 @@ main { max-width: 880px; width: 100%; margin: 0 auto; padding: 1.1rem 1rem 4rem;
 .speak-btn:active { transform: scale(.9); }
 .speak-btn.playing { background: var(--green-soft); border-color: var(--green); color: var(--green-ink); }
 
+/* ---------- mic mode ---------- */
+
+/* the mic chip goes green, not blue: it changes HOW you answer, not which group */
+.chip.mic.active {
+  background: var(--green-soft);
+  border-color: var(--green);
+  color: var(--green-ink);
+}
+.mic-status {
+  margin-top: .6rem;
+  min-height: 1.3rem;
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--text-3);
+}
+.mic-dot {
+  flex: none;
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: var(--red);
+  animation: sync-pulse 1.4s ease-in-out infinite;
+}
+.mic-resume {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-2);
+  border-radius: 999px;
+  padding: .26rem .68rem;
+  font-size: .78rem;
+  font-weight: 600;
+  text-align: left;
+}
+.mic-resume:hover { border-color: var(--green); color: var(--green-ink); }
+
 .example, .tip, .note {
   margin-top: .7rem;
   font-size: .86rem;

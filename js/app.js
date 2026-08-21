@@ -100,6 +100,7 @@
 
   function route() {
     const topic = topicById(currentTopicId());
+    Quiz.stopVoice();   // leaving a drill must stop the mic + pending auto-advance
     renderTabs();
     window.scrollTo(0, 0);
     if (topic.kind === 'browse') Browse.render();
@@ -127,6 +128,12 @@
 
     const foco = e.target.closest('.chip[data-focus]');
     if (foco) { Quiz.toggleFocus(); return; }
+
+    const mic = e.target.closest('.chip[data-mic]');
+    if (mic) { Quiz.toggleMic(); return; }
+
+    const micResume = e.target.closest('[data-mic-resume]');
+    if (micResume) { Quiz.resumeMic(); return; }
 
     const chip = e.target.closest('.chip[data-group]');
     if (chip) { Quiz.toggleGroup(chip.dataset.group); return; }
