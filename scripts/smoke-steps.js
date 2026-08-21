@@ -330,6 +330,13 @@ step('sync is inert without fetch and the button shows the off state', function 
   return 'no network attempted; off state dot + tooltip rendered';
 });
 
+step('the footer shows the app version', function () {
+  var text = registry.buildInfo.textContent;
+  if (!/^v\d+\.\d+\.\d+/.test(text)) throw new Error('build info reads "' + text + '"');
+  if (text !== 'v' + APP_VERSION) throw new Error('stub has no lastModified, expected bare version');
+  return '"' + text + '" (date suffix needs document.lastModified, absent in the stub)';
+});
+
 step('sync merge is conservative: union mastery, keep cards shaky', function () {
   var a = { mastered: { nouns: { x: 1 } },
             strength: { presente: { 'ser|0': { s: 3, m: 1 }, 'ir|2': { s: 2, m: 2 } } },
