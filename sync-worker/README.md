@@ -27,7 +27,9 @@ key to the progress — anyone who has it can read and write that progress, so
 treat it like a password (it never appears in URLs, only in the request path
 over HTTPS).
 
-The app pulls-and-merges on every load and pushes a couple of seconds after an
-answer. Merging is conservative: mastered cards are unioned, misses are kept,
+The app pulls-and-merges on every load and pushes at most once a minute while
+drilling, with a final flush when the tab is hidden or closed — that keeps a
+heavy session at a handful of KV writes, well inside the free tier's 1,000
+writes/day. Merging is conservative: mastered cards are unioned, misses are kept,
 and a card's correct-streak only counts if it happened since the last miss on
 every device — so syncing can never falsely graduate a shaky card out of Foco.

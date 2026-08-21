@@ -8,14 +8,17 @@
 // The model is pull-merge-push, never overwrite: on load the remote state is
 // fetched and MERGED into the local one (union of mastered; per-card strength
 // keeps max misses + min streak, so a shaky card can never graduate out of Foco
-// by syncing; the daily log merges element-wise), and pushes send the whole
-// merged state a couple of seconds after an answer. Because every sync merges,
-// a push lost to a closed tab or a dead connection heals on the next load.
+// by syncing; the daily log merges element-wise). Pushes send the whole state,
+// throttled to one per minute (KV free tier allows 1,000 writes/day) with a
+// final flush when the tab is hidden or closed. Because every sync merges, a
+// push lost to a dead connection or a killed tab heals on the next load.
 
 const SYNC_URL = 'https://fala-gringo-sync.henrik-hestnes.workers.dev';   // scheme required: without it fetch() treats this as a relative path
 
 const Sync = (function () {
+  const PUSH_INTERVAL = 60 * 1000;   // at most one KV write a minute while drilling
   let pushTimer = 0;
+  let lastPushAt = 0;
   let lastPushed = '';   // last JSON known to be on the server; skips no-op pushes
 
   const canFetch = typeof fetch === 'function';   // absent in the smoke-test stub
@@ -106,23 +109,39 @@ const Sync = (function () {
   }
 
   function push() {
+    pushTimer = 0;
     if (!enabled()) return;
     const body = JSON.stringify(Store.snapshot());
     if (body === lastPushed) return;
+    lastPushAt = Date.now();
     fetch(endpoint(), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: body,
-      cache: 'no-store'
+      cache: 'no-store',
+      keepalive: true          // lets the flush-on-close request outlive the page
     }).then(res => { if (res.ok) lastPushed = body; })
       .catch(() => { /* offline — the next answer reschedules */ });
   }
 
+  /* Throttle, don't debounce: the first change after a quiet spell pushes in
+     2.5s; further changes ride along until PUSH_INTERVAL has passed. */
   function schedulePush() {
-    if (!enabled()) return;
-    clearTimeout(pushTimer);
-    pushTimer = setTimeout(push, 2500);
+    if (!enabled() || pushTimer) return;
+    const wait = Math.max(2500, lastPushAt + PUSH_INTERVAL - Date.now());
+    pushTimer = setTimeout(push, wait);
   }
+
+  /* The tab going away is the last chance to sync this session's answers. */
+  function flushPush() {
+    if (!pushTimer) return;    // nothing pending
+    clearTimeout(pushTimer);
+    push();
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') flushPush();
+  });
+  window.addEventListener('pagehide', flushPush);
 
   /* ------------------------------------------------------------------- ui */
 
