@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://fala-gringo.pages.dev/sitemap.xml
