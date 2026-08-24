@@ -1,0 +1,266 @@
+// Static verb-page generator, in the same no-toolchain spirit as check.jxa:
+//
+//   osascript -l JavaScript scripts/generate-verb-pages.jxa
+//
+// Reads js/data/verbs.js (the source of truth for verb forms) and emits one
+// crawlable HTML page per verb under verbs/, plus verbs/index.html, sitemap.xml
+// and robots.txt. The app itself renders client-side behind a hash router, which
+// search engines see as a single page — these static pages are what gets indexed.
+// Output is committed to the repo (GitHub Pages runs no build); re-run after any
+// change to js/data/verbs.js and commit the diff.
+
+ObjC.import('Foundation');
+
+// Absolute URLs in canonicals and the sitemap come from here — change on rehost
+// (e.g. to 'https://falagringo.com' once the custom domain is live) and re-run.
+const SITE_URL = 'https://fala-gringo.pages.dev';
+
+function read(path) {
+  const s = $.NSString.stringWithContentsOfFileEncodingError(
+    $(path), $.NSUTF8StringEncoding, null);
+  if (!s || s.isNil()) throw new Error('cannot read ' + path);
+  return ObjC.unwrap(s);
+}
+
+function write(path, content) {
+  // atomically:false — the atomic temp-file dance is refused in sandboxed shells
+  const ok = $(content).writeToFileAtomicallyEncodingError(
+    $(path), false, $.NSUTF8StringEncoding, null);
+  if (!ok) throw new Error('cannot write ' + path);
+}
+
+function mkdir(path) {
+  $.NSFileManager.defaultManager
+    .createDirectoryAtPathWithIntermediateDirectoriesAttributesError(
+      $(path), true, $(), null);
+}
+
+const ROOT = ObjC.unwrap($.NSFileManager.defaultManager.currentDirectoryPath);
+
+// the data file assigns onto `window`; give it one
+var window = this;
+eval(read(ROOT + '/js/data/verbs.js'));
+const V = window.DATA_VERBS;
+
+function esc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function slug(pt) {
+  return pt.normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, '-');
+}
+
+const FAVICON = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='10' fill='%23009c3b'/><polygon points='32,9 55,32 32,55 9,32' fill='%23ffdf00'/><circle cx='32' cy='32' r='11' fill='%23002776'/><path d='M23 34.5 Q32 28.5 41 34.5' stroke='%23ffffff' stroke-width='1.8' fill='none' stroke-linecap='round'/><circle cx='27' cy='30' r='0.7' fill='%23ffffff'/><circle cx='32' cy='27.5' r='0.7' fill='%23ffffff'/><circle cx='37' cy='30' r='0.7' fill='%23ffffff'/><circle cx='29' cy='37' r='0.7' fill='%23ffffff'/><circle cx='35' cy='38' r='0.7' fill='%23ffffff'/></svg>";
+
+const BRAND_FLAG =
+  '<svg class="vp-flag" viewBox="0 0 28 20" aria-hidden="true">' +
+  '<rect width="28" height="20" rx="4.5" fill="#009c3b"/>' +
+  '<polygon points="14,2.6 25.2,10 14,17.4 2.8,10" fill="#ffdf00"/>' +
+  '<circle cx="14" cy="10" r="4.7" fill="#002776"/>' +
+  '<path d="M10.4 11.2 Q14 8.8 17.6 11.2" stroke="#ffffff" stroke-width=".9" fill="none" stroke-linecap="round"/>' +
+  '</svg>';
+
+// Page-local styles on top of the app's design tokens (../css/app.css).
+const PAGE_CSS = `
+.vp-top { background: var(--bg-topbar); border-bottom: 1px solid var(--border);
+  padding: .65rem 1rem; display: flex; align-items: center; gap: 1rem; }
+.vp-brand { font-family: var(--display); font-style: italic; font-weight: 700;
+  font-size: 1.15rem; text-transform: uppercase; letter-spacing: .02em;
+  color: var(--text); text-decoration: none; display: inline-flex;
+  align-items: center; gap: .5rem; }
+.vp-flag { width: 24px; height: auto; border-radius: 4px; }
+.vp-top nav { margin-left: auto; }
+.vp-top nav a { color: var(--text-2); font-size: .9rem; }
+.vp-crumb { font-size: .85rem; color: var(--text-3); margin-bottom: 1rem; }
+.vp-crumb a { color: var(--text-3); }
+h1 { font-family: var(--display); font-style: italic; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .02em; margin: 0 0 .35rem; }
+h1 .vp-en { color: var(--text-2); font-size: .65em; text-transform: none; }
+.vp-meta { color: var(--text-2); font-size: .92rem; margin-bottom: .9rem; }
+.vp-lede { margin-bottom: 1.1rem; max-width: 62ch; }
+h2 { font-size: 1.05rem; margin: 1.6rem 0 .55rem; }
+.vp-scroll { overflow-x: auto; border: 1px solid var(--border);
+  border-radius: var(--radius-sm); background: var(--surface); box-shadow: var(--shadow); }
+table { border-collapse: collapse; width: 100%; font-size: .95rem; }
+th, td { text-align: left; padding: .55rem .75rem; border-top: 1px solid var(--border);
+  vertical-align: top; }
+thead th { border-top: 0; font-size: .78rem; text-transform: uppercase;
+  letter-spacing: .04em; color: var(--text-3); background: var(--surface-2); }
+tbody th { font-weight: 500; color: var(--text-2); white-space: nowrap; }
+td strong { color: var(--green-ink); }
+.vp-gloss { display: block; font-size: .82rem; color: var(--text-3); }
+.vp-pron { font-family: var(--mono); font-size: .85rem; color: var(--blue-ink);
+  white-space: nowrap; }
+.vp-ex { font-style: italic; color: var(--text-2); min-width: 16rem; }
+.vp-links { list-style: none; display: flex; flex-wrap: wrap; gap: .4rem .9rem;
+  padding: 0; }
+.vp-links a { color: var(--blue-ink); }
+.vp-links .vp-en { color: var(--text-3); font-size: .85rem; }
+.vp-prevnext { display: flex; justify-content: space-between; margin-top: 1.8rem;
+  font-size: .92rem; }
+.vp-cat-head { display: flex; align-items: center; gap: .5rem; font-weight: 600;
+  margin: 1.4rem 0 .5rem; }
+.vp-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.vp-cta { display: inline-block; background: var(--green); color: #fff;
+  text-decoration: none; padding: .5rem .95rem; border-radius: var(--radius-sm);
+  font-weight: 600; margin-bottom: .4rem; }
+`;
+
+// Static pages have no app.js, so honour a saved theme pref with one inline line.
+const THEME_JS = "try{var p=JSON.parse(localStorage.getItem('pvs:v1')||'{}').prefs||{};" +
+  "if(p.theme==='light'||p.theme==='dark')document.documentElement.setAttribute('data-theme',p.theme);}catch(e){}";
+
+function page(opts) {
+  return '<!DOCTYPE html>\n<html lang="en">\n<head>\n' +
+    '<meta charset="UTF-8">\n' +
+    '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n' +
+    '<meta name="theme-color" content="#009c3b">\n' +
+    '<title>' + esc(opts.title) + '</title>\n' +
+    '<meta name="description" content="' + esc(opts.description) + '">\n' +
+    '<link rel="canonical" href="' + esc(opts.canonical) + '">\n' +
+    '<meta property="og:title" content="' + esc(opts.title) + '">\n' +
+    '<meta property="og:description" content="' + esc(opts.description) + '">\n' +
+    '<meta property="og:type" content="website">\n' +
+    '<link rel="icon" type="image/svg+xml" href="' + FAVICON + '">\n' +
+    '<link rel="stylesheet" href="../css/app.css">\n' +
+    '<style>' + PAGE_CSS + '</style>\n' +
+    '<script>' + THEME_JS + '</script>\n' +
+    '</head>\n<body>\n' +
+    '<!-- Generated by scripts/generate-verb-pages.jxa — do not edit by hand. -->\n' +
+    '<header class="vp-top">' +
+    '<a class="vp-brand" href="../index.html">' + BRAND_FLAG + 'Fala Gringo</a>' +
+    '<nav><a href="index.html">All verbs</a></nav>' +
+    '</header>\n<main>\n' + opts.body + '\n</main>\n' +
+    '<footer>Part of <a href="../index.html">Fala Gringo</a> &mdash; a free study tool ' +
+    'for spoken Brazilian Portuguese, Rio register. No sign-up, works offline.</footer>\n' +
+    '</body>\n</html>\n';
+}
+
+function verbKind(v) {
+  if (v.irregular) return 'irregular verb';
+  const m = v.pt.match(/(ar|er|ir|or)$/);
+  return m ? 'regular -' + m[1] + ' verb' : 'verb';
+}
+
+function tenseTable(v, t) {
+  const rows = v.tenses[t.key];
+  if (!rows) return '';
+  const body = rows.map((r, i) =>
+    '<tr><th scope="row">' + esc(V.persons[i]) + '</th>' +
+    '<td lang="pt-BR"><strong>' + esc(r.form || '&mdash;') + '</strong>' +
+    (r.meaning ? '<span class="vp-gloss">' + esc(r.meaning) + '</span>' : '') + '</td>' +
+    '<td class="vp-pron">' + esc(r.pron || '') + '</td>' +
+    '<td class="vp-ex" lang="pt-BR">' + esc(r.example || '') + '</td></tr>').join('\n');
+  return '<section>\n<h2>' + esc(t.label) + '</h2>\n<div class="vp-scroll"><table>\n' +
+    '<thead><tr><th scope="col">Person</th><th scope="col">Form</th>' +
+    '<th scope="col">Pronunciation</th><th scope="col">Example</th></tr></thead>\n' +
+    '<tbody>\n' + body + '\n</tbody></table></div>\n</section>';
+}
+
+function linkList(verbs) {
+  return '<ul class="vp-links">' + verbs.map(v =>
+    '<li><a href="' + slug(v.pt) + '.html" lang="pt-BR">' + esc(v.pt) + '</a> ' +
+    '<span class="vp-en">' + esc(v.en) + '</span></li>').join('') + '</ul>';
+}
+
+function verbPage(v, prev, next) {
+  const s = slug(v.pt);
+  const tenseLabels = V.tenses.filter(t => v.tenses[t.key]).map(t => t.label);
+  const euForms = V.tenses.filter(t => v.tenses[t.key])
+    .map(t => v.tenses[t.key][0].form).filter(Boolean);
+  const title = v.pt + ' conjugation — Brazilian Portuguese (' + v.en + ') | Fala Gringo';
+  const description = 'Conjugate ' + v.pt + ' (' + v.en + ') in Brazilian Portuguese: ' +
+    euForms.join(', ') + '… ' + tenseLabels.join(', ') +
+    ', with Rio pronunciation and spoken examples.';
+
+  const group = (V.synonyms || []).find(g => g.indexOf(v.pt) !== -1);
+  const syns = group ? group.filter(p => p !== v.pt) : [];
+  const synHtml = syns.length
+    ? '<p class="vp-lede">In spoken Brazilian Portuguese it is interchangeable with ' +
+      syns.map(p => '<a href="' + slug(p) + '.html" lang="pt-BR">' + esc(p) + '</a>')
+        .join(' and ') + ' — the drill accepts any of them.</p>'
+    : '';
+
+  const related = V.verbs.filter(o => o.category === v.category && o.pt !== v.pt);
+
+  const body =
+    '<p class="vp-crumb"><a href="../index.html">Fala Gringo</a> › ' +
+    '<a href="index.html">Verbs</a> › <span lang="pt-BR">' + esc(v.pt) + '</span></p>\n' +
+    '<h1><span lang="pt-BR">' + esc(v.pt) + '</span> <span class="vp-en">— ' +
+    esc(v.en) + '</span></h1>\n' +
+    '<p class="vp-meta">Brazilian Portuguese · ' + verbKind(v) + ' · ' +
+    esc(v.category) + '</p>\n' +
+    '<p class="vp-lede">Full conjugation of <strong lang="pt-BR">' + esc(v.pt) +
+    '</strong> in the tenses that matter for everyday speech, with pronunciation ' +
+    'hints in the Rio (carioca) accent and example sentences the way Brazilians ' +
+    'actually talk — not textbook European Portuguese.</p>\n' + synHtml +
+    '<p><a class="vp-cta" href="../index.html#presente">Drill this verb free →</a></p>\n' +
+    V.tenses.map(t => tenseTable(v, t)).join('\n') + '\n' +
+    (related.length
+      ? '<h2>More “' + esc(v.category) + '” verbs</h2>\n' + linkList(related) + '\n'
+      : '') +
+    '<nav class="vp-prevnext">' +
+    (prev ? '<a href="' + slug(prev.pt) + '.html" lang="pt-BR">← ' + esc(prev.pt) + '</a>' : '<span></span>') +
+    (next ? '<a href="' + slug(next.pt) + '.html" lang="pt-BR">' + esc(next.pt) + ' →</a>' : '<span></span>') +
+    '</nav>';
+
+  return { file: 'verbs/' + s + '.html', url: SITE_URL + '/verbs/' + s + '.html',
+           html: page({ title, description, canonical: SITE_URL + '/verbs/' + s + '.html', body }) };
+}
+
+function indexPage() {
+  const n = V.verbs.length;
+  const title = 'Brazilian Portuguese verb conjugation — all ' + n + ' verbs | Fala Gringo';
+  const description = 'Conjugation of the ' + n + ' most useful Brazilian Portuguese verbs ' +
+    '— presente, pretérito perfeito, imperfeito and imperfeito do subjuntivo — with ' +
+    'Rio pronunciation and spoken examples. Free, no sign-up.';
+  let body =
+    '<p class="vp-crumb"><a href="../index.html">Fala Gringo</a> › Verbs</p>\n' +
+    '<h1>Brazilian Portuguese verbs</h1>\n' +
+    '<p class="vp-lede">The ' + n + ' verbs you actually need for spoken Brazilian ' +
+    'Portuguese, each conjugated in the everyday tenses with pronunciation hints in ' +
+    'the Rio accent and real example sentences. Every form here is drilled by the ' +
+    '<a href="../index.html">free Fala Gringo trainer</a>: you see the English, you ' +
+    'type (or say) the Portuguese.</p>\n' +
+    '<p><a class="vp-cta" href="../index.html#presente">Start drilling free →</a></p>\n';
+  V.categories.forEach(cat => {
+    const list = V.verbs.filter(v => v.category === cat.name);
+    if (!list.length) return;
+    body += '<div class="vp-cat-head"><span class="vp-dot" style="background:' +
+      esc(cat.color) + '"></span>' + esc(cat.name) + '</div>\n' + linkList(list) + '\n';
+  });
+  return { file: 'verbs/index.html', url: SITE_URL + '/verbs/',
+           html: page({ title, description, canonical: SITE_URL + '/verbs/', body }) };
+}
+
+// ---- generate ----------------------------------------------------------------
+
+const slugs = {};
+V.verbs.forEach(v => {
+  const s = slug(v.pt);
+  if (slugs[s]) throw new Error('slug collision: ' + v.pt + ' vs ' + slugs[s]);
+  slugs[s] = v.pt;
+});
+
+mkdir(ROOT + '/verbs');
+
+const sorted = V.verbs.slice().sort((a, b) => a.pt.localeCompare(b.pt, 'pt'));
+const pages = [indexPage()];
+sorted.forEach((v, i) => pages.push(verbPage(v, sorted[i - 1], sorted[i + 1])));
+pages.forEach(p => write(ROOT + '/' + p.file, p.html));
+
+const today = new Date().toISOString().slice(0, 10);
+const urls = [SITE_URL + '/'].concat(pages.map(p => p.url));
+write(ROOT + '/sitemap.xml',
+  '<?xml version="1.0" encoding="UTF-8"?>\n' +
+  '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
+  urls.map(u => '  <url><loc>' + esc(u) + '</loc><lastmod>' + today + '</lastmod></url>')
+    .join('\n') + '\n</urlset>\n');
+
+write(ROOT + '/robots.txt',
+  'User-agent: *\nAllow: /\n\nSitemap: ' + SITE_URL + '/sitemap.xml\n');
+
+console.log('wrote ' + pages.length + ' pages under verbs/, sitemap.xml (' +
+  urls.length + ' urls), robots.txt');
