@@ -51,7 +51,10 @@ js/app.js           hash router + delegated events
 js/version.js       APP_VERSION shown in the footer — bump it in every commit with a user-visible change (patch: fixes/content, minor: feature); the "updated" date comes free from document.lastModified
 js/lib/             text.js (normalize/shuffle), tts.js, stt.js (mic-mode speech recognition + spoken-answer matching), fx.js, sync.js (optional cross-device sync)
 sync-worker/        Cloudflare Worker + KV backend for sync — deployed separately, see its README
-scripts/            check.jxa, smoke.jxa (+ smoke-steps.js), generate-verb-pages.jxa
+manifest.json, sw.js, icons/   installable PWA — sw.js caches offline, keyed to APP_VERSION
+og.png, 404.html    social-share card + not-found page (Cloudflare Pages serves 404.html)
+scripts/            check.jxa, smoke.jxa (+ smoke-steps.js), generate-verb-pages.jxa,
+                    og-image.html + app-icon.html (headless-Chrome sources for og.png/icons/)
 verbs/              GENERATED static per-verb pages (SEO) — never edit by hand;
                     re-run `osascript -l JavaScript scripts/generate-verb-pages.jxa`
                     after any change to js/data/verbs.js and commit the output

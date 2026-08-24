@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<!-- Source for the PWA/home-screen icons (icons/*.png). Full-bleed green with
+     the flag art inside the maskable safe zone; the OS rounds the corners.
+     Regenerate at each size with:
+     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless \
+       --screenshot=icons/icon-512.png --window-size=512,512 --hide-scrollbars \
+       file://$PWD/scripts/app-icon.html    (repeat for 192 and 180) -->
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; }
+  body { width: 100vw; height: 100vh; background: #009c3b; overflow: hidden;
+         display: flex; align-items: center; justify-content: center; }
+  svg { width: 100vw; height: 100vh; }
+</style>
+</head>
+<body>
+  <svg viewBox="0 0 64 64">
+    <polygon points="32,11 53,32 32,53 11,32" fill="#ffdf00"/>
+    <circle cx="32" cy="32" r="10" fill="#002776"/>
+    <path d="M23.8 34.3 Q32 28.8 40.2 34.3" stroke="#ffffff" stroke-width="1.7" fill="none" stroke-linecap="round"/>
+    <circle cx="27.5" cy="30" r="0.65" fill="#ffffff"/>
+    <circle cx="32" cy="27.8" r="0.65" fill="#ffffff"/>
+    <circle cx="36.5" cy="30" r="0.65" fill="#ffffff"/>
+    <circle cx="29" cy="36.6" r="0.65" fill="#ffffff"/>
+    <circle cx="35" cy="37.4" r="0.65" fill="#ffffff"/>
+  </svg>
+</body>
+</html>
