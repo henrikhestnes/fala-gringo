@@ -133,9 +133,9 @@ function page(opts) {
     '<nav><a href="index.html">All verbs</a></nav>' +
     '</header>\n<main>\n' + opts.body + '\n</main>\n' +
     '<footer>Part of <a href="../index.html">Fala Gringo</a> &mdash; a free study tool ' +
-    'for spoken Brazilian Portuguese, Rio register. No sign-up, works offline. ' +
-    'Useful? <a href="https://buymeacoffee.com/henrikhestnes" target="_blank" ' +
-    'rel="noopener">Buy me a cafezinho</a> ☕</footer>\n' +
+    'for spoken Brazilian Portuguese, Rio register. No sign-up, works offline.<br>' +
+    'Feito no Rio ☕ <a href="https://buymeacoffee.com/henrikhestnes" target="_blank" ' +
+    'rel="noopener">Buy me a cafezinho</a></footer>\n' +
     '</body>\n</html>\n';
 }
 
