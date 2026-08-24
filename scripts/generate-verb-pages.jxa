@@ -11,9 +11,8 @@
 
 ObjC.import('Foundation');
 
-// Absolute URLs in canonicals and the sitemap come from here — change on rehost
-// (e.g. to 'https://falagringo.com' once the custom domain is live) and re-run.
-const SITE_URL = 'https://fala-gringo.pages.dev';
+// Absolute URLs in canonicals and the sitemap come from here — change on rehost.
+const SITE_URL = 'https://falagringo.com';
 
 function read(path) {
   const s = $.NSString.stringWithContentsOfFileEncodingError(
