@@ -205,8 +205,11 @@ function verbPage(v, prev, next) {
     (next ? '<a href="' + slug(next.pt) + '.html" lang="pt-BR">' + esc(next.pt) + ' →</a>' : '<span></span>') +
     '</nav>';
 
-  return { file: 'verbs/' + s + '.html', url: SITE_URL + '/verbs/' + s + '.html',
-           html: page({ title, description, canonical: SITE_URL + '/verbs/' + s + '.html', body }) };
+  // Canonical/sitemap URLs are extensionless: Cloudflare Pages serves pretty
+  // URLs and 307-redirects the .html variant, and a canonical must be the URL
+  // that answers 200. Relative hrefs keep .html so pages work from file:// too.
+  return { file: 'verbs/' + s + '.html', url: SITE_URL + '/verbs/' + s,
+           html: page({ title, description, canonical: SITE_URL + '/verbs/' + s, body }) };
 }
 
 function indexPage() {
