@@ -1,0 +1,12 @@
+// Config for the git-connected Cloudflare Worker that serves the site
+// (Workers with static assets — created via the dashboard, name must match).
+// Exists mainly for not_found_handling: without it unknown paths get an
+// empty 404 instead of 404.html.
+{
+  "name": "fala-gringo",
+  "compatibility_date": "2026-08-24",
+  "assets": {
+    "directory": ".",
+    "not_found_handling": "404-page"
+  }
+}

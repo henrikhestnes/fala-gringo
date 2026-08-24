@@ -52,7 +52,9 @@ js/version.js       APP_VERSION shown in the footer — bump it in every commit 
 js/lib/             text.js (normalize/shuffle), tts.js, stt.js (mic-mode speech recognition + spoken-answer matching), fx.js, sync.js (optional cross-device sync)
 sync-worker/        Cloudflare Worker + KV backend for sync — deployed separately, see its README
 manifest.json, sw.js, icons/   installable PWA — sw.js caches offline, keyed to APP_VERSION
-og.png, 404.html    social-share card + not-found page (Cloudflare Pages serves 404.html)
+og.png, 404.html    social-share card + not-found page
+wrangler.jsonc      config for the git-connected Cloudflare Worker serving the site
+                    (static assets; not_found_handling makes it serve 404.html)
 scripts/            check.jxa, smoke.jxa (+ smoke-steps.js), generate-verb-pages.jxa,
                     og-image.html + app-icon.html (headless-Chrome sources for og.png/icons/)
 verbs/              GENERATED static per-verb pages (SEO) — never edit by hand;
