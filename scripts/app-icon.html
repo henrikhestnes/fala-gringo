@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <!-- Source for the PWA/home-screen icons (icons/*.png). Full-bleed green with
      the flag art inside the maskable safe zone; the OS rounds the corners.
-     Regenerate at each size with:
+     Render ONCE at 512 and downscale — headless Chrome clamps its window to a
+     minimum larger than 192, so smaller sizes come out as a corner crop:
      "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless \
        --screenshot=icons/icon-512.png --window-size=512,512 --hide-scrollbars \
-       file://$PWD/scripts/app-icon.html    (repeat for 192 and 180) -->
+       file://$PWD/scripts/app-icon.html
+     sips -z 192 192 icons/icon-512.png --out icons/icon-192.png
+     sips -z 180 180 icons/icon-512.png --out icons/apple-touch-icon.png -->
 <html>
 <head>
 <meta charset="UTF-8">
