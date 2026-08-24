@@ -11,7 +11,7 @@
 // 1.4 three-state theme (auto follows the system) · 1.5 mic mode (hands-free spoken answers)
 // 1.6 static per-verb pages under verbs/ (crawlable + sitemap)
 
-const APP_VERSION = '1.6.0';
+const APP_VERSION = '1.6.1';
 
 (function () {
   const el = document.getElementById('buildInfo');
