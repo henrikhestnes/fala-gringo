@@ -1,0 +1,14 @@
+{
+  "name": "Fala Gringo",
+  "short_name": "Fala Gringo",
+  "description": "Type-the-answer drills for spoken Brazilian Portuguese",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f0e2",
+  "theme_color": "#009c3b",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

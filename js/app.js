@@ -181,6 +181,13 @@
   updateModeButton();
   route();
 
+  // Installable/offline (sw.js): needs a secure origin — from file:// the app
+  // simply runs without it, same degradation as mic mode.
+  if ('serviceWorker' in navigator &&
+      (location.protocol === 'https:' || location.hostname === 'localhost')) {
+    navigator.serviceWorker.register('sw.js');
+  }
+
   // sync.js re-renders through this after pulling remote progress
   window.App = { refresh: route };
 })();
