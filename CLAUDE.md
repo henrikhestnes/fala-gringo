@@ -71,9 +71,9 @@ The key design decision: instead of one drill engine per topic (each topic's raw
 
 `js/data/verbs.js` is the **source of truth for verb forms** — 124 verbs, forms stored explicitly rather than generated at runtime, so a pronunciation hint hangs off each form. A curated 40-verb core additionally carries the imperfect subjunctive. `js/conjugate.js` exists only to independently verify the regular verbs.
 
-## /ingles/ — English for Brazilians (subpage)
+## /ingles/ — Fala Como Gringo, English for Brazilians (subpage)
 
-The inverse product on the same engine: a Portuguese speaker is shown Portuguese and types **American English**. It lives at `/ingles/` and shares `js/quiz.js`, `js/app.js`, `js/progress.js`, `js/lib/` and `css/app.css` verbatim — no forked engine code. The direction flip is entirely configuration, set in an inline `<script>` in `ingles/index.html` **before** the engine loads:
+The inverse product on the same engine, branded **Fala Como Gringo**: a Portuguese speaker is shown Portuguese and types **American English**. It lives at `/ingles/` and shares `js/quiz.js`, `js/app.js`, `js/progress.js`, `js/lib/` and `css/app.css` verbatim — no forked engine code. The direction flip is entirely configuration, set in an inline `<script>` in `ingles/index.html` **before** the engine loads:
 
 - `window.APP_LANG = 'en-US'` — TTS voice + mic-mode recognizer language (and it disables the Portuguese spoken-digit expansion in `stt.js`).
 - `window.APP_STORE_KEY = 'fg-ingles:v1'` — its own localStorage blob; the two apps' progress must never mix (also why the subpage does not load `js/lib/sync.js`: the sync backend keys by sync code, not by app).
