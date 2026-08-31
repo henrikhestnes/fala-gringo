@@ -1,5 +1,6 @@
-// Brazilian-Portuguese speech recognition via the Web Speech API — the mirror
-// of tts.js. Backs mic mode (the 🎤 chip in quiz.js): the learner speaks the
+// Speech recognition via the Web Speech API — the mirror of tts.js, and like
+// it listening in pt-BR unless the page sets window.APP_LANG first.
+// Backs mic mode (the 🎤 chip in quiz.js): the learner speaks the
 // answer instead of typing it. Chrome/Edge (webkitSpeechRecognition; the audio
 // goes to Google's servers, so it needs a network) and Safari 14.1+ support it;
 // where the API is missing the chip never renders and the app behaves exactly
@@ -18,7 +19,7 @@ const Stt = (function () {
     abort();
     if (!Ctor) { handlers.onError('unsupported'); return; }
     rec = new Ctor();
-    rec.lang = 'pt-BR';
+    rec.lang = window.APP_LANG || 'pt-BR';
     rec.interimResults = true;   // live transcript into the answer box
     rec.maxAlternatives = 5;     // grade every hypothesis, not just the top one
     rec.continuous = false;
@@ -113,10 +114,12 @@ function expandSpokenDigits(text) {
 /* The string to submit for a recognition result, or null when no hypothesis is
    correct: the matching accepted spelling if any alternative (raw or with its
    digits expanded) hits, and '' for a spoken "nada" on a card whose right
-   answer is nothing (the connecting topic's empty gaps). */
+   answer is nothing (the connecting topic's empty gaps). The digit expansion
+   is Portuguese-specific, so it only runs when the app listens in Portuguese. */
 function micAnswer(card, alternatives) {
+  const isPt = (window.APP_LANG || 'pt-BR').slice(0, 2).toLowerCase() === 'pt';
   for (const alt of alternatives) {
-    for (const cand of [alt, expandSpokenDigits(alt)]) {
+    for (const cand of isPt ? [alt, expandSpokenDigits(alt)] : [alt]) {
       const key = normalize(cand);
       const hit = card.accepted.find(a => normalize(a) === key);
       if (hit !== undefined) return hit;

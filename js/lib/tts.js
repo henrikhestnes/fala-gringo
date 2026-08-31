@@ -1,6 +1,8 @@
-// Brazilian-Portuguese text-to-speech via the Web Speech API.
-// Carried over unchanged from the original single-file study tool — this is the
-// capability the flashcards repo lacks, and it now backs every topic.
+// Text-to-speech via the Web Speech API. Speaks pt-BR by default; a page can
+// set window.APP_LANG before loading this file to speak another language
+// (the /ingles/ subpage sets 'en-US'). Carried over from the original
+// single-file study tool — this is the capability the flashcards repo lacks,
+// and it now backs every topic.
 
 const SPEAKER_SVG =
   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
@@ -9,16 +11,22 @@ const SPEAKER_SVG =
   '<path d="M15.5 8.5a5 5 0 0 1 0 7"></path>' +
   '<path d="M19 5a9 9 0 0 1 0 14"></path></svg>';
 
-let ptVoice = null;
+const TTS_LANG = window.APP_LANG || 'pt-BR';
+// the best plain-system voice per language family (Luciana is Apple's pt-BR)
+const TTS_FAVOURITE = { pt: /luciana/i, en: /samantha/i };
+
+let ttsVoice = null;
 
 function loadVoices() {
   const voices = window.speechSynthesis ? speechSynthesis.getVoices() : [];
-  const isPt = v => v.lang && v.lang.toLowerCase().startsWith('pt');
-  ptVoice = voices.find(v => isPt(v) && /luciana/i.test(v.name))
-         || voices.find(v => v.lang === 'pt-BR' && /google|natural|premium|enhanced/i.test(v.name))
-         || voices.find(v => v.lang === 'pt-BR')
-         || voices.find(isPt)
-         || null;
+  const family = TTS_LANG.slice(0, 2).toLowerCase();
+  const inFamily = v => v.lang && v.lang.toLowerCase().startsWith(family);
+  const favourite = TTS_FAVOURITE[family];
+  ttsVoice = (favourite ? voices.find(v => inFamily(v) && favourite.test(v.name)) : null)
+          || voices.find(v => v.lang === TTS_LANG && /google|natural|premium|enhanced/i.test(v.name))
+          || voices.find(v => v.lang === TTS_LANG)
+          || voices.find(inFamily)
+          || null;
 }
 
 if (typeof window !== 'undefined' && window.speechSynthesis) {
@@ -32,9 +40,9 @@ function speak(text, btn, onDone) {
   document.querySelectorAll('.speak-btn.playing').forEach(b => b.classList.remove('playing'));
 
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = 'pt-BR';
+  utterance.lang = TTS_LANG;
   utterance.rate = 0.9;
-  if (ptVoice) utterance.voice = ptVoice;
+  if (ttsVoice) utterance.voice = ttsVoice;
 
   // onDone (mic mode's auto-advance) fires exactly once, whether the utterance
   // finishes or is cancelled by a later speak()

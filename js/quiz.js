@@ -5,6 +5,52 @@
 // you get it right. Batching is gone; a deck is the whole topic minus any group
 // chips you switch off, filtered to the Foco cards while the 🎯 chip is on (the default).
 
+/* Every user-facing string in the engine, so a page teaching another language
+   can reword the chrome (window.APP_STRINGS, set before this file loads — the
+   /ingles/ subpage swaps these for Portuguese). '{name}' slots go through
+   tfill(). Card-level text (prompt, sub, tips) comes from the topic builders
+   and needs nothing here. */
+const QUIZ_STRINGS = Object.assign({
+  focoTitle: 'The cards needing work: new, missed (until answered right {streak} times ' +
+             'in a row) and reviews due after {days} days. Switch off to drill the whole deck.',
+  focoChip: '🎯 Foco',
+  micTitle: 'Mic mode: speak the answer instead of typing — it is recognized, ' +
+            'submitted and read back, and the deck advances hands-free.',
+  micChip: '🎤 Falar',
+  masteredLine: '{n} of {total} cards mastered',
+  easyTag: ' · Easy Mode',
+  reset: 'reset',
+  statTotal: 'Total',
+  statKnown: 'Known',
+  statLeft: 'Left',
+  emptyFocoTitle: 'Tudo em dia! 🎯',
+  emptyFocoBody: 'Every card here is mastered and fresh. Reviews come due after {days} days ' +
+                 '— or switch the Foco chip off to drill the whole deck now.',
+  emptyTitle: 'No cards',
+  emptyBody: 'Every category is switched off — turn one back on above.',
+  placeholder: 'fala aí…',
+  skip: 'Skip →',
+  restart: 'Restart ↻',
+  doneTitlePerfect: 'Perfeito!',
+  doneTitle: 'Fechou!',
+  clearedAll: 'You cleared all {n} cards',
+  clearedPerfect: ' without a single mistake.',
+  errorsMade: 'Errors made',
+  hardCards: 'Hard Mode cards',
+  startOver: 'Start over ↻',
+  answerIs: 'The answer is',
+  listening: 'Ouvindo… fala aí',
+  listeningEmpty: ' — diga “nada” se nada falta na lacuna',
+  micResumeSuffix: ' — tap to listen again',
+  micErrors: {
+    'no-speech': 'Não ouvi nada',
+    'not-allowed': 'Mic blocked — allow microphone access (needs https or localhost)',
+    'service-not-allowed': 'Mic blocked — allow microphone access (needs https or localhost)',
+    'audio-capture': 'No microphone found',
+    'network': 'Speech service unreachable — are you online?'
+  }
+}, window.APP_STRINGS || {});
+
 const Quiz = (function () {
   let topic = null;
   let deck = [];
@@ -23,13 +69,7 @@ const Quiz = (function () {
   const MIC_RETRIES = 3;       // silent listens before pausing with a resume button
   const MIC_NEXT_OK = 1100;    // ms after the answer audio before auto-advancing
   const MIC_NEXT_MISS = 3200;  // longer on a miss — time to read the reveal
-  const MIC_ERROR_TEXT = {
-    'no-speech': 'Não ouvi nada',
-    'not-allowed': 'Mic blocked — allow microphone access (needs https or localhost)',
-    'service-not-allowed': 'Mic blocked — allow microphone access (needs https or localhost)',
-    'audio-capture': 'No microphone found',
-    'network': 'Speech service unreachable — are you online?'
-  };
+  const MIC_ERROR_TEXT = QUIZ_STRINGS.micErrors;
 
   function acceptedFor(card) {
     const set = new Set();
@@ -104,32 +144,31 @@ const Quiz = (function () {
       '" data-group="' + escapeHtml(g) + '">' + escapeHtml(g) + '</button>').join('');
     const shaky = focusCards(topicCards(topic)).length;
     const focusChip = '<button class="chip focus' + (focusOn() ? ' active' : '') +
-      '" data-focus="1" title="The cards needing work: new, missed (until answered right ' +
-      FOCUS_STREAK + ' times in a row) and reviews due after ' + REVIEW_DAYS +
-      ' days. Switch off to drill the whole deck.">🎯 Foco' +
-      (shaky ? ' · ' + shaky : '') + '</button>';
+      '" data-focus="1" title="' +
+      escapeHtml(tfill(QUIZ_STRINGS.focoTitle, { streak: FOCUS_STREAK, days: REVIEW_DAYS })) +
+      '">' + QUIZ_STRINGS.focoChip + (shaky ? ' · ' + shaky : '') + '</button>';
     const micChip = (typeof Stt !== 'undefined' && Stt.supported())
       ? '<button class="chip mic' + (micOn() ? ' active' : '') +
-        '" data-mic="1" title="Mic mode: speak the answer instead of typing — it is ' +
-        'recognized, submitted and read back, and the deck advances hands-free.">🎤 Falar</button>'
+        '" data-mic="1" title="' + escapeHtml(QUIZ_STRINGS.micTitle) + '">' +
+        QUIZ_STRINGS.micChip + '</button>'
       : '';
     const total = topicCards(topic).length;
     const mastered = Store.masteredCount(topic.id);
     return '' +
       '<div class="view-head">' +
         '<h1>' + escapeHtml(topic.label) + '</h1>' +
-        '<p>' + mastered + ' of ' + total + ' cards mastered' +
-        (Mode.hard ? '' : ' · Easy Mode') +
+        '<p>' + tfill(QUIZ_STRINGS.masteredLine, { n: mastered, total: total }) +
+        (Mode.hard ? '' : QUIZ_STRINGS.easyTag) +
         (mastered > 0
           ? ' · <button class="reset-link" type="button" data-reset-topic="' +
-            escapeHtml(topic.id) + '">reset</button>'
+            escapeHtml(topic.id) + '">' + QUIZ_STRINGS.reset + '</button>'
           : '') + '</p>' +
       '</div>' +
       '<div class="filters" id="filterRow">' + focusChip + micChip + chips + '</div>' +
       '<div class="stats">' +
-        '<div class="stat"><div class="stat-num" id="statTotal">0</div><div class="stat-lbl">Total</div></div>' +
-        '<div class="stat"><div class="stat-num green" id="statKnown">0</div><div class="stat-lbl">Known</div></div>' +
-        '<div class="stat"><div class="stat-num red" id="statLeft">0</div><div class="stat-lbl">Left</div></div>' +
+        '<div class="stat"><div class="stat-num" id="statTotal">0</div><div class="stat-lbl">' + QUIZ_STRINGS.statTotal + '</div></div>' +
+        '<div class="stat"><div class="stat-num green" id="statKnown">0</div><div class="stat-lbl">' + QUIZ_STRINGS.statKnown + '</div></div>' +
+        '<div class="stat"><div class="stat-num red" id="statLeft">0</div><div class="stat-lbl">' + QUIZ_STRINGS.statLeft + '</div></div>' +
       '</div>' +
       '<div class="progress-row">' +
         '<div class="progress-bg"><div class="progress-fill" id="progressBar" style="width:0%"></div></div>' +
@@ -166,11 +205,10 @@ const Quiz = (function () {
 
     if (deck.length === 0) {
       area.innerHTML = focusOn()
-        ? '<div class="card empty"><h2>Tudo em dia! 🎯</h2>' +
-          '<p>Every card here is mastered and fresh. Reviews come due after ' +
-          REVIEW_DAYS + ' days — or switch the Foco chip off to drill the whole deck now.</p></div>'
-        : '<div class="card empty"><h2>No cards</h2>' +
-          '<p>Every category is switched off — turn one back on above.</p></div>';
+        ? '<div class="card empty"><h2>' + QUIZ_STRINGS.emptyFocoTitle + '</h2>' +
+          '<p>' + tfill(QUIZ_STRINGS.emptyFocoBody, { days: REVIEW_DAYS }) + '</p></div>'
+        : '<div class="card empty"><h2>' + QUIZ_STRINGS.emptyTitle + '</h2>' +
+          '<p>' + QUIZ_STRINGS.emptyBody + '</p></div>';
       return;
     }
 
@@ -192,7 +230,8 @@ const Quiz = (function () {
         (card.target ? '<div class="card-target">' + card.target + '</div>' : '') +
         '<div class="card-sub">' + escapeHtml(card.sub) + '</div>' +
         '<div class="input-row">' +
-          '<input class="answer-input" id="answerInput" type="text" placeholder="fala aí…" ' +
+          '<input class="answer-input" id="answerInput" type="text" placeholder="' +
+            escapeHtml(QUIZ_STRINGS.placeholder) + '" ' +
             'autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" ' +
             'enterkeyhint="go" />' +
           '<button class="check-btn" id="actionBtn" type="button" aria-label="Check answer">&rarr;</button>' +
@@ -202,8 +241,8 @@ const Quiz = (function () {
         '<div id="revealArea"></div>' +
       '</div>' +
       '<div class="controls">' +
-        '<button class="btn" id="skipBtn" type="button">Skip &rarr;</button>' +
-        '<button class="btn" id="restartBtn" type="button">Restart &#8635;</button>' +
+        '<button class="btn" id="skipBtn" type="button">' + escapeHtml(QUIZ_STRINGS.skip) + '</button>' +
+        '<button class="btn" id="restartBtn" type="button">' + escapeHtml(QUIZ_STRINGS.restart) + '</button>' +
       '</div>';
 
     answered = false;
@@ -221,20 +260,21 @@ const Quiz = (function () {
   }
 
   function renderDone(area) {
-    const title = perfect ? 'Perfeito!' : 'Fechou!';
+    const title = perfect ? QUIZ_STRINGS.doneTitlePerfect : QUIZ_STRINGS.doneTitle;
     area.innerHTML = '' +
       '<div class="card done-screen">' +
         '<div class="trophy">' + (perfect ? '🎆' : '🏆') + '</div>' +
         '<h2>' + title + '</h2>' +
-        '<p>You cleared all ' + deck.length + ' cards' +
-          (perfect ? ' without a single mistake.' : '.') + '</p>' +
+        '<p>' + tfill(QUIZ_STRINGS.clearedAll, { n: deck.length }) +
+          (perfect ? QUIZ_STRINGS.clearedPerfect : '.') + '</p>' +
         '<div class="result-stats">' +
           '<div class="result-stat"><div class="result-stat-num red">' + stats.errors +
-            '</div><div class="result-stat-lbl">Errors made</div></div>' +
+            '</div><div class="result-stat-lbl">' + QUIZ_STRINGS.errorsMade + '</div></div>' +
           '<div class="result-stat"><div class="result-stat-num accent">' + stats.hardSolved +
-            '</div><div class="result-stat-lbl">Hard Mode cards</div></div>' +
+            '</div><div class="result-stat-lbl">' + QUIZ_STRINGS.hardCards + '</div></div>' +
         '</div>' +
-        '<button class="btn primary" id="againBtn" type="button">Start over &#8635;</button>' +
+        '<button class="btn primary" id="againBtn" type="button">' +
+          escapeHtml(QUIZ_STRINGS.startOver) + '</button>' +
       '</div>';
     document.getElementById('againBtn').addEventListener('click', buildDeck);
     if (perfect) launchFireworks();
@@ -259,8 +299,8 @@ const Quiz = (function () {
   function startMic() {
     const card = deck[current];
     const gen = micGen;
-    setMicStatus('<span class="mic-dot"></span>Ouvindo… fala aí' +
-      (card.allowEmpty ? ' — diga “nada” se nada falta na lacuna' : ''));
+    setMicStatus('<span class="mic-dot"></span>' + escapeHtml(QUIZ_STRINGS.listening) +
+      (card.allowEmpty ? escapeHtml(QUIZ_STRINGS.listeningEmpty) : ''));
     Stt.listen({
       onInterim: t => {
         if (gen !== micGen || answered) return;
@@ -281,8 +321,8 @@ const Quiz = (function () {
         if (gen !== micGen || answered) return;
         if (code === 'no-speech' && micRetries < MIC_RETRIES) { micRetries++; startMic(); return; }
         setMicStatus('<button type="button" class="mic-resume" data-mic-resume="1">🎤 ' +
-          escapeHtml(MIC_ERROR_TEXT[code] || 'Mic error (' + code + ')') +
-          ' — tap to listen again</button>');
+          escapeHtml((MIC_ERROR_TEXT[code] || 'Mic error (' + code + ')') +
+                     QUIZ_STRINGS.micResumeSuffix) + '</button>');
       }
     });
   }
@@ -344,7 +384,8 @@ const Quiz = (function () {
       setTimeout(() => input.classList.remove('shake'), 340);
       btn.classList.add('go-red');
       feedback.className = 'feedback err';
-      feedback.innerHTML = '✗ ' + missWord() + ' The answer is <strong>' + escapeHtml(card.answer) + '</strong>' + pron + say;
+      feedback.innerHTML = '✗ ' + missWord() + ' ' + QUIZ_STRINGS.answerIs +
+        ' <strong>' + escapeHtml(card.answer) + '</strong>' + pron + say;
       revealArea.innerHTML = card.reveal || '';
     }
 
