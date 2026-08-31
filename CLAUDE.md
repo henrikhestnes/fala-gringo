@@ -24,13 +24,15 @@ Any new card, example, gloss, or pronunciation must follow these conventions. Wh
 Two headless check suites, run with the JavaScriptCore engine bundled with macOS — no toolchain needed:
 
 ```sh
-osascript -l JavaScript scripts/check.jxa    # data invariants
-osascript -l JavaScript scripts/smoke.jxa    # app behaviour, against a DOM stub
+osascript -l JavaScript scripts/check.jxa           # data invariants
+osascript -l JavaScript scripts/smoke.jxa           # app behaviour, against a DOM stub
+osascript -l JavaScript scripts/check-ingles.jxa    # /ingles/ data invariants
+osascript -l JavaScript scripts/smoke-ingles.jxa    # /ingles/ behaviour
 ```
 
-`verify.html` runs the same data checks in a browser (just open it). There is no build, lint, or package manager; there is no single-test runner — the suites are fast, run them whole.
+`verify.html` runs the main data checks in a browser (just open it). There is no build, lint, or package manager; there is no single-test runner — the suites are fast, run them whole.
 
-**Run both suites after any change to `js/` data or logic.** The checks are the safety net for hand-maintained data.
+**Run all suites after any change to `js/` data or logic** (the engine is shared with `/ingles/`, so an engine change can break either app). The checks are the safety net for hand-maintained data.
 
 ## Architecture
 
@@ -55,7 +57,9 @@ manifest.json, sw.js, icons/   installable PWA — sw.js caches offline, keyed t
 og.png, 404.html    social-share card + not-found page
 wrangler.jsonc      config for the git-connected Cloudflare Worker serving the site
                     (static assets; not_found_handling makes it serve 404.html)
-scripts/            check.jxa, smoke.jxa (+ smoke-steps.js), generate-verb-pages.jxa,
+ingles/             English-for-Brazilians subpage on the SAME engine — see its section below
+scripts/            check.jxa, smoke.jxa (+ smoke-steps.js, dom-stub.js), check-ingles.jxa,
+                    smoke-ingles.jxa (+ smoke-ingles-steps.js), generate-verb-pages.jxa,
                     og-image.html + app-icon.html (headless-Chrome sources for og.png/icons/)
 verbs/              GENERATED static per-verb pages (SEO) — never edit by hand;
                     re-run `osascript -l JavaScript scripts/generate-verb-pages.jxa`
@@ -66,6 +70,19 @@ verbs/              GENERATED static per-verb pages (SEO) — never edit by hand
 The key design decision: instead of one drill engine per topic (each topic's raw data has a different schema), `js/topics.js` normalises everything into one card shape — `{ id, topic, group, meta, hint, prompt, sub, accepted[], answer, pron, speak, reveal, allowEmpty }` — and `js/quiz.js` drives all of them.
 
 `js/data/verbs.js` is the **source of truth for verb forms** — 124 verbs, forms stored explicitly rather than generated at runtime, so a pronunciation hint hangs off each form. A curated 40-verb core additionally carries the imperfect subjunctive. `js/conjugate.js` exists only to independently verify the regular verbs.
+
+## /ingles/ — English for Brazilians (subpage)
+
+The inverse product on the same engine: a Portuguese speaker is shown Portuguese and types **American English**. It lives at `/ingles/` and shares `js/quiz.js`, `js/app.js`, `js/progress.js`, `js/lib/` and `css/app.css` verbatim — no forked engine code. The direction flip is entirely configuration, set in an inline `<script>` in `ingles/index.html` **before** the engine loads:
+
+- `window.APP_LANG = 'en-US'` — TTS voice + mic-mode recognizer language (and it disables the Portuguese spoken-digit expansion in `stt.js`).
+- `window.APP_STORE_KEY = 'fg-ingles:v1'` — its own localStorage blob; the two apps' progress must never mix (also why the subpage does not load `js/lib/sync.js`: the sync backend keys by sync code, not by app).
+- `window.APP_STRINGS` — Portuguese UI wording for the engine chrome (see `QUIZ_STRINGS` in quiz.js and `APP_STR` in app.js for every overridable key). Card-level text comes from `ingles/js/topics.js`.
+- `window.SW_PATH = '../sw.js'` — both apps register the one root service worker; the subpage's files are in its CORE list.
+
+`ingles/js/topics.js` mirrors the root registry contract (`TOPICS`, `topicById`, `topicCards`, `topicGroups`, `allQuizCards`) and normalises into the same card shape. There is no Browse or Daily tab; `app.js` falls back to `TOPICS[0]`.
+
+Conventions for its content (`ingles/js/data/`): everything the learner **reads** is carioca Portuguese (the ⚠️ rule above applies to the UI and glosses); everything the learner **types/hears** is American English. Pronunciation hints are aportuguesadas for Brazilian ears (`had` = `rréd`, English *h* written as carioca *rr*). The no-ambiguous-prompts invariant is mirrored: a `pt` gloss + meta must identify exactly one English answer (`fazer (ação, tarefa)` = do vs `fazer (criar, produzir)` = make), enforced by `scripts/check-ingles.jxa`.
 
 ## Correctness invariants (enforced by the checks)
 

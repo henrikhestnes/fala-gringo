@@ -35,6 +35,13 @@ function emphasize(escaped) {
   return escaped.replace(/\*\*(.+?)\*\*/g, '<em>$1</em>');
 }
 
+/* '{name}' placeholders -> values; used by the UI-string tables so a page can
+   override the engine's wording (window.APP_STRINGS) in another language. */
+function tfill(str, map) {
+  return String(str).replace(/\{(\w+)\}/g, (m, k) =>
+    Object.prototype.hasOwnProperty.call(map, k) ? map[k] : m);
+}
+
 function formatCount(n, singular, plural) {
   return n + ' ' + (n === 1 ? singular : (plural || singular + 's'));
 }

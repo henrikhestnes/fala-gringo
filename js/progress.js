@@ -1,8 +1,10 @@
 // Persistent state: per-card mastery, mode preferences, daily results.
 // One localStorage key, wrapped in try/catch so private browsing degrades to
-// an in-memory session instead of throwing.
+// an in-memory session instead of throwing. A page sharing this engine sets
+// window.APP_STORE_KEY before loading this file to keep its own progress blob
+// (the /ingles/ subpage does) — the two apps must never mix mastery data.
 
-const STORE_KEY = 'pvs:v1';
+const STORE_KEY = window.APP_STORE_KEY || 'pvs:v1';
 
 /* Correct answers in a row (since the last miss) before a card stops counting
    as shaky and drops out of the Foco deck. */

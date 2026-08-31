@@ -4,6 +4,14 @@
 (function () {
   const view = () => document.getElementById('view');
 
+  // overridable UI wording, same contract as quiz.js (the /ingles/ subpage
+  // sets window.APP_STRINGS to Portuguese before the engine loads)
+  const APP_STR = Object.assign({
+    modeHardTitle: 'Modo Raiz (hardcore): no Portuguese shown. Tap for Modo Nutella.',
+    modeEasyTitle: 'Modo Nutella (soft): the Portuguese infinitive is shown as a hint. Tap for Modo Raiz.',
+    resetConfirm: 'Reset mastered progress for "{label}"?'
+  }, window.APP_STRINGS || {});
+
   /* ------------------------------------------------------------- theming */
 
   function themePref() {
@@ -86,16 +94,16 @@
     // "Raiz vs Nutella" is Brazil's own meme for hardcore vs soft.
     btn.setAttribute('aria-pressed', Mode.hard ? 'true' : 'false');
     btn.textContent = Mode.hard ? 'Modo Raiz' : 'Modo Nutella';
-    btn.title = Mode.hard
-      ? 'Modo Raiz (hardcore): no Portuguese shown. Tap for Modo Nutella.'
-      : 'Modo Nutella (soft): the Portuguese infinitive is shown as a hint. Tap for Modo Raiz.';
+    btn.title = Mode.hard ? APP_STR.modeHardTitle : APP_STR.modeEasyTitle;
   }
 
   /* -------------------------------------------------------------- routing */
 
   function currentTopicId() {
     const id = (location.hash || '').replace(/^#/, '');
-    return topicById(id) ? id : 'browse';
+    // fall back to the first registered topic ('browse' in the main app; the
+    // /ingles/ subpage has no browse tab, so its first drill is the default)
+    return topicById(id) ? id : TOPICS[0].id;
   }
 
   function route() {
@@ -143,7 +151,7 @@
       const t = topicById(rst.dataset.resetTopic);
       // confirm() is absent in the headless smoke stub; treat that as a yes
       if (t && (typeof window.confirm !== 'function' ||
-                window.confirm('Reset mastered progress for "' + t.label + '"?'))) {
+                window.confirm(tfill(APP_STR.resetConfirm, { label: t.label })))) {
         Store.resetTopic(t.id);
         view().dataset.topic = '';  // force the quiz chrome (mastered count) to rebuild
         route();
@@ -185,7 +193,8 @@
   // simply runs without it, same degradation as mic mode.
   if ('serviceWorker' in navigator &&
       (location.protocol === 'https:' || location.hostname === 'localhost')) {
-    navigator.serviceWorker.register('sw.js');
+    // one root worker serves both apps; a subpage points back up at it
+    navigator.serviceWorker.register(window.SW_PATH || 'sw.js');
   }
 
   // sync.js re-renders through this after pulling remote progress

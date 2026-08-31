@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#009c3b">
+<title>Fala Gringo · Inglês — inglês para brasileiros</title>
+<meta name="description" content="Treine inglês americano digitando as respostas: verbos irregulares com pronúncia aproximada para ouvidos brasileiros. Grátis, sem cadastro.">
+<link rel="canonical" href="https://falagringo.com/ingles/">
+<meta property="og:title" content="Fala Gringo · Inglês — inglês para brasileiros">
+<meta property="og:description" content="Treine inglês americano digitando as respostas. Grátis, sem cadastro.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://falagringo.com/ingles/">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='10' fill='%23b22234'/><rect y='9' width='64' height='7' fill='%23ffffff'/><rect y='23' width='64' height='7' fill='%23ffffff'/><rect y='37' width='64' height='7' fill='%23ffffff'/><rect y='51' width='64' height='7' fill='%23ffffff'/><rect width='30' height='30' rx='10' fill='%233c3b6e'/><circle cx='9' cy='9' r='2.2' fill='%23ffffff'/><circle cx='21' cy='9' r='2.2' fill='%23ffffff'/><circle cx='15' cy='15' r='2.2' fill='%23ffffff'/><circle cx='9' cy='21' r='2.2' fill='%23ffffff'/><circle cx='21' cy='21' r='2.2' fill='%23ffffff'/></svg>">
+<link rel="stylesheet" href="../css/app.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <span class="brand">
+      <svg class="brand-flag" viewBox="0 0 28 20" aria-hidden="true">
+        <rect width="28" height="20" rx="4.5" fill="#b22234"/>
+        <rect y="3" width="28" height="2.2" fill="#ffffff"/>
+        <rect y="7.4" width="28" height="2.2" fill="#ffffff"/>
+        <rect y="11.8" width="28" height="2.2" fill="#ffffff"/>
+        <rect y="16.2" width="28" height="2.2" fill="#ffffff"/>
+        <rect width="12.5" height="9.6" rx="4.5" fill="#3c3b6e"/>
+        <circle cx="4" cy="3.4" r="0.9" fill="#ffffff"/>
+        <circle cx="8.5" cy="3.4" r="0.9" fill="#ffffff"/>
+        <circle cx="6.2" cy="6.4" r="0.9" fill="#ffffff"/>
+      </svg>
+      Fala Gringo · Inglês</span>
+    <button class="mode-btn" id="modeBtn" type="button" aria-pressed="true">Modo Raiz</button>
+    <button class="icon-btn" id="themeBtn" type="button" aria-label="Alternar tema" title="Alternar tema">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+        <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path>
+      </svg>
+    </button>
+  </div>
+  <nav class="tabs" id="tabs" role="tablist" aria-label="Tópicos de estudo"></nav>
+</header>
+
+<main id="view"></main>
+
+<footer>
+  Inglês americano para brasileiros &mdash; digite a resposta em inglês.<br>
+  <a href="../">&larr; Fala Gringo — português para gringos</a><br>
+  Feito no Rio ☕ <a href="https://buymeacoffee.com/henrikhestnes" target="_blank" rel="noopener">Me paga um cafezinho</a>
+  <span class="build-info" id="buildInfo"></span>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<!-- Mesma arquitetura do app principal: scripts clássicos, sem build. O motor
+     (quiz.js, app.js, progress.js, js/lib/) é COMPARTILHADO com a raiz; este
+     bloco de configuração roda antes dele e inverte a direção: fala/ouve
+     en-US, guarda o progresso em outra chave e traduz o chrome para PT. -->
+<script>
+window.APP_LANG = 'en-US';
+window.APP_STORE_KEY = 'fg-ingles:v1';
+window.SW_PATH = '../sw.js';
+window.APP_STRINGS = {
+  focoTitle: 'As cartas que precisam de atenção: novas, erradas (até acertar {streak} ' +
+             'vezes seguidas) e revisões após {days} dias. Desligue para treinar o baralho inteiro.',
+  focoChip: '🎯 Foco',
+  micTitle: 'Modo mic: fale a resposta em inglês em vez de digitar — ela é reconhecida, ' +
+            'corrigida e lida de volta, e o baralho avança sozinho.',
+  micChip: '🎤 Speak',
+  masteredLine: '{n} de {total} cartas dominadas',
+  easyTag: ' · Modo Nutella',
+  reset: 'zerar',
+  statTotal: 'Total',
+  statKnown: 'Certas',
+  statLeft: 'Faltam',
+  emptyFocoTitle: 'Tudo em dia! 🎯',
+  emptyFocoBody: 'Todas as cartas daqui estão dominadas e frescas. As revisões voltam após ' +
+                 '{days} dias — ou desligue o Foco para treinar tudo agora.',
+  emptyTitle: 'Sem cartas',
+  emptyBody: 'Todas as categorias estão desligadas — religue uma acima.',
+  placeholder: 'escreva em inglês…',
+  skip: 'Pular →',
+  restart: 'Recomeçar ↻',
+  doneTitlePerfect: 'Perfect!',
+  doneTitle: 'Fechou!',
+  clearedAll: 'Você fechou todas as {n} cartas',
+  clearedPerfect: ' sem errar nenhuma.',
+  errorsMade: 'Erros',
+  hardCards: 'Cartas no Modo Raiz',
+  startOver: 'De novo ↻',
+  answerIs: 'A resposta é',
+  listening: 'Ouvindo… manda aí, em inglês',
+  listeningEmpty: ' — diga “nada” se nada falta na lacuna',
+  micResumeSuffix: ' — toque para ouvir de novo',
+  micErrors: {
+    'no-speech': 'Não ouvi nada',
+    'not-allowed': 'Microfone bloqueado — permita o acesso (precisa de https ou localhost)',
+    'service-not-allowed': 'Microfone bloqueado — permita o acesso (precisa de https ou localhost)',
+    'audio-capture': 'Nenhum microfone encontrado',
+    'network': 'Serviço de voz fora do ar — você está online?'
+  },
+  modeHardTitle: 'Modo Raiz (hardcore): sem dica do verbo em inglês. Toque para o Modo Nutella.',
+  modeEasyTitle: 'Modo Nutella: mostra o verbo em inglês como dica. Toque para o Modo Raiz.',
+  resetConfirm: 'Zerar o progresso de "{label}"?'
+};
+</script>
+<script src="../js/lib/text.js"></script>
+<script src="../js/lib/tts.js"></script>
+<script src="../js/lib/stt.js"></script>
+<script src="../js/lib/fx.js"></script>
+<script src="../js/progress.js"></script>
+<script src="js/data/irregulares.js"></script>
+<script src="js/topics.js"></script>
+<script src="../js/quiz.js"></script>
+<script src="../js/app.js"></script>
+<script src="../js/version.js"></script>
+</body>
+</html>

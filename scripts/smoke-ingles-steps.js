@@ -1,0 +1,105 @@
+/* Smoke-test steps for the /ingles/ subpage. Concatenated into the same eval
+   as the stub, the config globals and the app sources (see smoke-ingles.jxa).
+   The interesting assertions are the ones the main suite cannot make: the
+   inverted direction boots, the APP_* overrides actually thread through the
+   shared engine, and the two apps' progress stays apart. */
+
+function shownCard(topicId) {
+  var m = registry.cardArea.innerHTML.match(/<div class="card-prompt">([\s\S]*?)<\/div>/);
+  if (!m) throw new Error('no prompt rendered');
+  var prompt = m[1];
+  var card = topicCards(topicById(topicId)).filter(function (c) { return c.prompt === prompt; })[0];
+  if (!card) throw new Error('could not identify shown card: ' + prompt);
+  return card;
+}
+
+step('with no browse tab, the app boots straight into the drill', function () {
+  if (registry.view.dataset.topic !== 'irregulares')
+    throw new Error('booted into "' + registry.view.dataset.topic + '"');
+  if (!registry.answerInput) throw new Error('no answer input rendered');
+  var tabs = (registry.tabs.innerHTML.match(/data-tab="/g) || []).length;
+  if (tabs !== TOPICS.length) throw new Error('got ' + tabs + ' tabs');
+  return 'default tab = irregulares, ' + tabs + ' tab(s)';
+});
+
+step('the chrome uses the Portuguese strings from APP_STRINGS', function () {
+  if (!/cartas dominadas/.test(registry.view.innerHTML))
+    throw new Error('masteredLine override missing from the chrome');
+  if (!/>Certas</.test(registry.view.innerHTML))
+    throw new Error('statKnown override missing from the stats row');
+  return '"cartas dominadas" and "Certas" rendered';
+});
+
+step('a correct English answer is accepted and marks mastery', function () {
+  var before = Store.masteredCount('irregulares');
+  var card = shownCard('irregulares');
+  registry.answerInput.value = card.answer.toUpperCase();   // case-insensitive too
+  registry.actionBtn.fire('click');
+  if (!/✓/.test(registry.feedback.innerHTML))
+    throw new Error('rejected: ' + registry.feedback.innerHTML);
+  if (Store.masteredCount('irregulares') !== before + 1)
+    throw new Error('mastery not recorded');
+  if (!/pron-tag/.test(registry.feedback.innerHTML))
+    throw new Error('no pronunciation hint shown');
+  return '"' + card.answer.toUpperCase() + '" accepted for "' + card.prompt + '"';
+});
+
+step('a miss reveals the answer with the Portuguese wording and an example', function () {
+  registry.actionBtn.fire('click');                          // advance past the hit
+  registry.answerInput.value = 'zzz-errado';
+  registry.actionBtn.fire('click');
+  if (!/A resposta é/.test(registry.feedback.innerHTML))
+    throw new Error('answerIs override missing: ' + registry.feedback.innerHTML);
+  if (!/class="example"/.test(registry.revealArea.innerHTML))
+    throw new Error('no example sentence revealed');
+  return 'reveal says "A resposta é …" with an example sentence';
+});
+
+step('an accepted alternative (got for gotten) passes', function () {
+  var card = topicCards(topicById('irregulares')).filter(function (c) {
+    return c.id === 'get|part';
+  })[0];
+  if (!card) throw new Error('get|part card missing');
+  if (!isCorrectForSmoke(card, 'got')) throw new Error('"got" rejected for "gotten"');
+  if (isCorrectForSmoke(card, 'getted')) throw new Error('"getted" wrongly accepted');
+  return '"got" accepted, "getted" rejected, canonical stays "gotten"';
+});
+function isCorrectForSmoke(card, value) {
+  return card.accepted.some(function (a) { return normalize(a) === normalize(value); });
+}
+
+step('Modo Raiz hides the English hint; Modo Nutella shows the base verb', function () {
+  window.location.hash = '#irregulares';
+  (window._h.hashchange || []).forEach(function (fn) { fn(); });
+  if (/card-hint/.test(registry.cardArea.innerHTML)) throw new Error('hint leaked in Modo Raiz');
+  registry.modeBtn.fire('click');
+  var m = registry.cardArea.innerHTML.match(/card-hint">([^<]*)</);
+  if (!m) throw new Error('no hint in Modo Nutella');
+  var card = shownCard('irregulares');
+  if (m[1] !== escapeHtml(card.hint)) throw new Error('hint is "' + m[1] + '"');
+  registry.modeBtn.fire('click');                            // back to the default
+  return 'hint "' + m[1] + '" only in Modo Nutella';
+});
+
+step('the mic listens in en-US and skips the Portuguese digit expansion', function () {
+  Quiz.toggleMic();
+  if (!window._activeRec) throw new Error('mic did not start listening');
+  if (window._activeRec.lang !== 'en-US')
+    throw new Error('recognizer lang is "' + window._activeRec.lang + '"');
+  var fake = { accepted: ['twenty'], allowEmpty: false };
+  if (micAnswer(fake, ['20']) !== null)
+    throw new Error('digit expansion ran despite en-US');
+  if (micAnswer(fake, ['Twenty!']) !== 'twenty')
+    throw new Error('normalized spoken match failed');
+  Quiz.toggleMic();
+  return 'lang=en-US; "20" no longer expands to "vinte"';
+});
+
+step('progress lives under its own storage key, apart from the main app', function () {
+  if (STORE_KEY !== 'fg-ingles:v1') throw new Error('STORE_KEY is "' + STORE_KEY + '"');
+  if (window.localStorage.getItem('fg-ingles:v1') === null)
+    throw new Error('nothing written under fg-ingles:v1');
+  if (window.localStorage.getItem('pvs:v1') !== null)
+    throw new Error('the subpage wrote into the main app\'s pvs:v1 blob');
+  return 'writes go to fg-ingles:v1; pvs:v1 untouched';
+});
