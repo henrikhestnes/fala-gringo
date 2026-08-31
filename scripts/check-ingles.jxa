@@ -16,6 +16,7 @@ const ROOT = ObjC.unwrap($.NSFileManager.defaultManager.currentDirectoryPath);
 const FILES = [
   'js/lib/text.js',
   'ingles/js/data/irregulares.js',
+  'ingles/js/data/phrasal.js',
   'ingles/js/topics.js',
   'ingles/js/checks.js'
 ];

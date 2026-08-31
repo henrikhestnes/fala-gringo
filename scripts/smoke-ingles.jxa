@@ -24,7 +24,7 @@ const FILES = [
   'scripts/dom-stub.js',
   null,  // CONFIG slots in here, after the stub creates `window`
   'js/lib/text.js', 'js/lib/tts.js', 'js/lib/stt.js', 'js/lib/fx.js', 'js/progress.js',
-  'ingles/js/data/irregulares.js', 'ingles/js/topics.js',
+  'ingles/js/data/irregulares.js', 'ingles/js/data/phrasal.js', 'ingles/js/topics.js',
   'js/quiz.js', 'js/app.js', 'js/version.js',
   'scripts/smoke-ingles-steps.js'
 ];

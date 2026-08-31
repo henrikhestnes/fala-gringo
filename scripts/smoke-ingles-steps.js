@@ -4,12 +4,22 @@
    inverted direction boots, the APP_* overrides actually thread through the
    shared engine, and the two apps' progress stays apart. */
 
+function goTo(hash) {
+  window.location.hash = hash;
+  (window._h.hashchange || []).forEach(function (fn) { fn(); });
+}
+
 function shownCard(topicId) {
+  // unlike the main app, a prompt alone is not unique here — the same pt gloss
+  // fronts both the passado and the particípio card — so match prompt + meta
   var m = registry.cardArea.innerHTML.match(/<div class="card-prompt">([\s\S]*?)<\/div>/);
   if (!m) throw new Error('no prompt rendered');
-  var prompt = m[1];
-  var card = topicCards(topicById(topicId)).filter(function (c) { return c.prompt === prompt; })[0];
-  if (!card) throw new Error('could not identify shown card: ' + prompt);
+  var mm = registry.cardArea.innerHTML.match(/<div class="card-meta"><span>([\s\S]*?)<\/span>/);
+  if (!mm) throw new Error('no meta rendered');
+  var card = topicCards(topicById(topicId)).filter(function (c) {
+    return c.prompt === m[1] && escapeHtml(c.meta) === mm[1];
+  })[0];
+  if (!card) throw new Error('could not identify shown card: ' + m[1] + ' / ' + mm[1]);
   return card;
 }
 
@@ -68,9 +78,24 @@ function isCorrectForSmoke(card, value) {
   return card.accepted.some(function (a) { return normalize(a) === normalize(value); });
 }
 
+step('the phrasal tab drills with theme chips and a tip reveal', function () {
+  goTo('#phrasal');
+  var total = parseInt(registry.statTotal.textContent, 10);
+  var all = topicCards(topicById('phrasal')).length;
+  if (total !== all) throw new Error('deck has ' + total + ' of ' + all + ' phrasal cards');
+  var chips = (registry.view.innerHTML.match(/data-group="/g) || []).length;
+  if (chips !== window.DATA_EN_PHRASAL.groups.length)
+    throw new Error('got ' + chips + ' theme chips');
+  var card = shownCard('phrasal');
+  registry.answerInput.value = card.answer;
+  registry.actionBtn.fire('click');
+  if (!/✓/.test(registry.feedback.innerHTML))
+    throw new Error('rejected "' + card.answer + '": ' + registry.feedback.innerHTML);
+  return all + ' cards, ' + chips + ' chips; "' + card.answer + '" accepted for "' + card.prompt + '"';
+});
+
 step('Modo Raiz hides the English hint; Modo Nutella shows the base verb', function () {
-  window.location.hash = '#irregulares';
-  (window._h.hashchange || []).forEach(function (fn) { fn(); });
+  goTo('#irregulares');
   if (/card-hint/.test(registry.cardArea.innerHTML)) throw new Error('hint leaked in Modo Raiz');
   registry.modeBtn.fire('click');
   var m = registry.cardArea.innerHTML.match(/card-hint">([^<]*)</);

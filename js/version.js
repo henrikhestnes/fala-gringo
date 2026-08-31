@@ -11,8 +11,9 @@
 // 1.4 three-state theme (auto follows the system) · 1.5 mic mode (hands-free spoken answers)
 // 1.6 static per-verb pages under verbs/ (crawlable + sitemap) · 1.7 installable PWA (offline)
 // 1.8 /ingles/ — English for Brazilians on the same engine
+// 1.9 /ingles/: full irregular-verb set (74 entries) + phrasal verbs tab
 
-const APP_VERSION = '1.8.0';
+const APP_VERSION = '1.9.0';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name
