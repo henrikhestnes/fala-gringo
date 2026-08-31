@@ -21,6 +21,7 @@ function runChecks() {
   function fail(msg) { throw new Error(msg); }
 
   const D = window.DATA_EN_IRREGULARES;
+  const P = window.DATA_EN_PHRASAL;
 
   check('every irregular verb entry is complete', () => {
     const bad = [];
@@ -44,6 +45,28 @@ function runChecks() {
       if (seen[v.base]) fail('duplicate base: ' + v.base);
       seen[v.base] = 1;
     });
+  });
+
+  check('every phrasal verb entry is complete and unique', () => {
+    const bad = [];
+    const seen = {};
+    P.cards.forEach(c => {
+      ['pv', 'pt', 'group', 'pron', 'example', 'examplePt'].forEach(k => {
+        if (!c[k]) bad.push((c.pv || '?') + ': missing ' + k);
+      });
+      if (seen[c.pv]) bad.push('duplicate phrasal: ' + c.pv);
+      seen[c.pv] = 1;
+    });
+    if (bad.length) fail(bad.join('\n'));
+    return P.cards.length + ' phrasal verbs';
+  });
+
+  check('every phrasal example contains the exact phrasal verb', () => {
+    // contíguo e sem flexão de propósito: as frases usam imperativo, modal ou
+    // sujeito I/you/we/they (ver a nota no topo de phrasal.js)
+    const bad = P.cards.filter(c =>
+      !new RegExp('\\b' + c.pv + '\\b', 'i').test(c.example));
+    if (bad.length) fail(bad.map(c => c.pv + ': "' + c.example + '"').join('\n'));
   });
 
   const cards = allQuizCards();
@@ -89,11 +112,18 @@ function runChecks() {
     if (bad.length) fail(bad.join('\n'));
   });
 
-  check('every card group is declared', () => {
-    const declared = new Set(D.groups);
-    const bad = cards.filter(c => !declared.has(c.group));
-    if (bad.length) fail(bad.map(c => c.id + ': ' + c.group).join('\n'));
-    return D.groups.join(', ');
+  check('every card group is declared by its topic', () => {
+    const bad = [];
+    const summary = [];
+    TOPICS.filter(t => t.kind === 'quiz').forEach(t => {
+      const declared = new Set(topicGroups(t));
+      topicCards(t).forEach(c => {
+        if (!declared.has(c.group)) bad.push(t.id + '/' + c.id + ': ' + c.group);
+      });
+      summary.push(t.id + ': ' + topicGroups(t).join(', '));
+    });
+    if (bad.length) fail(bad.join('\n'));
+    return summary.join('\n');
   });
 
   return results;

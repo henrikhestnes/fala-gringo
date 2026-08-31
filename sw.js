@@ -19,7 +19,8 @@ const CORE = [
   'js/app.js', 'js/lib/sync.js', 'js/version.js',
   // the /ingles/ subpage (English for Brazilians) shares the engine above and
   // registers this same root worker, so its own files ride in the same cache
-  'ingles/', 'ingles/index.html', 'ingles/js/topics.js', 'ingles/js/data/irregulares.js'
+  'ingles/', 'ingles/index.html', 'ingles/js/topics.js',
+  'ingles/js/data/irregulares.js', 'ingles/js/data/phrasal.js'
 ];
 
 self.addEventListener('install', e => {

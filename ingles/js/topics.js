@@ -11,6 +11,7 @@ function exampleBlock(en, pt) {
   return '<div class="example">"' + escapeHtml(en) + '"' +
          (pt ? '<span class="en">' + escapeHtml(pt) + '</span>' : '') + '</div>';
 }
+function tipBlock(html) { return html ? '<div class="tip">' + html + '</div>' : ''; }
 
 /* ------------------------------------------------- verbos irregulares ---- */
 
@@ -49,11 +50,32 @@ function buildIrregularCards() {
   return cards;
 }
 
+/* --------------------------------------------------- phrasal verbs ---- */
+
+function buildPhrasalCards() {
+  return window.DATA_EN_PHRASAL.cards.map(c => ({
+    id: c.pv,
+    group: c.group,
+    meta: 'phrasal verb',
+    hint: c.pv.split(' ')[0],       // Modo Nutella mostra só o verbo-raiz
+    prompt: escapeHtml(c.pt),
+    sub: 'Digite o phrasal verb em inglês',
+    accepted: [c.pv].concat(c.alts || []),
+    answer: c.pv,
+    pron: c.pron,
+    speak: c.pv,
+    reveal: exampleBlock(c.example, c.examplePt) +
+            (c.tip ? tipBlock(escapeHtml(c.tip)) : '')
+  }));
+}
+
 /* ------------------------------------------------------------ registro ---- */
 
 const TOPICS = [
   { id: 'irregulares', label: 'Irregulares', kind: 'quiz',
-    groups: ['passado', 'particípio'], build: buildIrregularCards }
+    groups: ['passado', 'particípio'], build: buildIrregularCards },
+  { id: 'phrasal', label: 'Phrasal verbs', kind: 'quiz',
+    groups: () => window.DATA_EN_PHRASAL.groups, build: buildPhrasalCards }
 ];
 
 const _cardCache = {};
