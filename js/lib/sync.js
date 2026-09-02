@@ -12,10 +12,41 @@
 // throttled to one per minute (KV free tier allows 1,000 writes/day) with a
 // final flush when the tab is hidden or closed. Because every sync merges, a
 // push lost to a dead connection or a killed tab heals on the next load.
+//
+// The /ingles/ subpage shares this file. Its progress must never merge with the
+// main app's, so it sets window.APP_SYNC_APP = 'ingles' before loading it and
+// that prefix goes in front of the code on the wire (`/ingles<code>`): the same
+// unchanged worker then stores its blob under a separate KV key, even when the
+// learner pastes the same code into both apps. The UI wording is overridable
+// through window.APP_STRINGS, same contract as quiz.js/app.js.
 
 const SYNC_URL = 'https://fala-gringo-sync.henrik-hestnes.workers.dev';   // scheme required: without it fetch() treats this as a relative path
 
 const Sync = (function () {
+  const STR = Object.assign({
+    syncTitleOff: 'Sync is off — tap to link your devices',
+    syncTitleError: 'Last sync failed — will retry',
+    syncTitleBusy: 'Syncing…',
+    syncTitleNow: 'Synced just now',
+    syncTitleAgo: 'Synced {min} min ago',
+    syncNoBackend: 'Sync needs a backend — see sync-worker/README.md',
+    syncAsk: 'Sync across devices.\n\nPaste the sync code from your other device — ' +
+             'or leave the box empty to create a new one.',
+    syncBadCode: 'That code does not look right',
+    syncShowNew: 'Sync is ON. This code is the key to your progress — copy it, keep it ' +
+                 'private, and paste it on your other devices:',
+    syncShowOn: 'Sync is ON. Your code is below — copy it to link another device.\n\n' +
+                'Type "off" instead to disconnect this device.',
+    syncOffWord: 'off',
+    syncOffToast: 'Sync off on this device',
+    syncPulled: 'Progress synced ⇅',
+    syncNudge: '⇅ can sync your progress between devices — tap it to set up'
+  }, window.APP_STRINGS || {});
+  // key prefix on the worker: '' for the main app, 'ingles' for the subpage —
+  // it must satisfy the worker's [a-z0-9]{16,64} code regex together with the code
+  const APP = String(window.APP_SYNC_APP || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const MAX_CODE = 64 - APP.length;
+
   const PUSH_INTERVAL = 60 * 1000;   // at most one KV write a minute while drilling
   let pushTimer = 0;
   let lastPushAt = 0;
@@ -27,7 +58,9 @@ const Sync = (function () {
 
   function code() { return Store.getPref('syncCode', ''); }
   function enabled() { return !!SYNC_URL && canFetch && !!code(); }
-  function endpoint() { return SYNC_URL.replace(/\/+$/, '') + '/' + code(); }
+  function endpoint() {
+    return SYNC_URL.replace(/\/+$/, '') + '/' + APP + code();
+  }
 
   function toast(msg) { if (typeof showToast === 'function') showToast(msg); }
 
@@ -40,12 +73,12 @@ const Sync = (function () {
     const st = enabled() ? status : 'off';
     btn.className = 'icon-btn sync-' + st;
     let title;
-    if (st === 'off') title = 'Sync is off — tap to link your devices';
-    else if (st === 'error') title = 'Last sync failed — will retry';
-    else if (!lastSyncAt) title = 'Syncing…';
+    if (st === 'off') title = STR.syncTitleOff;
+    else if (st === 'error') title = STR.syncTitleError;
+    else if (!lastSyncAt) title = STR.syncTitleBusy;
     else {
       const min = Math.round((Date.now() - lastSyncAt) / 60000);
-      title = min < 1 ? 'Synced just now' : 'Synced ' + min + ' min ago';
+      title = min < 1 ? STR.syncTitleNow : STR.syncTitleAgo.replace('{min}', min);
     }
     btn.setAttribute('title', title);
   }
@@ -130,7 +163,7 @@ const Sync = (function () {
         if (mergedJson !== JSON.stringify(local)) {
           Store.applySynced(merged);          // save() schedules the push back up
           if (window.App) App.refresh();
-          toast('Progress synced ⇅');
+          toast(STR.syncPulled);
         } else if (mergedJson !== JSON.stringify(remote)) {
           schedulePush();                     // remote is behind
         } else {
@@ -180,32 +213,28 @@ const Sync = (function () {
 
   function manage() {
     if (!SYNC_URL || !canFetch) {
-      toast('Sync needs a backend — see sync-worker/README.md');
+      toast(STR.syncNoBackend);
       return;
     }
     if (typeof window.prompt !== 'function') return;
     if (!code()) {
-      const entered = window.prompt(
-        'Sync across devices.\n\nPaste the sync code from your other device — ' +
-        'or leave the box empty to create a new one.', '');
+      const entered = window.prompt(STR.syncAsk, '');
       if (entered === null) return;
       const c = (entered.trim() || newCode()).toLowerCase();
-      if (!/^[a-z0-9]{16,64}$/.test(c)) { toast('That code does not look right'); return; }
+      if (!/^[a-z0-9]{16,64}$/.test(c) || c.length > MAX_CODE) { toast(STR.syncBadCode); return; }
       Store.setPref('syncCode', c);
       lastPushed = '';
       lastSyncAt = 0;
       updateButton();
       pull().then(schedulePush);
-      window.prompt(
-        'Sync is ON. This code is the key to your progress — copy it, keep it ' +
-        'private, and paste it on your other devices:', c);
+      window.prompt(STR.syncShowNew, c);
     } else {
-      const ans = window.prompt(
-        'Sync is ON. Your code is below — copy it to link another device.\n\n' +
-        'Type "off" instead to disconnect this device.', code());
-      if (ans !== null && ans.trim().toLowerCase() === 'off') {
+      const ans = window.prompt(STR.syncShowOn, code());
+      // the English "off" always works too, whatever the localized word is
+      const word = ans === null ? null : ans.trim().toLowerCase();
+      if (word !== null && (word === 'off' || word === STR.syncOffWord.toLowerCase())) {
         Store.setPref('syncCode', '');
-        toast('Sync off on this device');
+        toast(STR.syncOffToast);
         updateButton();
       }
     }
@@ -223,7 +252,7 @@ const Sync = (function () {
     const visits = Store.getPref('syncNudge', 0) + 1;
     if (visits <= 3) Store.setPref('syncNudge', visits);
     if (visits === 3) {
-      setTimeout(() => toast('⇅ can sync your progress between devices — tap it to set up'), 1200);
+      setTimeout(() => toast(STR.syncNudge), 1200);
     }
   }
 
@@ -232,6 +261,7 @@ const Sync = (function () {
   return {
     onLocalChange: schedulePush,   // called by Store.save()
     manage: manage,
-    _merge: mergeStates            // exposed for the checks
+    _merge: mergeStates,           // exposed for the checks
+    _endpoint: endpoint            // likewise — proves the /ingles/ key prefix
   };
 })();
