@@ -23,6 +23,12 @@
       <span aria-hidden="true" style="font-style:normal;font-size:1.25em;line-height:1">🗽</span>
       Fala Como Gringo</span>
     <button class="mode-btn" id="modeBtn" type="button" aria-pressed="true">Modo Raiz</button>
+    <button class="icon-btn" id="syncBtn" type="button" aria-label="Sincronizar o progresso entre aparelhos" title="Sincronizar o progresso entre aparelhos">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M8 3v14m0 0-4-4m4 4 4-4"></path>
+        <path d="M16 21V7m0 0-4 4m4-4 4 4"></path>
+      </svg>
+    </button>
     <button class="icon-btn" id="themeBtn" type="button" aria-label="Alternar tema" title="Alternar tema">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
         <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path>
@@ -46,10 +52,14 @@
 <!-- Mesma arquitetura do app principal: scripts clássicos, sem build. O motor
      (quiz.js, app.js, progress.js, js/lib/) é COMPARTILHADO com a raiz; este
      bloco de configuração roda antes dele e inverte a direção: fala/ouve
-     en-US, guarda o progresso em outra chave e traduz o chrome para PT. -->
+     en-US, guarda o progresso em outra chave e traduz o chrome para PT. O sync
+     (js/lib/sync.js) também é compartilhado: APP_SYNC_APP vira prefixo do código de sync,
+     então o mesmo worker guarda este progresso em outra chave e ele nunca se
+     mistura com o do app principal. -->
 <script>
 window.APP_LANG = 'en-US';
 window.APP_STORE_KEY = 'fg-ingles:v1';
+window.APP_SYNC_APP = 'ingles';
 window.SW_PATH = '../sw.js';
 window.APP_STRINGS = {
   focoTitle: 'As cartas que precisam de atenção: novas, erradas (até acertar {streak} ' +
@@ -92,7 +102,25 @@ window.APP_STRINGS = {
   },
   modeHardTitle: 'Modo Raiz (hardcore): sem dica do verbo em inglês. Toque para o Modo Nutella.',
   modeEasyTitle: 'Modo Nutella: mostra o verbo em inglês como dica. Toque para o Modo Raiz.',
-  resetConfirm: 'Zerar o progresso de "{label}"?'
+  resetConfirm: 'Zerar o progresso de "{label}"?',
+  // sync (js/lib/sync.js)
+  syncTitleOff: 'Sync desligado — toque para conectar seus aparelhos',
+  syncTitleError: 'O último sync falhou — vai tentar de novo',
+  syncTitleBusy: 'Sincronizando…',
+  syncTitleNow: 'Sincronizado agora mesmo',
+  syncTitleAgo: 'Sincronizado há {min} min',
+  syncNoBackend: 'O sync precisa de um backend — veja sync-worker/README.md',
+  syncAsk: 'Sincronize entre aparelhos.\n\nCole aqui o código de sync do seu outro aparelho — ' +
+           'ou deixe em branco para criar um novo.',
+  syncBadCode: 'Esse código não parece certo',
+  syncShowNew: 'Sync LIGADO. Este código é a chave do seu progresso — copie, guarde em ' +
+               'segredo e cole nos seus outros aparelhos:',
+  syncShowOn: 'Sync LIGADO. Seu código está abaixo — copie para conectar outro aparelho.\n\n' +
+              'Ou digite "desligar" para desconectar este aparelho.',
+  syncOffWord: 'desligar',
+  syncOffToast: 'Sync desligado neste aparelho',
+  syncPulled: 'Progresso sincronizado ⇅',
+  syncNudge: '⇅ sincroniza seu progresso entre aparelhos — toque para configurar'
 };
 </script>
 <script src="../js/lib/text.js"></script>
@@ -105,6 +133,7 @@ window.APP_STRINGS = {
 <script src="js/topics.js"></script>
 <script src="../js/quiz.js"></script>
 <script src="../js/app.js"></script>
+<script src="../js/lib/sync.js"></script>
 <script src="../js/version.js"></script>
 </body>
 </html>

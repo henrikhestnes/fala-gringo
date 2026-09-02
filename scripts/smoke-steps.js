@@ -361,7 +361,12 @@ step('sync is inert without fetch and the button shows the off state', function 
   flushTimers();
   if (registry.toast.textContent.indexOf('backend') === -1)
     throw new Error('no setup hint shown: "' + registry.toast.textContent + '"');
-  return 'no network attempted; off state dot + tooltip rendered';
+  // the root app keeps the bare key — existing learners' blobs must stay reachable
+  Store.setPref('syncCode', 'abcdefghijklmnop');
+  var ep = Sync._endpoint();
+  Store.setPref('syncCode', '');
+  if (!/\/abcdefghijklmnop$/.test(ep) || /\/ingles/.test(ep)) throw new Error('endpoint is "' + ep + '"');
+  return 'no network attempted; off state dot + tooltip rendered; bare key endpoint';
 });
 
 step('the footer shows the app version', function () {

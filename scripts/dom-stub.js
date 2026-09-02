@@ -124,6 +124,5 @@ window.SpeechRecognition = function () {
 window._activeRec = null;
 function flushTimers() { const t = timers.splice(0); t.forEach(fn => { try { fn(); } catch (e) {} }); }
 
-// shell elements that index.html provides (syncBtn only exists in the main
-// app's shell; an unused entry is harmless for the /ingles/ run)
+// shell elements that both index.html files provide
 ['view', 'tabs', 'toast', 'modeBtn', 'themeBtn', 'syncBtn', 'buildInfo'].forEach(id => { registry[id] = new El(id); });

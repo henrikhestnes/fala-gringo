@@ -128,3 +128,19 @@ step('progress lives under its own storage key, apart from the main app', functi
     throw new Error('the subpage wrote into the main app\'s pvs:v1 blob');
   return 'writes go to fg-ingles:v1; pvs:v1 untouched';
 });
+
+step('sync loads inert, speaks Portuguese, and targets its own prefixed key', function () {
+  if (typeof Sync === 'undefined') throw new Error('Sync not defined');
+  Sync.onLocalChange();                  // no fetch in the stub -> schedules nothing
+  if (registry.syncBtn.className !== 'icon-btn sync-off')
+    throw new Error('button class is "' + registry.syncBtn.className + '"');
+  var title = registry.syncBtn.getAttribute('title') || '';
+  if (!/toque para conectar/.test(title)) throw new Error('tooltip not localized: "' + title + '"');
+  // the endpoint must carry the app namespace so a code shared with the main
+  // app can never merge the two apps' progress on the server
+  Store.setPref('syncCode', 'abcdefghijklmnop');
+  var ep = Sync._endpoint();
+  Store.setPref('syncCode', '');
+  if (!/\/inglesabcdefghijklmnop$/.test(ep)) throw new Error('endpoint is "' + ep + '"');
+  return 'off-state tooltip in PT; endpoint …' + ep.slice(ep.lastIndexOf("/"));
+});
