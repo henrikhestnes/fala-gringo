@@ -16,8 +16,10 @@
 // The /ingles/ subpage shares this file. Its progress must never merge with the
 // main app's, so it sets window.APP_SYNC_APP = 'ingles' before loading it and
 // that prefix goes in front of the code on the wire (`/ingles<code>`): the same
-// unchanged worker then stores its blob under a separate KV key, even when the
-// learner pastes the same code into both apps. The UI wording is overridable
+// unchanged worker then stores its blob under a separate KV key. The code itself
+// is ONE per device, not per app: it lives under a shared localStorage key
+// (CODE_KEY, same origin), so switching sync on in either app switches it on in
+// both — one "account", two separate blobs. The UI wording is overridable
 // through window.APP_STRINGS, same contract as quiz.js/app.js.
 
 const SYNC_URL = 'https://fala-gringo-sync.henrik-hestnes.workers.dev';   // scheme required: without it fetch() treats this as a relative path
@@ -34,7 +36,8 @@ const Sync = (function () {
              'or leave the box empty to create a new one.',
     syncBadCode: 'That code does not look right',
     syncShowNew: 'Sync is ON. This code is the key to your progress — copy it, keep it ' +
-                 'private, and paste it on your other devices:',
+                 'private, and paste it on your other devices. It covers both Fala Gringo ' +
+                 'and Fala Como Gringo:',
     syncShowOn: 'Sync is ON. Your code is below — copy it to link another device.\n\n' +
                 'Type "off" instead to disconnect this device.',
     syncOffWord: 'off',
@@ -45,7 +48,9 @@ const Sync = (function () {
   // key prefix on the worker: '' for the main app, 'ingles' for the subpage —
   // it must satisfy the worker's [a-z0-9]{16,64} code regex together with the code
   const APP = String(window.APP_SYNC_APP || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-  const MAX_CODE = 64 - APP.length;
+  // the code is shared with the other app, so it must fit behind the LONGEST prefix
+  // either app uses ('ingles', 6 chars) — generated codes are 32 anyway
+  const MAX_CODE = 64 - 6;
 
   const PUSH_INTERVAL = 60 * 1000;   // at most one KV write a minute while drilling
   let pushTimer = 0;
@@ -56,7 +61,28 @@ const Sync = (function () {
 
   const canFetch = typeof fetch === 'function';   // the smoke stub has one that never reaches a network
 
-  function code() { return Store.getPref('syncCode', ''); }
+  /* The code is shared by both apps on this origin through one plain
+     localStorage key (each app's Store blob is private to it, so a pref would
+     not do). Pre-1.11 devices kept it in the per-app 'syncCode' pref: the first
+     read adopts that into the shared key and clears the pref, so a later "off"
+     cannot resurrect it. No storage (private mode): falls back to memory. */
+  const CODE_KEY = 'fg:syncCode';
+  let memCode = '';
+  function readShared() {
+    try { return localStorage.getItem(CODE_KEY) || ''; } catch (e) { return memCode; }
+  }
+  function setCode(c) {
+    memCode = c || '';
+    try { if (c) localStorage.setItem(CODE_KEY, c); else localStorage.removeItem(CODE_KEY); } catch (e) { /* memory only */ }
+    if (Store.getPref('syncCode', '')) Store.setPref('syncCode', '');   // retire the legacy pref
+  }
+  function code() {
+    const shared = readShared();
+    if (shared) return shared;
+    const legacy = Store.getPref('syncCode', '');
+    if (legacy) setCode(legacy);
+    return legacy;
+  }
   function enabled() { return !!SYNC_URL && canFetch && !!code(); }
   function endpoint() {
     return SYNC_URL.replace(/\/+$/, '') + '/' + APP + code();
@@ -222,7 +248,7 @@ const Sync = (function () {
       if (entered === null) return;
       const c = (entered.trim() || newCode()).toLowerCase();
       if (!/^[a-z0-9]{16,64}$/.test(c) || c.length > MAX_CODE) { toast(STR.syncBadCode); return; }
-      Store.setPref('syncCode', c);
+      setCode(c);
       lastPushed = '';
       lastSyncAt = 0;
       updateButton();
@@ -233,7 +259,7 @@ const Sync = (function () {
       // the English "off" always works too, whatever the localized word is
       const word = ans === null ? null : ans.trim().toLowerCase();
       if (word !== null && (word === 'off' || word === STR.syncOffWord.toLowerCase())) {
-        Store.setPref('syncCode', '');
+        setCode('');
         toast(STR.syncOffToast);
         updateButton();
       }
@@ -262,7 +288,8 @@ const Sync = (function () {
     onLocalChange: schedulePush,   // Store.save() calls this through Store.onChange (below)
     manage: manage,
     _merge: mergeStates,           // exposed for the checks
-    _endpoint: endpoint            // likewise — proves the /ingles/ key prefix
+    _endpoint: endpoint,           // likewise — proves the /ingles/ key prefix
+    _setCode: setCode              // likewise — drives the shared-code + migration checks
   };
 })();
 

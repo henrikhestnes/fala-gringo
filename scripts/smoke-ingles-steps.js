@@ -141,9 +141,14 @@ step('sync loads inert, survives its own init saves, speaks Portuguese, and targ
   if (!/toque para conectar/.test(title)) throw new Error('tooltip not localized: "' + title + '"');
   // the endpoint must carry the app namespace so a code shared with the main
   // app can never merge the two apps' progress on the server
-  Store.setPref('syncCode', 'abcdefghijklmnop');
+  // the code is the one shared with the main app (same fg:syncCode key) — only the
+  // wire prefix differs, so one code links both apps without merging their blobs
+  Sync._setCode('abcdefghijklmnop');
   var ep = Sync._endpoint();
-  Store.setPref('syncCode', '');
   if (!/\/inglesabcdefghijklmnop$/.test(ep)) throw new Error('endpoint is "' + ep + '"');
-  return 'init saves survived (nudge=1); off-state tooltip in PT; endpoint …' + ep.slice(ep.lastIndexOf("/"));
+  if (localStorage.getItem('fg:syncCode') !== 'abcdefghijklmnop') throw new Error('shared key not written');
+  if (Store.getPref('syncCode', '')) throw new Error('code leaked into the per-app pref');
+  Sync._setCode('');
+  if (localStorage.getItem('fg:syncCode') !== null) throw new Error('off did not clear the shared key');
+  return 'init saves survived (nudge=1); off-state tooltip in PT; shared fg:syncCode; endpoint …' + ep.slice(ep.lastIndexOf("/"));
 });

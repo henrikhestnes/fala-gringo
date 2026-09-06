@@ -365,11 +365,24 @@ step('sync is inert without a code, survives its own init saves, and shows the o
   registry.syncBtn.fire('click');        // no prompt() in the stub -> a silent no-op
   flushTimers();
   // the root app keeps the bare key — existing learners' blobs must stay reachable
-  Store.setPref('syncCode', 'abcdefghijklmnop');
+  Sync._setCode('abcdefghijklmnop');
   var ep = Sync._endpoint();
-  Store.setPref('syncCode', '');
   if (!/\/abcdefghijklmnop$/.test(ep) || /\/ingles/.test(ep)) throw new Error('endpoint is "' + ep + '"');
-  return 'init saves survived (nudge=1); no network attempted; off-state dot + tooltip; bare key endpoint';
+  // the code lives in the shared (both-apps) localStorage key, not in this app's prefs
+  if (localStorage.getItem('fg:syncCode') !== 'abcdefghijklmnop') throw new Error('shared key not written');
+  if (Store.getPref('syncCode', '')) throw new Error('code leaked into the per-app pref');
+  Sync._setCode('');
+  if (localStorage.getItem('fg:syncCode') !== null) throw new Error('off did not clear the shared key');
+  // a pre-1.11 device kept the code in its own prefs: adopted once, pref retired
+  Store.setPref('syncCode', 'legacycode1234567');
+  ep = Sync._endpoint();
+  if (!/\/legacycode1234567$/.test(ep)) throw new Error('legacy code not adopted: ' + ep);
+  if (localStorage.getItem('fg:syncCode') !== 'legacycode1234567') throw new Error('legacy code not migrated');
+  if (Store.getPref('syncCode', '')) throw new Error('legacy pref not retired');
+  Sync._setCode('');
+  if (Sync._endpoint().slice(-1) !== '/') throw new Error('code survived off: ' + Sync._endpoint());
+  return 'init saves survived (nudge=1); no network attempted; off-state dot + tooltip; bare key endpoint; ' +
+         'code in shared fg:syncCode, legacy pref migrated then retired';
 });
 
 step('the footer shows the app version', function () {

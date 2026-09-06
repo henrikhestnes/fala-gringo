@@ -23,7 +23,8 @@ returned id in a `wrangler.toml` binding named `SYNC`, then `wrangler deploy wor
 
 The /ingles/ subpage uses the very same worker: it prefixes the code with
 `ingles` on the wire (`/ingles<code>`), so its blob lives under a different KV
-key and never merges with the main app's, even for one shared code.
+key and never merges with the main app's. The code is stored once per device
+(a shared localStorage key), so linking either app links both.
 
 On any device (either app): tap the ⇅ button in the top bar. First device: leave the box
 empty to generate a sync code. Other devices: paste that code. The code is the
