@@ -123,6 +123,7 @@ step('Skip advances the deck without granting mastery', function () {
 
 step('group chips shrink the deck but can never empty it', function () {
   goTo('#presente');
+  Quiz.toggleFocus();                    // whole-topic deck: the Foco cap would hide the shrink
   var total = parseInt(registry.statTotal.textContent, 10);
   Quiz.toggleGroup('-ar verbs');
   var fewer = parseInt(registry.statTotal.textContent, 10);
@@ -130,6 +131,7 @@ step('group chips shrink the deck but can never empty it', function () {
   ['-er verbs', '-ir verbs', 'irregular'].forEach(function (g) { Quiz.toggleGroup(g); });
   var left = parseInt(registry.statTotal.textContent, 10);
   if (!(left > 0)) throw new Error('deck emptied');
+  Quiz.toggleFocus();                    // back to the default
   return total + ' -> ' + fewer + ' after one chip; floor holds at ' + left;
 });
 
@@ -284,18 +286,40 @@ step('an unknown hash falls back to Browse', function () {
   return 'ok';
 });
 
-step('Foco is the default and a fresh topic is all "needing work"', function () {
+/* The schedule is day-based, so steps move the clock: Date.now() is offset
+   forward (never back) by whole days. progress.js reads Date.now() at call
+   time, so every later step sees the advanced calendar. */
+var _dayOffset = 0;
+var _realNow = Date.now;
+function advanceDays(n) {
+  _dayOffset += n * 86400000;
+  Date.now = function () { return _realNow() + _dayOffset; };
+}
+
+step('Foco is the default and a fresh topic shows only the daily intake', function () {
   Store.resetTopic('adverbs');           // clear anything earlier steps recorded
   goTo('#adverbs');
   if (!/chip focus active/.test(registry.view.innerHTML))
     throw new Error('Foco chip not active by default');
   var total = parseInt(registry.statTotal.textContent, 10);
   var all = topicCards(topicById('adverbs')).length;
-  if (total !== all) throw new Error('fresh Foco deck ' + total + ', expected all ' + all);
-  return 'chip active on a fresh profile; deck holds all ' + all + ' cards';
+  var cap = Store.newPerDay();
+  if (all <= cap) throw new Error('adverbs (' + all + ') no longer exceed the cap; pick a bigger topic');
+  if (total !== cap) throw new Error('fresh Foco deck ' + total + ', expected the ' + cap + ' daily intake of ' + all);
+  if (!new RegExp('· ' + cap + ' new').test(registry.view.innerHTML))
+    throw new Error('Foco chip does not read "' + cap + ' new"');
+  if (Store.introducedToday('adverbs') !== cap)
+    throw new Error('introduced-today stamp is ' + Store.introducedToday('adverbs'));
+  // a rebuild the same day must hand back the SAME intake, not another batch
+  Quiz.toggleFocus(); Quiz.toggleFocus();
+  if (parseInt(registry.statTotal.textContent, 10) !== cap)
+    throw new Error('rebuild changed the intake to ' + registry.statTotal.textContent);
+  return 'chip active on a fresh profile; ' + cap + ' of ' + all + ' cards, chip reads "' + cap + ' new"; stable across rebuilds';
 });
 
-step('one clean pass empties the Foco deck until reviews fall due', function () {
+step('clearing the intake leaves the rest waiting; a new day brings them', function () {
+  var all = topicCards(topicById('adverbs')).length;
+  var cap = Store.newPerDay();
   var guard = 0;
   while (registry.answerInput && guard++ < 60) {
     var c = shownCard('adverbs');
@@ -305,13 +329,138 @@ step('one clean pass empties the Foco deck until reviews fall due', function () 
   }
   if (!/done-screen/.test(registry.cardArea.innerHTML))
     throw new Error('did not clear the deck in ' + guard + ' rounds');
-  registry.againBtn.fire('click');       // rebuild: everything mastered + fresh
+  registry.againBtn.fire('click');       // rebuild: intake mastered, remainder still capped out
   if (!/Tudo em dia/.test(registry.cardArea.innerHTML))
-    throw new Error('deck did not empty after mastering everything');
+    throw new Error('deck did not empty after mastering the intake');
+  if (!new RegExp((all - cap) + ' more wait for tomorrow').test(registry.cardArea.innerHTML))
+    throw new Error('waiting count missing: ' + registry.cardArea.innerHTML);
   Quiz.toggleFocus();                    // off -> the full deck must come back
-  if (!registry.answerInput) throw new Error('full deck did not come back');
-  Quiz.toggleFocus();                    // back to the default for later steps
-  return 'mastered everything -> "Tudo em dia"; toggle-off still drills all';
+  if (parseInt(registry.statTotal.textContent, 10) !== all) throw new Error('full deck did not come back');
+  Quiz.toggleFocus();                    // back to the default
+  advanceDays(1);
+  goTo('#browse'); goTo('#adverbs');
+  var total = parseInt(registry.statTotal.textContent, 10);
+  if (total !== all - cap) throw new Error('next day deck is ' + total + ', expected the remaining ' + (all - cap));
+  guard = 0;
+  while (registry.answerInput && guard++ < 60) {
+    var c2 = shownCard('adverbs');
+    registry.answerInput.value = c2.answer;
+    registry.actionBtn.fire('click'); registry.actionBtn.fire('click');
+  }
+  registry.againBtn.fire('click');
+  if (!/Tudo em dia/.test(registry.cardArea.innerHTML) || /wait for tomorrow/.test(registry.cardArea.innerHTML))
+    throw new Error('topic not fully mastered: ' + registry.cardArea.innerHTML);
+  return 'day 1: ' + cap + ' mastered, ' + (all - cap) + ' waiting; day 2: the rest; then "Tudo em dia"';
+});
+
+step('review level grows only across distinct days and climbs the interval ladder', function () {
+  var id = topicCards(topicById('adverbs'))[0].id;
+  // start from a card mastered today (the intake spread over two days above)
+  var snap0 = Store.snapshot();
+  snap0.strength.adverbs[id] = { s: 1, m: 0, l: 1, t: Math.floor(Date.now() / 86400000) };
+  Store.applySynced(snap0);
+  var lvl = Store.reviewLevel('adverbs', id);
+  if (lvl !== 1) throw new Error('level after first mastery is ' + lvl);
+  Store.recordAnswer('adverbs', id, true);          // same day: proves nothing extra
+  Store.recordAnswer('adverbs', id, true);
+  if (Store.reviewLevel('adverbs', id) !== 1) throw new Error('same-day repeats raised the level');
+  if (Store.cardState('adverbs', id) !== 'ok') throw new Error('fresh card reads ' + Store.cardState('adverbs', id));
+  advanceDays(REVIEW_INTERVALS[0]);                 // 7 days -> first review due
+  if (Store.cardState('adverbs', id) !== 'due') throw new Error('not due after ' + REVIEW_INTERVALS[0] + ' days');
+  Store.recordAnswer('adverbs', id, true);          // confirmed on a later day -> level 2
+  if (Store.reviewLevel('adverbs', id) !== 2) throw new Error('level after a distinct-day confirm is ' + Store.reviewLevel('adverbs', id));
+  advanceDays(REVIEW_INTERVALS[0]);                 // 7 more days: level 2 waits 14
+  if (Store.cardState('adverbs', id) !== 'ok') throw new Error('level-2 card came back after only 7 days');
+  advanceDays(REVIEW_INTERVALS[1] - REVIEW_INTERVALS[0]);
+  if (Store.cardState('adverbs', id) !== 'due') throw new Error('level-2 card not due after 14 days');
+  if (Store.overdue('adverbs', id) !== 0) throw new Error('overdue on the due day should be 0, got ' + Store.overdue('adverbs', id));
+  Store.recordAnswer('adverbs', id, false);         // a miss restarts the ladder
+  if (Store.reviewLevel('adverbs', id) !== 0 || Store.cardState('adverbs', id) !== 'shaky')
+    throw new Error('miss did not reset: level ' + Store.reviewLevel('adverbs', id) + ', ' + Store.cardState('adverbs', id));
+  // a pre-1.12 record (no `l`) with a last-correct day counts as level 1
+  var snap = Store.snapshot();
+  snap.strength.adverbs[id] = { s: 3, m: 0, t: Math.floor(Date.now() / 86400000) - 8 };
+  Store.applySynced(snap);
+  if (Store.reviewLevel('adverbs', id) !== 1 || Store.cardState('adverbs', id) !== 'due')
+    throw new Error('legacy record: level ' + Store.reviewLevel('adverbs', id) + ', ' + Store.cardState('adverbs', id));
+  return 'same day stays 1; +7d due -> confirm -> 2; +7d ok, +14d due; miss -> 0/shaky; legacy record = level 1';
+});
+
+step('the Foco deck puts due reviews before new cards, most overdue first', function () {
+  Store.resetTopic('nouns');
+  var cards = topicCards(topicById('nouns'));
+  var today = Math.floor(Date.now() / 86400000);
+  var snap = Store.snapshot();
+  snap.mastered.nouns = {}; snap.strength.nouns = {};
+  var due = cards.slice(-5);                        // the LAST five in data order, so intake order can't mask it
+  due.forEach(function (c, i) {
+    snap.mastered.nouns[c.id] = 1;
+    snap.strength.nouns[c.id] = { s: 1, m: 0, l: 1, t: today - REVIEW_INTERVALS[0] - i };   // c[4] most overdue
+  });
+  Store.applySynced(snap);
+  goTo('#browse'); goTo('#nouns');
+  var total = parseInt(registry.statTotal.textContent, 10);
+  if (total !== 5 + Store.newPerDay()) throw new Error('deck is ' + total + ', expected 5 due + ' + Store.newPerDay() + ' new');
+  if (!/· 5 due · 20 new/.test(registry.view.innerHTML)) throw new Error('chip breakdown missing: ' + registry.view.innerHTML.match(/chip focus[^<]*/)[0]);
+  var first = shownCard('nouns');
+  if (first.id !== due[4].id) throw new Error('first card is "' + first.id + '", expected the most overdue "' + due[4].id + '"');
+  for (var i = 0; i < 5; i++) {
+    var c = shownCard('nouns');
+    if (due.map(function (d) { return d.id; }).indexOf(c.id) === -1) throw new Error('card ' + (i + 1) + ' "' + c.id + '" is not a due review');
+    registry.answerInput.value = c.answer;
+    registry.actionBtn.fire('click'); registry.actionBtn.fire('click');
+  }
+  var sixth = shownCard('nouns');
+  if (Store.cardState('nouns', sixth.id) !== 'new') throw new Error('sixth card "' + sixth.id + '" is not new');
+  return '5 due first (most overdue leading), then the 20 new';
+});
+
+step('inference: a known word + a known pattern makes an unseen regular form a "verify" card', function () {
+  ['presente', 'perfeito', 'imperfeito', 'subjuntivo'].forEach(function (t) { Store.resetTopic(t); });
+  var cards = topicCards(topicById('presente'));
+  var today = Math.floor(Date.now() / 86400000);
+  // the regular -ar "vocês" forms, one per verb, in data order
+  var voces = cards.filter(function (c) { return c.infer && c.infer.regular && c.infer.pattern === 'ar|presente|3'; });
+  if (voces.length < Infer.PATTERN_MIN + 3) throw new Error('only ' + voces.length + ' regular -ar vocês forms');
+  var irregularForm = cards.filter(function (c) { return c.infer && !c.infer.regular && c.infer.pattern === 'ar|presente|3'; })[0];
+  if (!irregularForm) throw new Error('no irregular -ar vocês form to test against');
+  var snap = Store.snapshot();
+  snap.mastered.presente = {}; snap.strength.presente = {};
+  // pattern: PATTERN_MIN distinct regular -ar verbs confirmed in vocês
+  voces.slice(0, Infer.PATTERN_MIN).forEach(function (c) {
+    snap.mastered.presente[c.id] = 1;
+    snap.strength.presente[c.id] = { s: 1, m: 0, l: 1, t: today };
+  });
+  // word: the "eu" form of the next verb is mastered — its vocês form is unseen
+  var target = voces[Infer.PATTERN_MIN];
+  var targetEu = target.infer.lexeme + '|0';
+  snap.mastered.presente[targetEu] = 1;
+  snap.strength.presente[targetEu] = { s: 1, m: 0, l: 1, t: today };
+  // a verb the learner has never met anywhere: pattern known, word not
+  var stranger = voces[Infer.PATTERN_MIN + 1];
+  Store.applySynced(snap);
+  goTo('#browse'); goTo('#presente');
+  var counts = Quiz._counts();
+  if (!counts || counts.verify !== 1) throw new Error('verify tier is ' + JSON.stringify(counts));
+  if (Quiz._tierOf(target.id) !== 'verify') throw new Error('"' + target.id + '" is in tier ' + Quiz._tierOf(target.id));
+  if (Quiz._tierOf(stranger.id) === 'verify') throw new Error('unknown word "' + stranger.id + '" was inferred');
+  if (Quiz._tierOf(irregularForm.id) === 'verify') throw new Error('irregular form "' + irregularForm.id + '" was inferred');
+  if (!/· 1 to confirm/.test(registry.view.innerHTML)) throw new Error('chip lacks the verify count');
+  // no due, no shaky: the verify card leads the deck; a hit starts at level 2 (14-day review)
+  var first = shownCard('presente');
+  if (first.id !== target.id) throw new Error('first card is "' + first.id + '", expected the verify card');
+  registry.answerInput.value = first.answer;
+  registry.actionBtn.fire('click');
+  if (!/✓/.test(registry.feedback.innerHTML)) throw new Error('verify card rejected: ' + registry.feedback.innerHTML);
+  if (Store.reviewLevel('presente', target.id) !== 2) throw new Error('verify hit landed at level ' + Store.reviewLevel('presente', target.id));
+  // a shaky pattern stops qualifying: miss two of the five confirmed forms -> 3/5 solid < 80%
+  var snap2 = Store.snapshot();
+  voces.slice(0, 2).forEach(function (c) { snap2.strength.presente[c.id] = { s: 0, m: 1, l: 0, t: today }; });
+  snap2.mastered.presente[voces[Infer.PATTERN_MIN + 2].infer.lexeme + '|0'] = 1;   // another known word…
+  Store.applySynced(snap2);
+  goTo('#browse'); goTo('#presente');
+  if (Quiz._counts().verify !== 0) throw new Error('…was still inferred from a shaky pattern: ' + JSON.stringify(Quiz._counts()));
+  return '"' + target.id + '" verified from "' + targetEu + '" + ' + Infer.PATTERN_MIN + ' -ar vocês; hit -> level 2; stranger, irregular and shaky pattern excluded';
 });
 
 step('a miss pulls the whole conjugation back into Foco', function () {
@@ -342,12 +491,12 @@ step('a miss pulls the whole conjugation back into Foco', function () {
 step('a mastered card comes back for review once it goes stale', function () {
   var cards = topicCards(topicById('imperfeito'));
   var snap = Store.snapshot();
-  snap.strength.imperfeito[cards[5].id].t -= (REVIEW_DAYS + 1);
+  snap.strength.imperfeito[cards[5].id].t -= (REVIEW_INTERVALS[0] + 1);
   Store.applySynced(snap);
   goTo('#browse'); goTo('#imperfeito');
   var total = parseInt(registry.statTotal.textContent, 10);
   if (total !== 1) throw new Error('expected exactly the stale card, got ' + total);
-  return '"' + cards[5].id + '" resurfaced after ' + REVIEW_DAYS + '+ days';
+  return '"' + cards[5].id + '" resurfaced after ' + REVIEW_INTERVALS[0] + '+ days';
 });
 
 step('sync is inert without a code, survives its own init saves, and shows the off state', function () {
@@ -394,22 +543,27 @@ step('the footer shows the app version', function () {
 
 step('sync merge is conservative: union mastery, keep cards shaky', function () {
   var a = { mastered: { nouns: { x: 1 } },
-            strength: { presente: { 'ser|0': { s: 3, m: 1, t: 20660 }, 'ir|2': { s: 2, m: 2 } } },
+            strength: { presente: { 'ser|0': { s: 3, m: 1, t: 20660, l: 3, i: 20650 }, 'ir|2': { s: 2, m: 2 },
+                                    'dar|1': { s: 1, m: 0, t: 20660 } } },
             daily: { '20260821': { attempts: [1, 0], failed: [false, false], solved: [true, false], current: 1 } } };
   var b = { mastered: { nouns: { y: 1 } },
-            strength: { presente: { 'ser|0': { s: 0, m: 1, t: 20655 } } },
+            strength: { presente: { 'ser|0': { s: 0, m: 1, t: 20655, l: 0, i: 20652 },
+                                    'dar|1': { s: 4, m: 0, t: 20661, l: 3 } } },
             daily: { '20260821': { attempts: [1, 2], failed: [false, true], solved: [true, false], current: 1 } } };
   var m = Sync._merge(a, b);
   if (!m.mastered.nouns.x || !m.mastered.nouns.y) throw new Error('mastery not unioned');
   var ser = m.strength.presente['ser|0'];
-  if (ser.s !== 0 || ser.m !== 1 || ser.t !== 20660)
+  if (ser.s !== 0 || ser.m !== 1 || ser.t !== 20660 || ser.l !== 0 || ser.i !== 20650)
     throw new Error('ser|0 merged to ' + JSON.stringify(ser));
   var ir = m.strength.presente['ir|2'];
   if (ir.s !== 2 || ir.m !== 2) throw new Error('one-sided entry not kept: ' + JSON.stringify(ir));
+  // a pre-1.12 record (no `l`) counts as level 1, so the merged level is the lower rung
+  var dar = m.strength.presente['dar|1'];
+  if (dar.l !== 1 || dar.t !== 20661 || 'i' in dar) throw new Error('dar|1 merged to ' + JSON.stringify(dar));
   var d = m.daily['20260821'];
   if (d.attempts[1] !== 2 || d.failed[1] !== true || d.solved[0] !== true)
     throw new Error('daily merged to ' + JSON.stringify(d));
-  return 'graduated-on-A but just-missed-on-B stays shaky; daily merged element-wise';
+  return 'graduated-on-A but just-missed-on-B stays shaky at level 0; earliest intro day kept; legacy level = 1; daily merged element-wise';
 });
 
 /* Deliver a final recognition result into whatever the app is listening with

@@ -62,9 +62,14 @@ window.APP_STORE_KEY = 'fg-ingles:v1';
 window.APP_SYNC_APP = 'ingles';
 window.SW_PATH = '../sw.js';
 window.APP_STRINGS = {
-  focoTitle: 'As cartas que precisam de atenção: novas, erradas (até acertar {streak} ' +
-             'vezes seguidas) e revisões após {days} dias. Desligue para treinar o baralho inteiro.',
+  focoTitle: 'As cartas que precisam de atenção, revisões primeiro: vencidas (após 7, 14, 30, 60 ' +
+             'e depois 120 dias de acertos confirmados), erradas (até acertar {streak} vezes ' +
+             'seguidas) e até {cap} cartas novas por dia. Desligue para treinar o baralho inteiro.',
   focoChip: '🎯 Foco',
+  focoDue: '{n} p/ revisar',
+  focoShaky: '{n} erradas',
+  focoVerify: '{n} p/ confirmar',
+  focoNew: '{n} novas',
   micTitle: 'Modo mic: fale a resposta em inglês em vez de digitar — ela é reconhecida, ' +
             'corrigida e lida de volta, e o baralho avança sozinho.',
   micChip: '🎤 Speak',
@@ -75,8 +80,10 @@ window.APP_STRINGS = {
   statKnown: 'Certas',
   statLeft: 'Faltam',
   emptyFocoTitle: 'Tudo em dia! 🎯',
-  emptyFocoBody: 'Todas as cartas daqui estão dominadas e frescas. As revisões voltam após ' +
-                 '{days} dias — ou desligue o Foco para treinar tudo agora.',
+  emptyFocoBody: 'Todas as cartas daqui estão dominadas e frescas. As revisões voltam num ritmo ' +
+                 'crescente (7, 14, 30… dias) — ou desligue o Foco para treinar tudo agora.',
+  emptyFocoWaiting: 'Nada vencido e as novas de hoje já foram — {n} esperam por amanhã. ' +
+                    'Desligue o Foco para treinar tudo agora.',
   emptyTitle: 'Sem cartas',
   emptyBody: 'Todas as categorias estão desligadas — religue uma acima.',
   placeholder: 'escreva em inglês…',

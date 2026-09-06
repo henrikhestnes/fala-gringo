@@ -10,9 +10,17 @@ const STORE_KEY = window.APP_STORE_KEY || 'pvs:v1';
    as shaky and drops out of the Foco deck. */
 const FOCUS_STREAK = 3;
 
-/* Days a mastered card stays out of the Foco deck before it comes back for
-   review; one correct answer resets the clock, a miss makes it shaky again. */
-const REVIEW_DAYS = 7;
+/* Review schedule: days a mastered card stays out of the Foco deck, indexed by
+   its review level — how many times it has been confirmed on DISTINCT days since
+   its last miss (same-day repeats prove nothing extra). 7, 14, 30, 60, then 120
+   for good; a miss makes it shaky again and restarts the ladder. */
+const REVIEW_INTERVALS = [7, 14, 30, 60, 120];
+
+/* Unseen cards Foco introduces per topic per day — the deck would otherwise be
+   the whole topic (a tense tab is ~500 forms) and the first pass would never
+   end. Verb topics round up to whole conjugations. The `newPerDay` pref
+   overrides it on a device. */
+const NEW_PER_DAY = 20;
 
 const Store = (function () {
   const empty = { mastered: {}, daily: {}, prefs: {}, strength: {} };
@@ -48,6 +56,15 @@ const Store = (function () {
 
   state = load();
 
+  function today() { return Math.floor(Date.now() / 86400000); }
+  /* Review level of a strength record; pre-1.12 records carry no `l`. */
+  function levelOf(e) { return e.l != null ? e.l : (e.t ? 1 : 0); }
+  /* Days until review at a level: level 0 or 1 -> first rung, then up the ladder. */
+  function intervalFor(level) {
+    const i = Math.min(Math.max(level, 1), REVIEW_INTERVALS.length) - 1;
+    return REVIEW_INTERVALS[i];
+  }
+
   return {
     /* --- mastery: a card counts as mastered once answered correctly --- */
     isMastered(topicId, cardId) {
@@ -77,16 +94,26 @@ const Store = (function () {
       save();
     },
 
-    /* --- per-card strength: consecutive-correct streak, lifetime misses, and
-       the day (epoch days) of the last correct answer. A single correct answer
-       proves little, so a card stays "shaky" from its first miss until it has
-       been answered correctly FOCUS_STREAK times in a row. Feeds the Foco deck
-       filter in quiz.js. --- */
-    recordAnswer(topicId, cardId, correct) {
+    /* --- per-card strength record { s, m, t, l, i }: consecutive-correct
+       streak, lifetime misses, the day (epoch days) of the last correct answer,
+       the review level (distinct-day confirmations since the last miss — drives
+       the REVIEW_INTERVALS ladder) and the day the card was first introduced by
+       Foco. A single correct answer proves little, so a card stays "shaky" from
+       its first miss until it has been answered correctly FOCUS_STREAK times in
+       a row. Records written before 1.12 have no `l`: a card with a last-correct
+       day counts as level 1, i.e. exactly the old fixed 7-day review. --- */
+    recordAnswer(topicId, cardId, correct, minLevel) {
       if (!state.strength[topicId]) state.strength[topicId] = {};
       const s = state.strength[topicId][cardId] || { s: 0, m: 0 };
-      if (correct) { s.s += 1; s.t = Math.floor(Date.now() / 86400000); }
-      else { s.s = 0; s.m += 1; }
+      if (correct) {
+        const day = today();
+        let l = levelOf(s);
+        if (day > (s.t || 0)) l += 1;              // a new day confirms; a same-day repeat does not
+        if (minLevel && l < minLevel) l = minLevel;  // inferred-known cards start higher (js/infer.js)
+        s.s += 1; s.t = day; s.l = l;
+      } else {
+        s.s = 0; s.m += 1; s.l = 0;
+      }
       state.strength[topicId][cardId] = s;
       save();
     },
@@ -95,15 +122,70 @@ const Store = (function () {
       const s = t && t[cardId];
       return !!(s && s.m > 0 && s.s < FOCUS_STREAK);
     },
-    /* Foco deck membership: never answered correctly, currently shaky, or
-       mastered but not confirmed within the last REVIEW_DAYS. */
-    needsWork(topicId, cardId) {
-      const m = state.mastered[topicId];
-      if (!(m && m[cardId])) return true;                     // never succeeded
+    /* Where a card stands for the Foco deck:
+         new   — never answered correctly and never missed
+         shaky — missed, and not yet FOCUS_STREAK right in a row since
+         due   — mastered, and its review interval has run out
+         ok    — mastered and fresh */
+    cardState(topicId, cardId) {
       const e = state.strength[topicId] && state.strength[topicId][cardId];
-      if (e && e.m > 0 && e.s < FOCUS_STREAK) return true;    // shaky
-      return !(e && e.t) ||                                   // review due
-             Math.floor(Date.now() / 86400000) - e.t >= REVIEW_DAYS;
+      const m = state.mastered[topicId];
+      if (!(m && m[cardId])) return (e && e.m > 0) ? 'shaky' : 'new';
+      if (e && e.m > 0 && e.s < FOCUS_STREAK) return 'shaky';
+      if (!e || !e.t) return 'due';                           // mastered pre-1.1, no record
+      return today() - e.t >= intervalFor(levelOf(e)) ? 'due' : 'ok';
+    },
+    needsWork(topicId, cardId) {
+      return this.cardState(topicId, cardId) !== 'ok';
+    },
+    /* Days past its review date (0 when not due) — orders the review tier. */
+    overdue(topicId, cardId) {
+      const e = state.strength[topicId] && state.strength[topicId][cardId];
+      if (!e || !e.t) return 0;
+      return Math.max(0, today() - e.t - intervalFor(levelOf(e)));
+    },
+    reviewLevel(topicId, cardId) {
+      const e = state.strength[topicId] && state.strength[topicId][cardId];
+      return e ? levelOf(e) : 0;
+    },
+    /* Lexemes (the part of a card id before "|") with at least one mastered,
+       non-shaky form in ANY topic — "the learner knows this word" (js/infer.js). */
+    knownLexemes() {
+      const out = new Set();
+      Object.keys(state.mastered).forEach(topicId => {
+        Object.keys(state.mastered[topicId]).forEach(id => {
+          const bar = id.indexOf('|');
+          if (bar < 0) return;
+          const lex = id.slice(0, bar);
+          if (!out.has(lex) && this.cardState(topicId, id) !== 'shaky') out.add(lex);
+        });
+      });
+      return out;
+    },
+
+    /* --- daily intake of unseen cards (the Foco cap) --- */
+    newPerDay() {
+      const n = parseInt(this.getPref('newPerDay', NEW_PER_DAY), 10);
+      return n > 0 ? n : NEW_PER_DAY;
+    },
+    introducedOn(topicId, cardId) {
+      const e = state.strength[topicId] && state.strength[topicId][cardId];
+      return (e && e.i) || 0;
+    },
+    introducedToday(topicId) {
+      const t = state.strength[topicId] || {};
+      const day = today();
+      return Object.keys(t).filter(id => t[id].i === day).length;
+    },
+    /* Stamp the cards Foco shows for the first time today; one save for the lot. */
+    markIntroduced(topicId, cardIds) {
+      let changed = false;
+      cardIds.forEach(id => {
+        if (!state.strength[topicId]) state.strength[topicId] = {};
+        const e = state.strength[topicId][id] || (state.strength[topicId][id] = { s: 0, m: 0 });
+        if (!e.i) { e.i = today(); changed = true; }
+      });
+      if (changed) save();
     },
 
     /* --- sync (js/lib/sync.js): the synced sections out as a deep copy, and

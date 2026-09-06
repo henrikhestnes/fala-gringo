@@ -11,11 +11,11 @@ const CACHE = 'fala-gringo-' + APP_VERSION;
 const CORE = [
   './', 'index.html', 'css/app.css', 'manifest.json',
   'js/lib/text.js', 'js/lib/tts.js', 'js/lib/stt.js', 'js/lib/fx.js',
-  'js/progress.js',
+  'js/progress.js', 'js/conjugate.js',
   'js/data/verbs.js', 'js/data/pronominal.js', 'js/data/nouns.js',
   'js/data/adjectives.js', 'js/data/adverbs.js', 'js/data/connecting.js',
   'js/data/numbers.js', 'js/data/glossary.js', 'js/data/sentences.js',
-  'js/topics.js', 'js/quiz.js', 'js/browse.js', 'js/daily.js',
+  'js/topics.js', 'js/infer.js', 'js/quiz.js', 'js/browse.js', 'js/daily.js',
   'js/app.js', 'js/lib/sync.js', 'js/version.js',
   // the /ingles/ subpage (English for Brazilians) shares the engine above and
   // registers this same root worker, so its own files ride in the same cache

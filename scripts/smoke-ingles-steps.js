@@ -82,7 +82,10 @@ step('the phrasal tab drills with theme chips and a tip reveal', function () {
   goTo('#phrasal');
   var total = parseInt(registry.statTotal.textContent, 10);
   var all = topicCards(topicById('phrasal')).length;
-  if (total !== all) throw new Error('deck has ' + total + ' of ' + all + ' phrasal cards');
+  // Foco caps a fresh topic at the daily intake; the rest wait behind the chip
+  var cap = Math.min(all, Store.newPerDay());
+  if (total !== cap) throw new Error('deck has ' + total + ' of ' + all + ' phrasal cards, expected the ' + cap + ' daily intake');
+  if (!/· 20 novas/.test(registry.view.innerHTML)) throw new Error('Foco chip does not read "20 novas"');
   var chips = (registry.view.innerHTML.match(/data-group="/g) || []).length;
   if (chips !== window.DATA_EN_PHRASAL.groups.length)
     throw new Error('got ' + chips + ' theme chips');

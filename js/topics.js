@@ -67,6 +67,27 @@ function verbConjTable(verb, tense, tenseLabel, currentIndex) {
          '<table class="conj-table">' + rows + '</table></div>';
 }
 
+/* Inference metadata for js/infer.js: the word, the pattern (class|tense|person),
+   and whether THIS form follows the regular rule — judged per form by the
+   oracle in js/conjugate.js, so the regular forms of a mostly irregular verb
+   qualify while its odd ones never do. The imperfect subjunctive is regular
+   whenever the perfeito 3pl it derives from is (the derivation itself has no
+   exceptions). Without the oracle loaded (a page that skips it) there is no
+   metadata and no inference — everything else is unaffected. */
+function verbInfer(verb, tense, i, form) {
+  if (typeof conjugateRegular !== 'function') return null;
+  const oracle = conjugateRegular(verb.pt);
+  if (!oracle) return null;
+  let regular;
+  if (tense === 'subjuntivo') {
+    const perf = verb.tenses.perfeito && verb.tenses.perfeito[3];
+    regular = !!perf && oracle.perfeito[3] === perf.form;
+  } else {
+    regular = !!oracle[tense] && oracle[tense][i] === form;
+  }
+  return { lexeme: verb.pt, pattern: verb.pt.slice(-2) + '|' + tense + '|' + i, regular: regular };
+}
+
 function buildVerbCards(tense, tenseLabel) {
   const byPt = {};
   V.verbs.forEach(v => { byPt[v.pt] = v; });
@@ -76,6 +97,7 @@ function buildVerbCards(tense, tenseLabel) {
     if (verb.quiz === false) return;
     if (!verb.tenses[tense]) return;   // the subjunctive covers a curated subset
     verb.tenses[tense].forEach((row, i) => {
+      const infer = verbInfer(verb, tense, i, row.form);
       const person = V.personsShort[i];
       const full = person + ' ' + row.form;
       const accepted = [row.form, full];
@@ -103,7 +125,8 @@ function buildVerbCards(tense, tenseLabel) {
         pron: row.pron,
         speak: full,
         reveal: exampleBlock(row.example) +
-                verbConjTable(verb, tense, tenseLabel, i)
+                verbConjTable(verb, tense, tenseLabel, i),
+        infer: infer
       });
     });
   });

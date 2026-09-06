@@ -11,9 +11,15 @@
    tfill(). Card-level text (prompt, sub, tips) comes from the topic builders
    and needs nothing here. */
 const QUIZ_STRINGS = Object.assign({
-  focoTitle: 'The cards needing work: new, missed (until answered right {streak} times ' +
-             'in a row) and reviews due after {days} days. Switch off to drill the whole deck.',
+  focoTitle: 'The cards needing work, reviews first: due (after 7, 14, 30, 60, then 120 days ' +
+             'of confirmed answers), missed (until answered right {streak} times in a row), ' +
+             'forms you likely know from the verb and the pattern (one quick confirmation), ' +
+             'and up to {cap} new cards a day. Switch off to drill the whole deck.',
   focoChip: '🎯 Foco',
+  focoDue: '{n} due',
+  focoShaky: '{n} shaky',
+  focoVerify: '{n} to confirm',
+  focoNew: '{n} new',
   micTitle: 'Mic mode: speak the answer instead of typing — it is recognized, ' +
             'submitted and read back, and the deck advances hands-free.',
   micChip: '🎤 Falar',
@@ -24,8 +30,10 @@ const QUIZ_STRINGS = Object.assign({
   statKnown: 'Known',
   statLeft: 'Left',
   emptyFocoTitle: 'Tudo em dia! 🎯',
-  emptyFocoBody: 'Every card here is mastered and fresh. Reviews come due after {days} days ' +
-                 '— or switch the Foco chip off to drill the whole deck now.',
+  emptyFocoBody: 'Every card here is mastered and fresh. Reviews come due on an expanding ' +
+                 'schedule (7, 14, 30… days) — or switch the Foco chip off to drill the whole deck now.',
+  emptyFocoWaiting: 'Nothing due and today\'s new cards are done — {n} more wait for tomorrow. ' +
+                    'Switch the Foco chip off to drill the whole deck now.',
   emptyTitle: 'No cards',
   emptyBody: 'Every category is switched off — turn one back on above.',
   placeholder: 'fala aí…',
@@ -60,6 +68,8 @@ const Quiz = (function () {
   let perfect = true;
   let stats = { errors: 0, hardSolved: 0 };
   let activeGroups = null;
+  let counts = null;        // Foco tier sizes of the current deck (+ cards waiting behind the cap)
+  let tierOf = new Map();   // card id -> 'due' | 'shaky' | 'verify' | 'new' (Foco decks only)
 
   /* mic mode (the 🎤 chip): hands-free spoken answers */
   let micTimer = 0;    // pending auto-advance
@@ -70,6 +80,7 @@ const Quiz = (function () {
   const MIC_NEXT_OK = 1100;    // ms after the answer audio before auto-advancing
   const MIC_NEXT_MISS = 3200;  // longer on a miss — time to read the reveal
   const MIC_ERROR_TEXT = QUIZ_STRINGS.micErrors;
+  const VERIFY_LEVEL = 2;      // review level a confirmed inferred-known card starts at (14 days)
 
   function acceptedFor(card) {
     const set = new Set();
@@ -99,27 +110,79 @@ const Quiz = (function () {
     return String(card.id).split('|')[0];
   }
 
-  /* The Foco deck (the default): every card needing work — never answered
-     correctly, shaky (missed and no FOCUS_STREAK since; plus, because getting
-     one form right doesn't mean the conjugation is known, every other card
-     sharing a shaky card's lexeme), or mastered but due for review after
-     REVIEW_DAYS. Switching the chip off drills the whole topic. */
-  function focusCards(cards) {
+  /* The Foco deck (the default) — the cards needing work, in tiers:
+       due     mastered cards whose review interval ran out, most overdue first
+       shaky   missed and no FOCUS_STREAK since — plus, because getting one form
+               right doesn't mean the conjugation is known, every other card
+               sharing a shaky card's lexeme
+       verify  unseen forms the learner very likely knows already (js/infer.js:
+               the verb is known and the pattern is known) — asked once, uncapped
+       new     unseen cards, at most Store.newPerDay() introduced per day, taken
+               in data order (the curated "essentials first" order) by whole
+               lexeme so a verb arrives with all its forms
+     Reviews come before new material so a short session still does what matters.
+     Switching the chip off drills the whole topic. Returns the ordered deck and
+     fills `counts` / `tierOf`. */
+  function focusDeck(cards) {
     const weak = new Set();
     cards.forEach(c => { if (Store.isShaky(topic.id, c.id)) weak.add(lexeme(c)); });
-    return cards.filter(c => weak.has(lexeme(c)) || Store.needsWork(topic.id, c.id));
+
+    const due = [], shaky = [], unseen = [];
+    cards.forEach(c => {
+      const st = Store.cardState(topic.id, c.id);
+      if (st === 'shaky' || weak.has(lexeme(c))) shaky.push(c);
+      else if (st === 'due') due.push(c);
+      else if (st === 'new') unseen.push(c);
+    });
+
+    // inferred-known forms skip the queue (a quick confirmation, not a lesson)
+    const likely = (window.Infer && Infer.likelyKnown) ? Infer.likelyKnown(topic.id, cards, unseen) : new Set();
+    const verify = unseen.filter(c => likely.has(c.id));
+
+    // today's intake: what was already introduced today comes back for free,
+    // then whole lexemes in data order until the cap is reached
+    const today = Math.floor(Date.now() / 86400000);
+    const fresh = [], intake = [];
+    unseen.forEach(c => {
+      if (likely.has(c.id)) return;
+      if (Store.introducedOn(topic.id, c.id) === today) intake.push(c); else fresh.push(c);
+    });
+    let room = Store.newPerDay() - Store.introducedToday(topic.id);
+    let waiting = 0;
+    const byLex = new Map();
+    fresh.forEach(c => { const k = lexeme(c); if (!byLex.has(k)) byLex.set(k, []); byLex.get(k).push(c); });
+    byLex.forEach(group => {
+      if (room > 0) { intake.push(...group); room -= group.length; }
+      else waiting += group.length;
+    });
+
+    due.sort((a, b) => Store.overdue(topic.id, b.id) - Store.overdue(topic.id, a.id));
+    const tiers = [['due', due], ['shaky', shuffle(shaky)], ['verify', shuffle(verify)], ['new', shuffle(intake)]];
+    tierOf = new Map();
+    const out = [];
+    tiers.forEach(([name, list]) => list.forEach(c => { tierOf.set(c.id, name); out.push(c); }));
+    counts = { due: due.length, shaky: shaky.length, verify: verify.length, new: intake.length, waiting: waiting };
+
+    // stamp every never-seen card that made it into today's deck (new, or dragged
+    // in by a shaky sibling) as introduced today; verify cards are re-inferred on
+    // every rebuild and must not eat into the intake
+    Store.markIntroduced(topic.id, out.filter(c =>
+      tierOf.get(c.id) !== 'verify' && Store.cardState(topic.id, c.id) === 'new').map(c => c.id));
+    return out;
   }
 
   function filteredCards() {
     let cards = topicCards(topic);
     const groups = topicGroups(topic);
     if (groups.length && activeGroups) cards = cards.filter(c => activeGroups.has(c.group));
-    if (focusOn()) cards = focusCards(cards);
-    return cards;
+    if (focusOn()) return focusDeck(cards);
+    counts = null;
+    tierOf = new Map();
+    return shuffle(cards);
   }
 
   function buildDeck() {
-    deck = shuffle(filteredCards());
+    deck = filteredCards();
     current = 0;
     known = new Set();
     answered = false;
@@ -142,11 +205,17 @@ const Quiz = (function () {
     const chips = groups.map(g =>
       '<button class="chip' + (activeGroups && activeGroups.has(g) ? ' active' : '') +
       '" data-group="' + escapeHtml(g) + '">' + escapeHtml(g) + '</button>').join('');
-    const shaky = focusCards(topicCards(topic)).length;
+    // the day's work at a glance: "🎯 Foco · 12 due · 3 shaky · 20 new" (zero tiers omitted)
+    const parts = [];
+    if (focusOn() && counts) {
+      [['due', 'focoDue'], ['shaky', 'focoShaky'], ['verify', 'focoVerify'], ['new', 'focoNew']].forEach(([k, str]) => {
+        if (counts[k]) parts.push(tfill(QUIZ_STRINGS[str], { n: counts[k] }));
+      });
+    }
     const focusChip = '<button class="chip focus' + (focusOn() ? ' active' : '') +
       '" data-focus="1" title="' +
-      escapeHtml(tfill(QUIZ_STRINGS.focoTitle, { streak: FOCUS_STREAK, days: REVIEW_DAYS })) +
-      '">' + QUIZ_STRINGS.focoChip + (shaky ? ' · ' + shaky : '') + '</button>';
+      escapeHtml(tfill(QUIZ_STRINGS.focoTitle, { streak: FOCUS_STREAK, cap: Store.newPerDay() })) +
+      '">' + QUIZ_STRINGS.focoChip + parts.map(p => ' · ' + escapeHtml(p)).join('') + '</button>';
     const micChip = (typeof Stt !== 'undefined' && Stt.supported())
       ? '<button class="chip mic' + (micOn() ? ' active' : '') +
         '" data-mic="1" title="' + escapeHtml(QUIZ_STRINGS.micTitle) + '">' +
@@ -204,9 +273,11 @@ const Quiz = (function () {
     const area = document.getElementById('cardArea');
 
     if (deck.length === 0) {
+      const waiting = counts ? counts.waiting : 0;
       area.innerHTML = focusOn()
         ? '<div class="card empty"><h2>' + QUIZ_STRINGS.emptyFocoTitle + '</h2>' +
-          '<p>' + tfill(QUIZ_STRINGS.emptyFocoBody, { days: REVIEW_DAYS }) + '</p></div>'
+          '<p>' + (waiting ? tfill(QUIZ_STRINGS.emptyFocoWaiting, { n: waiting })
+                           : QUIZ_STRINGS.emptyFocoBody) + '</p></div>'
         : '<div class="card empty"><h2>' + QUIZ_STRINGS.emptyTitle + '</h2>' +
           '<p>' + QUIZ_STRINGS.emptyBody + '</p></div>';
       return;
@@ -374,7 +445,8 @@ const Quiz = (function () {
       revealArea.innerHTML = card.reveal || '';
       known.add(current);
       Store.markMastered(topic.id, card.id);
-      Store.recordAnswer(topic.id, card.id, true);
+      // a confirmed inferred-known form skips the first rung of the review ladder
+      Store.recordAnswer(topic.id, card.id, true, tierOf.get(card.id) === 'verify' ? VERIFY_LEVEL : 0);
       updateStats();
     } else {
       stats.errors++;
@@ -452,7 +524,9 @@ const Quiz = (function () {
     toggleMic: toggleMic,
     resumeMic: resumeMic,
     stopVoice: stopVoice,
-    isActive: () => !!topic
+    isActive: () => !!topic,
+    _counts: () => counts,     // exposed for the smoke checks
+    _tierOf: id => tierOf.get(id)
   };
 })();
 

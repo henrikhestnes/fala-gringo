@@ -20,6 +20,7 @@ const CONFIG =
   "window.APP_STORE_KEY = 'fg-ingles:v1';\n" +
   "window.APP_SYNC_APP = 'ingles';\n" +
   "window.APP_STRINGS = { answerIs: 'A resposta é', masteredLine: '{n} de {total} cartas dominadas', statKnown: 'Certas', " +
+  "focoNew: '{n} novas', focoDue: '{n} p/ revisar', emptyFocoWaiting: '{n} esperam por amanhã', " +
   "syncTitleOff: 'Sync desligado — toque para conectar seus aparelhos' };\n";
 
 const FILES = [

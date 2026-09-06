@@ -147,10 +147,15 @@ const Sync = (function () {
       eachKey(a || {}, b || {}, (card, sa, sb) => {
         // one-sided: take it verbatim; both: pessimistic view — misses never
         // shrink, a streak only counts if it postdates the miss everywhere,
-        // and the review clock runs from the newest correct answer anywhere
-        t[card] = !sa ? sb : !sb ? sa
-          : { s: Math.min(sa.s || 0, sb.s || 0), m: Math.max(sa.m || 0, sb.m || 0),
-              t: Math.max(sa.t || 0, sb.t || 0) };
+        // the review clock runs from the newest correct answer anywhere, the
+        // review level is the lower rung (a card is never pushed further out
+        // than either device believes), and "introduced" is the earliest day
+        if (!sa || !sb) { t[card] = sa || sb; return; }
+        const lvl = e => (e.l != null ? e.l : (e.t ? 1 : 0));   // pre-1.12 records carry no `l`
+        const merged = { s: Math.min(sa.s || 0, sb.s || 0), m: Math.max(sa.m || 0, sb.m || 0),
+                         t: Math.max(sa.t || 0, sb.t || 0), l: Math.min(lvl(sa), lvl(sb)) };
+        if (sa.i || sb.i) merged.i = Math.min(sa.i || Infinity, sb.i || Infinity);
+        t[card] = merged;
       });
     });
 

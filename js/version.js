@@ -15,8 +15,10 @@
 // 1.10 /ingles/ gets cross-device sync (prefixed code, same worker untouched)
 // 1.10.1 fix: with sync off, a miss showed no answer (save() hit the Sync const in its TDZ)
 // 1.11 one sync code per device, shared by both apps (fg:syncCode) — two blobs, one "account"
+// 1.12 Foco: expanding review schedule (7/14/30/60/120 by review level), a daily cap on new cards,
+//      reviews-first deck order, and inferred-known verb forms (js/infer.js) that only need confirming
 
-const APP_VERSION = '1.11.0';
+const APP_VERSION = '1.12.0';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name
