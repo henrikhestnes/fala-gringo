@@ -54,7 +54,7 @@ const Sync = (function () {
   let status = 'ok';     // 'ok' | 'error' — meaningful only while sync is on
   let lastSyncAt = 0;
 
-  const canFetch = typeof fetch === 'function';   // absent in the smoke-test stub
+  const canFetch = typeof fetch === 'function';   // the smoke stub has one that never reaches a network
 
   function code() { return Store.getPref('syncCode', ''); }
   function enabled() { return !!SYNC_URL && canFetch && !!code(); }
@@ -259,9 +259,13 @@ const Sync = (function () {
   pull();   // merge in whatever the other devices did since last time
 
   return {
-    onLocalChange: schedulePush,   // called by Store.save()
+    onLocalChange: schedulePush,   // Store.save() calls this through Store.onChange (below)
     manage: manage,
     _merge: mergeStates,           // exposed for the checks
     _endpoint: endpoint            // likewise — proves the /ingles/ key prefix
   };
 })();
+
+// Subscribe only now: the initialiser above already saves (the nudge counter), and
+// Store.save() must not touch `Sync` while this const is still being initialised.
+Store.onChange(Sync.onLocalChange);

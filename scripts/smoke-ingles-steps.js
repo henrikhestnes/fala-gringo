@@ -129,9 +129,12 @@ step('progress lives under its own storage key, apart from the main app', functi
   return 'writes go to fg-ingles:v1; pvs:v1 untouched';
 });
 
-step('sync loads inert, speaks Portuguese, and targets its own prefixed key', function () {
+step('sync loads inert, survives its own init saves, speaks Portuguese, and targets its own prefixed key', function () {
   if (typeof Sync === 'undefined') throw new Error('Sync not defined');
-  Sync.onLocalChange();                  // no fetch in the stub -> schedules nothing
+  // regression (v1.10.1): the init-time nudge save used to throw on `Sync` in its TDZ
+  if (Store.getPref('syncNudge', 0) !== 1)
+    throw new Error('nudge counter not recorded: ' + Store.getPref('syncNudge', 0));
+  Sync.onLocalChange();                  // no code -> schedules nothing
   if (registry.syncBtn.className !== 'icon-btn sync-off')
     throw new Error('button class is "' + registry.syncBtn.className + '"');
   var title = registry.syncBtn.getAttribute('title') || '';
@@ -142,5 +145,5 @@ step('sync loads inert, speaks Portuguese, and targets its own prefixed key', fu
   var ep = Sync._endpoint();
   Store.setPref('syncCode', '');
   if (!/\/inglesabcdefghijklmnop$/.test(ep)) throw new Error('endpoint is "' + ep + '"');
-  return 'off-state tooltip in PT; endpoint …' + ep.slice(ep.lastIndexOf("/"));
+  return 'init saves survived (nudge=1); off-state tooltip in PT; endpoint …' + ep.slice(ep.lastIndexOf("/"));
 });

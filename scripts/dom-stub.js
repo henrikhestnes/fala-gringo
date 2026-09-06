@@ -114,6 +114,10 @@ window.localStorage = (function () {
   };
 })();
 window.SpeechSynthesisUtterance = function () {};
+// a fetch that exists but never reaches a network: the sync module sees a
+// capable browser (so its real init path runs) while enabled() stays false
+// without a sync code, so nothing is ever actually requested
+window.fetch = function () { return Promise.reject(new Error('no network in the smoke stub')); };
 // captured by stt.js at load; steps drive recognition by hand via window._activeRec
 window.SpeechRecognition = function () {
   const self = this;

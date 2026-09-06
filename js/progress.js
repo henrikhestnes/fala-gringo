@@ -34,10 +34,16 @@ const Store = (function () {
     }
   }
 
+  /* js/lib/sync.js registers itself here (Store.onChange) once it has finished
+     initialising. Deliberately NOT `typeof Sync`: that is a top-level const, and
+     a save() fired while sync.js is still running its initialiser (it stores the
+     nudge counter) would hit the temporal dead zone and throw — which once left
+     Sync uninitialised and every later save() throwing, so a miss showed no answer. */
+  let listener = null;
+
   function save() {
     try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* ignore */ }
-    // js/lib/sync.js loads after this file; before then there is nothing to notify
-    if (typeof Sync !== 'undefined') Sync.onLocalChange();
+    if (listener) listener();
   }
 
   state = load();
@@ -113,6 +119,10 @@ const Store = (function () {
       state.daily = data.daily && typeof data.daily === 'object' ? data.daily : {};
       save();
     },
+
+    /* --- change notification: one subscriber (the sync module), called after
+       every save(); a later call replaces the earlier one --- */
+    onChange(fn) { listener = typeof fn === 'function' ? fn : null; },
 
     /* --- preferences --- */
     getPref(key, fallback) {

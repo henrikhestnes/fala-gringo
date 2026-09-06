@@ -350,23 +350,26 @@ step('a mastered card comes back for review once it goes stale', function () {
   return '"' + cards[5].id + '" resurfaced after ' + REVIEW_DAYS + '+ days';
 });
 
-step('sync is inert without fetch and the button shows the off state', function () {
+step('sync is inert without a code, survives its own init saves, and shows the off state', function () {
   if (typeof Sync === 'undefined') throw new Error('Sync not defined');
-  Sync.onLocalChange();                  // must schedule nothing and not throw
+  // regression: the initialiser stores the discovery-nudge counter via Store.setPref,
+  // which fires save() — that used to read `Sync` inside its own temporal dead zone
+  // and throw, leaving every later save() broken (a miss then showed no answer)
+  if (Store.getPref('syncNudge', 0) !== 1)
+    throw new Error('nudge counter not recorded: ' + Store.getPref('syncNudge', 0));
+  Sync.onLocalChange();                  // no code -> must schedule nothing and not throw
   if (registry.syncBtn.className !== 'icon-btn sync-off')
     throw new Error('button class is "' + registry.syncBtn.className + '"');
   if (!/tap to link/.test(registry.syncBtn.getAttribute('title') || ''))
     throw new Error('off-state tooltip missing');
-  registry.syncBtn.fire('click');        // no fetch in the stub -> setup toast, no prompt
+  registry.syncBtn.fire('click');        // no prompt() in the stub -> a silent no-op
   flushTimers();
-  if (registry.toast.textContent.indexOf('backend') === -1)
-    throw new Error('no setup hint shown: "' + registry.toast.textContent + '"');
   // the root app keeps the bare key — existing learners' blobs must stay reachable
   Store.setPref('syncCode', 'abcdefghijklmnop');
   var ep = Sync._endpoint();
   Store.setPref('syncCode', '');
   if (!/\/abcdefghijklmnop$/.test(ep) || /\/ingles/.test(ep)) throw new Error('endpoint is "' + ep + '"');
-  return 'no network attempted; off state dot + tooltip rendered; bare key endpoint';
+  return 'init saves survived (nudge=1); no network attempted; off-state dot + tooltip; bare key endpoint';
 });
 
 step('the footer shows the app version', function () {

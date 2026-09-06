@@ -13,8 +13,9 @@
 // 1.8 /ingles/ — English for Brazilians on the same engine
 // 1.9 /ingles/: full irregular-verb set (74 entries) + phrasal verbs tab
 // 1.10 /ingles/ gets cross-device sync (prefixed code, same worker untouched)
+// 1.10.1 fix: with sync off, a miss showed no answer (save() hit the Sync const in its TDZ)
 
-const APP_VERSION = '1.10.0';
+const APP_VERSION = '1.10.1';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name
