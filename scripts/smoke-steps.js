@@ -506,6 +506,87 @@ step('inference: a known word + a known pattern makes an unseen regular form a "
   return '"' + target.id + '" verified from "' + targetEu + '" + ' + Infer.PATTERN_MIN + ' -ar vocês; hit -> level 2; stranger, irregular and shaky pattern excluded';
 });
 
+step('typed near-misses: one unambiguous slip is accepted, an ambiguous one is a miss', function () {
+  var cards = topicCards(topicById('presente'));
+  function byId(id) { return cards.filter(function (c) { return c.id === id; })[0]; }
+  function rivals(card) {
+    var own = {}; card.accepted.forEach(function (a) { own[normalize(a)] = 1; });
+    return cards.filter(function (c) { return c !== card; }).reduce(function (acc, c) {
+      return acc.concat(c.accepted.filter(function (a) { return !own[normalize(a)]; }));
+    }, []);
+  }
+  var falo = byId('falar|0'), falam = byId('falar|3');
+  var m = matchAnswer(falo, 'eu falu', rivals(falo), false);
+  if (!m || m.grade !== 'near' || m.hit !== 'eu falo') throw new Error('"eu falu": ' + JSON.stringify(m));
+  m = matchAnswer(falo, 'eu faloo', rivals(falo), false);
+  if (!m || m.grade !== 'near') throw new Error('"eu faloo": ' + JSON.stringify(m));
+  if (matchAnswer(falo, 'eu fala', rivals(falo), false)) throw new Error('"eu fala" accepted for "eu falo" — that is another form');
+  if (matchAnswer(falam, 'voces fala', rivals(falam), false)) throw new Error('"vocês fala" accepted for "vocês falam"');
+  if (matchAnswer(falo, 'falu', rivals(falo), false)) throw new Error('a 4-letter slip was tolerated');
+  if (matchAnswer(falo, 'eu fxlo', rivals(falo), false) === null) throw new Error('one substitution rejected');
+  if (matchAnswer(falo, 'eu fxlx', rivals(falo), false)) throw new Error('two substitutions accepted on a short form');
+  var exact = matchAnswer(falo, 'EU FALO!', rivals(falo), false);
+  if (!exact || exact.grade !== 'exact') throw new Error('exact match broken: ' + JSON.stringify(exact));
+  // sentence-length answers get two edits
+  var sent = topicCards(topicById('sentences'))[0];
+  var twoOff = sent.answer.replace(/a/, 'e').replace(/o([^o]*)$/, 'u$1');
+  var ms = matchAnswer(sent, twoOff, [], false);
+  if (sent.answer.length >= 12 && (!ms || ms.grade !== 'near')) throw new Error('two edits on "' + sent.answer + '" -> ' + JSON.stringify(ms));
+  // through the UI: a fresh topic whose only unseen card is falo
+  Store.resetTopic('presente');
+  var snap = Store.snapshot();
+  var today = Math.floor(Date.now() / 86400000);
+  snap.mastered.presente = {}; snap.strength.presente = {};
+  cards.forEach(function (c) {
+    if (c.id === falo.id) return;
+    snap.mastered.presente[c.id] = 1;
+    snap.strength.presente[c.id] = { s: 1, m: 0, l: 3, t: today };
+  });
+  Store.applySynced(snap);
+  goTo('#browse'); goTo('#presente');
+  if (shownCard('presente').id !== falo.id) throw new Error('deck did not isolate falo');
+  registry.answerInput.value = 'eu falu';
+  registry.actionBtn.fire('click');
+  if (!/^≈ Close! You typed “eu falu”/.test(registry.feedback.innerHTML)) throw new Error('near feedback: ' + registry.feedback.innerHTML);
+  if (registry.feedback.className !== 'feedback ok near') throw new Error('feedback class "' + registry.feedback.className + '"');
+  if (!Store.isMastered('presente', falo.id)) throw new Error('near-miss did not clear the card');
+  if (Store.reviewLevel('presente', falo.id) !== 1) throw new Error('first near-miss level is ' + Store.reviewLevel('presente', falo.id));
+  // a near-miss on a due card confirms it WITHOUT climbing the ladder
+  var snap2 = Store.snapshot();
+  snap2.strength.presente[falo.id] = { s: 1, m: 0, l: 2, t: today - REVIEW_INTERVALS[1] };
+  Store.applySynced(snap2);
+  goTo('#browse'); goTo('#presente');
+  if (shownCard('presente').id !== falo.id) throw new Error('due falo not shown');
+  registry.answerInput.value = 'eu falu';
+  registry.actionBtn.fire('click');
+  if (Store.reviewLevel('presente', falo.id) !== 2) throw new Error('near-miss raised the level to ' + Store.reviewLevel('presente', falo.id));
+  if (Store.cardState('presente', falo.id) !== 'ok') throw new Error('near-miss did not restart the clock: ' + Store.cardState('presente', falo.id));
+  return '"eu falu" ≈ eu falo (level kept at 2); "eu fala" / "vocês fala" / "falu" rejected; sentences take two edits';
+});
+
+step('spoken answers match by sound, guarded by the conjugation', function () {
+  var cards = topicCards(topicById('presente'));
+  function byId(id) { return cards.filter(function (c) { return c.id === id; })[0]; }
+  function rivals(card) {
+    var own = {}; card.accepted.forEach(function (a) { own[normalize(a)] = 1; });
+    return cards.filter(function (c) { return c !== card; }).reduce(function (acc, c) {
+      return acc.concat(c.accepted.filter(function (a) { return !own[normalize(a)]; }));
+    }, []);
+  }
+  var falam = byId('falar|3'), falo = byId('falar|0'), fala = byId('falar|1'), faco = byId('fazer|0');
+  if (phoneticKey('vocês falão') !== phoneticKey('vocês falam')) throw new Error('-ão/-am not collapsed: ' + phoneticKey('vocês falão'));
+  if (phoneticKey('faço') !== phoneticKey('fasso')) throw new Error('ç/ss not collapsed');
+  if (phoneticKey('você falar') !== phoneticKey('você fala')) throw new Error('final r not dropped');
+  if (phoneticKey('falo') === phoneticKey('fala')) throw new Error('sound key merged falo and fala');
+  if (micAnswer(falam, ['vocês falão'], rivals(falam)) !== 'vocês falam') throw new Error('"vocês falão" not accepted by sound');
+  if (micAnswer(faco, ['eu fasso'], rivals(faco)) !== 'eu faço') throw new Error('"eu fasso" not accepted by sound');
+  if (micAnswer(fala, ['você falar'], rivals(fala)) !== 'você fala') throw new Error('"você falar" not accepted by sound');
+  if (micAnswer(falo, ['eu fala'], rivals(falo)) !== null) throw new Error('"eu fala" accepted for "eu falo" by the mic');
+  if (micAnswer(falo, ['eu fala', 'eu falo'], rivals(falo)) !== 'eu falo') throw new Error('exact second hypothesis lost to the first');
+  if (micAnswer(falo, ['falu'], rivals(falo)) !== 'falo') throw new Error('sound identity on a short form rejected: ' + micAnswer(falo, ['falu'], rivals(falo)));
+  return 'falão→falam, fasso→faço, falar→fala by sound; fala≠falo guarded; exact hypothesis wins';
+});
+
 step('a miss makes only that form shaky; one right answer clears it', function () {
   Store.resetTopic('imperfeito');
   var cards = topicCards(topicById('imperfeito'));

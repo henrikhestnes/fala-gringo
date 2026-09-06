@@ -36,6 +36,33 @@ function runChecks() {
     return bad.length ? bad.join(', ') : (n === 1488 ? true : 'counted ' + n + ' forms');
   });
 
+  /* Mic mode accepts a spoken answer by sound (text.js phoneticKey) unless a
+     rival form sounds the same. Two DIFFERENT forms of one conjugation with one
+     key would make both unreachable by sound — flag them so the key stays
+     honest about the data. (Identical spellings like eu era / você era are the
+     same answer, not a collision.) */
+  check('no two distinct forms of a conjugation share a sound key', () => {
+    const bad = [];
+    quizTopics.forEach(t => {
+      const byLex = {};
+      topicCards(t).forEach(c => {
+        const bar = String(c.id).indexOf('|');
+        if (bar < 0) return;                       // non-verb topics: one word per card
+        (byLex[c.id.slice(0, bar)] = byLex[c.id.slice(0, bar)] || []).push(c);
+      });
+      Object.keys(byLex).forEach(lex => {
+        const seen = {};
+        byLex[lex].forEach(c => {
+          const form = normalize(c.answer.split(' ').slice(-1)[0]);   // the bare form, pronoun dropped
+          const k = phoneticKey(form);
+          if (seen[k] && seen[k] !== form) bad.push(t.id + ' ' + lex + ': ' + seen[k] + ' / ' + form);
+          seen[k] = seen[k] || form;
+        });
+      });
+    });
+    return bad.length ? bad.slice(0, 12).join('; ') + (bad.length > 12 ? ' …' : '') : true;
+  });
+
   check('no duplicate verbs', () => {
     const seen = {}, dup = [];
     V.verbs.forEach(v => { if (seen[v.pt]) dup.push(v.pt); seen[v.pt] = 1; });

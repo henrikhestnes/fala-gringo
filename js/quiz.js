@@ -47,6 +47,7 @@ const QUIZ_STRINGS = Object.assign({
   hardCards: 'Hard Mode cards',
   startOver: 'Start over ↻',
   answerIs: 'The answer is',
+  nearIs: 'Close! You typed “{typed}” — the answer is',
   listening: 'Ouvindo… fala aí',
   listeningEmpty: ' — diga “nada” se nada falta na lacuna',
   micResumeSuffix: ' — tap to listen again',
@@ -89,8 +90,25 @@ const Quiz = (function () {
     return set;
   }
 
-  function isCorrect(card, value) {
-    return acceptedFor(card).has(normalize(value));
+  /* Every answer of the topic's OTHER cards that this card does not accept
+     itself — what a near-miss must stay clear of (text.js matchAnswer). Cached
+     per card for the mounted topic. */
+  const rivalCache = new Map();
+  function rivalsFor(card) {
+    let r = rivalCache.get(card.id);
+    if (r) return r;
+    const own = acceptedFor(card);
+    r = [];
+    topicCards(topic).forEach(o => {
+      if (o === card) return;
+      o.accepted.forEach(a => { if (a && !own.has(normalize(a))) r.push(a); });
+    });
+    rivalCache.set(card.id, r);
+    return r;
+  }
+
+  function gradeTyped(card, value) {
+    return matchAnswer(card, value, rivalsFor(card), false);
   }
 
   function focusOn() {
@@ -198,6 +216,7 @@ const Quiz = (function () {
 
   function mount(t) {
     topic = t;
+    rivalCache.clear();
     const groups = topicGroups(topic);
     activeGroups = groups.length ? new Set(groups) : null;
     buildDeck();
@@ -416,7 +435,7 @@ const Quiz = (function () {
         micRetries = 0;
         const input = document.getElementById('answerInput');
         if (!input) return;
-        const match = micAnswer(card, alts);
+        const match = micAnswer(card, alts, rivalsFor(card));
         input.value = match !== null ? match : alts[0] || '';
         if (!input.value.trim() && !card.allowEmpty) { startMic(); return; }
         checkAnswer();
@@ -468,18 +487,26 @@ const Quiz = (function () {
     const pron = card.pron ? '<span class="pron-tag">' + escapeHtml(card.pron) + '</span>' : '';
     const say = card.speak ? speakButton(card.speak, card.answer) : '';
 
-    const ok = isCorrect(card, input.value);
+    const res = gradeTyped(card, input.value);
+    const ok = !!res;
     if (ok) {
+      // a near-miss (one slip, unambiguous) clears the card but earns no review
+      // level: it comes back on its current interval instead of a longer one
+      const near = res.grade === 'near';
       if (Mode.hard) stats.hardSolved++;
       input.classList.add('correct');
       btn.classList.add('go-green');
-      feedback.className = 'feedback ok';
-      feedback.innerHTML = '✓ ' + praiseWord() + ' <strong>' + escapeHtml(card.answer) + '</strong>' + pron + say;
+      feedback.className = 'feedback ok' + (near ? ' near' : '');
+      feedback.innerHTML = near
+        ? '≈ ' + tfill(QUIZ_STRINGS.nearIs, { typed: escapeHtml(input.value.trim()) }) +
+          ' <strong>' + escapeHtml(card.answer) + '</strong>' + pron + say
+        : '✓ ' + praiseWord() + ' <strong>' + escapeHtml(card.answer) + '</strong>' + pron + say;
       revealArea.innerHTML = card.reveal || '';
       known.add(current);
       Store.markMastered(topic.id, card.id);
       // a confirmed inferred-known form skips the first rung of the review ladder
-      Store.recordAnswer(topic.id, card.id, true, tierOf.get(card.id) === 'verify' ? VERIFY_LEVEL : 0);
+      Store.recordAnswer(topic.id, card.id, true,
+                         (!near && tierOf.get(card.id) === 'verify') ? VERIFY_LEVEL : 0, near);
       updateStats();
     } else {
       stats.errors++;

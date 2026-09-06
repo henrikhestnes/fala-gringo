@@ -22,8 +22,10 @@
 // 1.13.1 the tab strip's mastery % follows every answer too (drills and Daily)
 // 1.14 shaky = missed and not yet answered right again (was a 3-streak); a shaky verb drags in only
 //      its UNSEEN forms — the flat-era rules had kept hundreds of cards "shaky" for weeks
+// 1.15 forgiving matching: a typed slip is a near-miss (clears, no level gain), spoken answers match by
+//      pt-BR sound key — both refused when another form of the topic is just as close
 
-const APP_VERSION = '1.14.0';
+const APP_VERSION = '1.15.0';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

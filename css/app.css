@@ -541,6 +541,7 @@ main { max-width: 880px; width: 100%; margin: 0 auto; padding: 1.1rem 1rem 4rem;
 }
 .feedback.ok, .feedback.err { display: flex; }
 .feedback.ok { color: var(--green-ink); }
+.feedback.ok.near { color: var(--yellow-ink); }   /* a slip: accepted, but shown as such */
 .feedback.err { color: var(--red-ink); }
 .feedback strong { font-family: var(--mono); }
 

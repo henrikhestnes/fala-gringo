@@ -106,13 +106,13 @@ const Store = (function () {
        its first miss until it has been answered correctly FOCUS_STREAK times in
        a row. Records written before 1.12 have no `l`: a card with a last-correct
        day counts as level 1, i.e. exactly the old fixed 7-day review. --- */
-    recordAnswer(topicId, cardId, correct, minLevel) {
+    recordAnswer(topicId, cardId, correct, minLevel, near) {
       if (!state.strength[topicId]) state.strength[topicId] = {};
       const s = state.strength[topicId][cardId] || { s: 0, m: 0 };
       if (correct) {
         const day = today();
         let l = levelOf(s);
-        if (day > (s.t || 0)) l += 1;              // a new day confirms; a same-day repeat does not
+        if (day > (s.t || 0) && !near) l += 1;     // a new day confirms; a same-day repeat or a near-miss does not
         if (l < 1) l = 1;                          // …but a hit after a miss is always back on rung one
         if (minLevel && l < minLevel) l = minLevel;  // inferred-known cards start higher (js/infer.js)
         s.s += 1; s.t = day; s.l = l;

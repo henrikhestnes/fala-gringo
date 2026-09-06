@@ -78,6 +78,25 @@ function isCorrectForSmoke(card, value) {
   return card.accepted.some(function (a) { return normalize(a) === normalize(value); });
 }
 
+step('typed slips are tolerated in English too, but not into another answer', function () {
+  var cards = topicCards(topicById('irregulares'));
+  var card = cards.filter(function (c) { return c.id === 'understand|past'; })[0];
+  if (!card) throw new Error('understand|past card missing');
+  var own = {}; card.accepted.forEach(function (a) { own[normalize(a)] = 1; });
+  var rivals = cards.filter(function (c) { return c !== card; }).reduce(function (acc, c) {
+    return acc.concat(c.accepted.filter(function (a) { return !own[normalize(a)]; }));
+  }, []);
+  var m = matchAnswer(card, 'understod', rivals, false);
+  if (!m || m.grade !== 'near' || m.hit !== 'understood') throw new Error('"understod": ' + JSON.stringify(m));
+  // the sound key is plain spelling for a non-Portuguese app
+  if (phoneticKey('understood') !== 'understood') throw new Error('pt-BR sound rules leaked into en-US: ' + phoneticKey('understood'));
+  // "went" vs "want"? only if both are answers: a slip that lands on a rival is refused
+  var went = cards.filter(function (c) { return c.id === 'go|past'; })[0];
+  var wentRivals = ['want'].concat(rivals);
+  if (matchAnswer(went, 'want', wentRivals, false)) throw new Error('"want" accepted for "went" despite a rival');
+  return '"understod" ≈ understood; rival guard holds; sound key is identity in en-US';
+});
+
 step('the phrasal tab drills with theme chips and a tip reveal', function () {
   goTo('#phrasal');
   var total = parseInt(registry.statTotal.textContent, 10);

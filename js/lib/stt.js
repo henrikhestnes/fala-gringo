@@ -116,15 +116,22 @@ function expandSpokenDigits(text) {
    digits expanded) hits, and '' for a spoken "nada" on a card whose right
    answer is nothing (the connecting topic's empty gaps). The digit expansion
    is Portuguese-specific, so it only runs when the app listens in Portuguese. */
-function micAnswer(card, alternatives) {
+function micAnswer(card, alternatives, rivals) {
   const isPt = (window.APP_LANG || 'pt-BR').slice(0, 2).toLowerCase() === 'pt';
-  for (const alt of alternatives) {
-    for (const cand of isPt ? [alt, expandSpokenDigits(alt)] : [alt]) {
-      const key = normalize(cand);
-      const hit = card.accepted.find(a => normalize(a) === key);
-      if (hit !== undefined) return hit;
-    }
-    if (card.allowEmpty && normalize(alt) === 'nada') return '';
+  const cands = [];
+  alternatives.forEach(alt => (isPt ? [alt, expandSpokenDigits(alt)] : [alt]).forEach(c => cands.push(c)));
+  // an exact hit in ANY hypothesis beats a sound-alike in the top one
+  for (const cand of cands) {
+    const key = normalize(cand);
+    const hit = card.accepted.find(a => normalize(a) === key);
+    if (hit !== undefined) return hit;
   }
+  // then by sound (text.js phoneticKey), guarded against the card's rivals so a
+  // form that merely sounds like a DIFFERENT form of the conjugation stays a miss
+  for (const cand of cands) {
+    const m = matchAnswer(card, cand, rivals, true);
+    if (m) return m.hit;
+  }
+  if (card.allowEmpty && alternatives.some(alt => normalize(alt) === 'nada')) return '';
   return null;
 }
