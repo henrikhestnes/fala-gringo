@@ -88,6 +88,19 @@
     }).join('');
   }
 
+  /* Refresh one tab's mastery percentage in place (the drills and the Daily call
+     this after every answer). Only the span changes, so a horizontally scrolled
+     tab strip on a phone keeps its position; a strip without the span yet
+     (first paint) falls back to a full render. */
+  function updateTabPct(topicId) {
+    const t = topicById(topicId);
+    if (!t || t.kind !== 'quiz') return;
+    const span = document.querySelector('[data-tab="' + topicId + '"] .pct');
+    if (!span) { renderTabs(); return; }
+    const total = topicCards(t).length;
+    span.textContent = (total ? Math.round((Store.masteredCount(t.id) / total) * 100) : 0) + '%';
+  }
+
   function updateModeButton() {
     const btn = document.getElementById('modeBtn');
     // aria-pressed reflects Hard Mode, which is the default state.
@@ -198,5 +211,5 @@
   }
 
   // sync.js re-renders through this after pulling remote progress
-  window.App = { refresh: route };
+  window.App = { refresh: route, updateTabPct: updateTabPct };
 })();

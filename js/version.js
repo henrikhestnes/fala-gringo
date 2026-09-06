@@ -19,8 +19,9 @@
 //      reviews-first deck order, and inferred-known verb forms (js/infer.js) that only need confirming
 // 1.12.1 fix: equally overdue reviews were served in data order (stable sort on a tie) — shuffled again
 // 1.13 the drill header is live: the Foco chip tiers and the mastered count follow every answer
+// 1.13.1 the tab strip's mastery % follows every answer too (drills and Daily)
 
-const APP_VERSION = '1.13.0';
+const APP_VERSION = '1.13.1';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

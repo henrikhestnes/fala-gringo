@@ -212,6 +212,7 @@ const Daily = (function () {
       document.getElementById('revealArea').innerHTML = card.reveal || '';
       Store.markMastered(card.topic, card.id);
       Store.recordAnswer(card.topic, card.id, true);
+      if (window.App && App.updateTabPct) App.updateTabPct(card.topic);   // that topic's tab % follows
       save();
       requestAnimationFrame(() => {
         const t = document.querySelector('.conj-table-wrapper');

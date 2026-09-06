@@ -287,6 +287,7 @@ const Quiz = (function () {
     if (chip) chip.innerHTML = focoChipHtml();
     const line = document.getElementById('masteredLine');
     if (line) line.innerHTML = masteredHtml();
+    if (window.App && App.updateTabPct) App.updateTabPct(topic.id);   // the tab's mastery % too
   }
 
   /* ---------------------------------------------------------------- render */
