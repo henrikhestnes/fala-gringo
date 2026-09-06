@@ -156,8 +156,10 @@ const Quiz = (function () {
       else waiting += group.length;
     });
 
-    due.sort((a, b) => Store.overdue(topic.id, b.id) - Store.overdue(topic.id, a.id));
-    const tiers = [['due', due], ['shaky', shuffle(shaky)], ['verify', shuffle(verify)], ['new', shuffle(intake)]];
+    // most overdue first; shuffle BEFORE the (stable) sort so equally overdue
+    // cards — most of them, on any given day — don't come out in data order
+    const dueOrdered = shuffle(due).sort((a, b) => Store.overdue(topic.id, b.id) - Store.overdue(topic.id, a.id));
+    const tiers = [['due', dueOrdered], ['shaky', shuffle(shaky)], ['verify', shuffle(verify)], ['new', shuffle(intake)]];
     tierOf = new Map();
     const out = [];
     tiers.forEach(([name, list]) => list.forEach(c => { tierOf.set(c.id, name); out.push(c); }));

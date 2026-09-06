@@ -17,8 +17,9 @@
 // 1.11 one sync code per device, shared by both apps (fg:syncCode) — two blobs, one "account"
 // 1.12 Foco: expanding review schedule (7/14/30/60/120 by review level), a daily cap on new cards,
 //      reviews-first deck order, and inferred-known verb forms (js/infer.js) that only need confirming
+// 1.12.1 fix: equally overdue reviews were served in data order (stable sort on a tie) — shuffled again
 
-const APP_VERSION = '1.12.0';
+const APP_VERSION = '1.12.1';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

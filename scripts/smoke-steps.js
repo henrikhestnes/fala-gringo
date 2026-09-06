@@ -415,6 +415,36 @@ step('the Foco deck puts due reviews before new cards, most overdue first', func
   return '5 due first (most overdue leading), then the 20 new';
 });
 
+step('equally overdue reviews are shuffled, not served in data order', function () {
+  // regression (v1.12.1): the stable overdue sort kept ties in data order, so a
+  // tab whose cards all fell due together ran through the list verb by verb
+  Store.resetTopic('nouns');
+  var cards = topicCards(topicById('nouns')).slice(0, 12);
+  var today = Math.floor(Date.now() / 86400000);
+  var snap = Store.snapshot();
+  snap.mastered.nouns = {}; snap.strength.nouns = {};
+  cards.forEach(function (c) {
+    snap.mastered.nouns[c.id] = 1;
+    snap.strength.nouns[c.id] = { s: 1, m: 0, l: 1, t: today - REVIEW_INTERVALS[0] };   // all due, all equal
+  });
+  Store.applySynced(snap);
+  var inOrder = 0;
+  for (var run = 0; run < 3; run++) {
+    goTo('#browse'); goTo('#nouns');
+    var shown = [];
+    for (var i = 0; i < cards.length; i++) {
+      var c = shownCard('nouns');
+      shown.push(c.id);
+      registry.answerInput.value = 'zzz-wrong-' + i;      // a miss keeps every card in the deck
+      registry.actionBtn.fire('click'); registry.actionBtn.fire('click');
+    }
+    if (shown.join('|') === cards.map(function (c) { return c.id; }).join('|')) inOrder++;
+    Store.applySynced(snap);                                // undo the misses for the next run
+  }
+  if (inOrder === 3) throw new Error('due ties came out in data order on every rebuild');
+  return '12 equally due cards; data order seen in ' + inOrder + ' of 3 rebuilds';
+});
+
 step('inference: a known word + a known pattern makes an unseen regular form a "verify" card', function () {
   ['presente', 'perfeito', 'imperfeito', 'subjuntivo'].forEach(function (t) { Store.resetTopic(t); });
   var cards = topicCards(topicById('presente'));
