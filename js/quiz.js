@@ -12,7 +12,7 @@
    and needs nothing here. */
 const QUIZ_STRINGS = Object.assign({
   focoTitle: 'The cards needing work, reviews first: due (after 7, 14, 30, 60, then 120 days ' +
-             'of confirmed answers), missed (until answered right {streak} times in a row), ' +
+             'of confirmed answers), missed (until answered right again), ' +
              'forms you likely know from the verb and the pattern (one quick confirmation), ' +
              'and up to {cap} new cards a day. Switch off to drill the whole deck.',
   focoChip: '🎯 Foco',
@@ -113,9 +113,10 @@ const Quiz = (function () {
 
   /* The Foco deck (the default) — the cards needing work, in tiers:
        due     mastered cards whose review interval ran out, most overdue first
-       shaky   missed and no FOCUS_STREAK since — plus, because getting one form
-               right doesn't mean the conjugation is known, every other card
-               sharing a shaky card's lexeme
+       shaky   missed and not answered right since — plus the UNSEEN forms of
+               the same verb (a shaky form is a reason to meet the rest of the
+               conjugation now, cap or no cap; its fresh, mastered siblings are
+               left alone and its due ones are simply due)
        verify  unseen forms the learner very likely knows already (js/infer.js:
                the verb is known and the pattern is known) — asked once, uncapped
        new     unseen cards, at most Store.newPerDay() introduced per day, taken
@@ -131,9 +132,9 @@ const Quiz = (function () {
     const due = [], shaky = [], unseen = [];
     cards.forEach(c => {
       const st = Store.cardState(topic.id, c.id);
-      if (st === 'shaky' || weak.has(lexeme(c))) shaky.push(c);
+      if (st === 'shaky') shaky.push(c);
       else if (st === 'due') due.push(c);
-      else if (st === 'new') unseen.push(c);
+      else if (st === 'new') (weak.has(lexeme(c)) ? shaky : unseen).push(c);   // dragged in by a shaky sibling
     });
 
     // inferred-known forms skip the queue (a quick confirmation, not a lesson)

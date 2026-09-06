@@ -20,8 +20,10 @@
 // 1.12.1 fix: equally overdue reviews were served in data order (stable sort on a tie) — shuffled again
 // 1.13 the drill header is live: the Foco chip tiers and the mastered count follow every answer
 // 1.13.1 the tab strip's mastery % follows every answer too (drills and Daily)
+// 1.14 shaky = missed and not yet answered right again (was a 3-streak); a shaky verb drags in only
+//      its UNSEEN forms — the flat-era rules had kept hundreds of cards "shaky" for weeks
 
-const APP_VERSION = '1.13.1';
+const APP_VERSION = '1.14.0';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

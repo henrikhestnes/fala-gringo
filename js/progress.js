@@ -7,8 +7,12 @@
 const STORE_KEY = window.APP_STORE_KEY || 'pvs:v1';
 
 /* Correct answers in a row (since the last miss) before a card stops counting
-   as shaky and drops out of the Foco deck. */
-const FOCUS_STREAK = 3;
+   as shaky. One: a missed card is shaky only until it is answered right again —
+   that answer puts it on the first rung of the review ladder (due in 7 days),
+   and a second miss resets it, so a lucky hit is caught a week later anyway.
+   (Pre-1.14 this was 3, a guard from the flat-schedule era that kept cards
+   "shaky" for weeks once reviews were a week or more apart.) */
+const FOCUS_STREAK = 1;
 
 /* Review schedule: days a mastered card stays out of the Foco deck, indexed by
    its review level — how many times it has been confirmed on DISTINCT days since
@@ -109,6 +113,7 @@ const Store = (function () {
         const day = today();
         let l = levelOf(s);
         if (day > (s.t || 0)) l += 1;              // a new day confirms; a same-day repeat does not
+        if (l < 1) l = 1;                          // …but a hit after a miss is always back on rung one
         if (minLevel && l < minLevel) l = minLevel;  // inferred-known cards start higher (js/infer.js)
         s.s += 1; s.t = day; s.l = l;
       } else {

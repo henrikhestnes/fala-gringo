@@ -506,7 +506,7 @@ step('inference: a known word + a known pattern makes an unseen regular form a "
   return '"' + target.id + '" verified from "' + targetEu + '" + ' + Infer.PATTERN_MIN + ' -ar vocês; hit -> level 2; stranger, irregular and shaky pattern excluded';
 });
 
-step('a miss pulls the whole conjugation back into Foco', function () {
+step('a miss makes only that form shaky; one right answer clears it', function () {
   Store.resetTopic('imperfeito');
   var cards = topicCards(topicById('imperfeito'));
   cards.forEach(function (c) {           // simulate a fully mastered, fresh topic
@@ -516,19 +516,42 @@ step('a miss pulls the whole conjugation back into Foco', function () {
   var missed = cards[0];
   Store.recordAnswer('imperfeito', missed.id, false);
   goTo('#browse'); goTo('#imperfeito');
-  var lex = String(missed.id).split('|')[0];
-  var expected = cards.filter(function (c) {
-    return String(c.id).split('|')[0] === lex;
-  }).length;
+  // the verb's other forms are fresh and mastered: they are NOT dragged back in
   var total = parseInt(registry.statTotal.textContent, 10);
-  if (total !== expected)
-    throw new Error('deck has ' + total + ' cards, expected the ' +
-                    expected + ' forms of "' + lex + '"');
-  for (var i = 0; i < FOCUS_STREAK; i++) Store.recordAnswer('imperfeito', missed.id, true);
+  if (total !== 1) throw new Error('deck has ' + total + ' cards, expected just the missed form');
+  if (!/· 1 shaky$/.test(registry.focoChip.innerHTML)) throw new Error('chip reads "' + registry.focoChip.innerHTML + '"');
+  Store.recordAnswer('imperfeito', missed.id, true);   // one right answer -> back on the ladder
+  if (Store.cardState('imperfeito', missed.id) !== 'ok' || Store.reviewLevel('imperfeito', missed.id) !== 1)
+    throw new Error('after the fix-up: ' + Store.cardState('imperfeito', missed.id) + ' / level ' + Store.reviewLevel('imperfeito', missed.id));
   goTo('#browse'); goTo('#imperfeito');
   if (!/Tudo em dia/.test(registry.cardArea.innerHTML))
-    throw new Error('verb did not graduate after a ' + FOCUS_STREAK + '-streak');
-  return 'miss -> the ' + expected + ' forms of "' + lex + '"; 3-streak -> empty again';
+    throw new Error('deck did not empty after the fix-up');
+  return 'miss -> 1 shaky card (fresh siblings left alone); one hit -> level 1, deck empty';
+});
+
+step('a shaky form drags its UNSEEN siblings in, cap or no cap', function () {
+  var cards = topicCards(topicById('imperfeito'));
+  var missed = cards[0];
+  var lex = String(missed.id).split('|')[0];
+  var siblings = cards.filter(function (c) { return c.id !== missed.id && String(c.id).split('|')[0] === lex; });
+  // forget the siblings entirely (never seen), then miss the form again
+  var snap = Store.snapshot();
+  siblings.forEach(function (c) { delete snap.mastered.imperfeito[c.id]; delete snap.strength.imperfeito[c.id]; });
+  Store.applySynced(snap);
+  Store.setPref('newPerDay', 1);                      // a cap the drag must ignore
+  Store.recordAnswer('imperfeito', missed.id, false);
+  goTo('#browse'); goTo('#imperfeito');
+  var total = parseInt(registry.statTotal.textContent, 10);
+  if (total !== 1 + siblings.length)
+    throw new Error('deck has ' + total + ' cards, expected the missed form + its ' + siblings.length + ' unseen siblings');
+  siblings.forEach(function (c) {
+    if (Quiz._tierOf(c.id) !== 'shaky') throw new Error('sibling "' + c.id + '" is in tier ' + Quiz._tierOf(c.id));
+  });
+  if (Quiz._counts().new !== 0) throw new Error('unseen siblings leaked into the new tier: ' + JSON.stringify(Quiz._counts()));
+  Store.setPref('newPerDay', NEW_PER_DAY);
+  Store.recordAnswer('imperfeito', missed.id, true);   // tidy up for the steps that follow
+  siblings.forEach(function (c) { Store.markMastered('imperfeito', c.id); Store.recordAnswer('imperfeito', c.id, true); });
+  return 'miss -> the form + ' + siblings.length + ' unseen forms of "' + lex + '" in the shaky tier, past a cap of 1';
 });
 
 step('a mastered card comes back for review once it goes stale', function () {
