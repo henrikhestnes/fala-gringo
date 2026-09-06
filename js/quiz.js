@@ -70,6 +70,7 @@ const Quiz = (function () {
   let activeGroups = null;
   let counts = null;        // Foco tier sizes of the current deck (+ cards waiting behind the cap)
   let tierOf = new Map();   // card id -> 'due' | 'shaky' | 'verify' | 'new' (Foco decks only)
+  let missed = new Set();   // card ids missed in this run (they read as shaky on the chip)
 
   /* mic mode (the 🎤 chip): hands-free spoken answers */
   let micTimer = 0;    // pending auto-advance
@@ -190,6 +191,7 @@ const Quiz = (function () {
     answered = false;
     perfect = true;
     stats = { errors: 0, hardSolved: 0 };
+    missed = new Set();
     render();
   }
 
@@ -202,38 +204,60 @@ const Quiz = (function () {
 
   /* ---------------------------------------------------------------- chrome */
 
+  /* What is still ahead in this run, per tier: a card answered right leaves
+     its tier, a card missed this run counts as shaky until it is cleared. */
+  function liveCounts() {
+    if (!counts) return null;
+    const live = { due: 0, shaky: 0, verify: 0, new: 0, waiting: counts.waiting };
+    deck.forEach((c, i) => {
+      if (known.has(i)) return;
+      const tier = missed.has(c.id) ? 'shaky' : (tierOf.get(c.id) || 'new');
+      live[tier]++;
+    });
+    return live;
+  }
+
+  /* "🎯 Foco · 12 due · 3 shaky · 20 new" — the tiers still ahead, zeros omitted. */
+  function focoChipHtml() {
+    const c = focusOn() ? liveCounts() : null;
+    const parts = [];
+    if (c) {
+      [['due', 'focoDue'], ['shaky', 'focoShaky'], ['verify', 'focoVerify'], ['new', 'focoNew']].forEach(([k, str]) => {
+        if (c[k]) parts.push(tfill(QUIZ_STRINGS[str], { n: c[k] }));
+      });
+    }
+    return QUIZ_STRINGS.focoChip + parts.map(p => ' · ' + escapeHtml(p)).join('');
+  }
+
+  function masteredHtml() {
+    const total = topicCards(topic).length;
+    const mastered = Store.masteredCount(topic.id);
+    return tfill(QUIZ_STRINGS.masteredLine, { n: mastered, total: total }) +
+      (Mode.hard ? '' : QUIZ_STRINGS.easyTag) +
+      (mastered > 0
+        ? ' · <button class="reset-link" type="button" data-reset-topic="' +
+          escapeHtml(topic.id) + '">' + QUIZ_STRINGS.reset + '</button>'
+        : '');
+  }
+
   function chromeHtml() {
     const groups = topicGroups(topic);
     const chips = groups.map(g =>
       '<button class="chip' + (activeGroups && activeGroups.has(g) ? ' active' : '') +
       '" data-group="' + escapeHtml(g) + '">' + escapeHtml(g) + '</button>').join('');
-    // the day's work at a glance: "🎯 Foco · 12 due · 3 shaky · 20 new" (zero tiers omitted)
-    const parts = [];
-    if (focusOn() && counts) {
-      [['due', 'focoDue'], ['shaky', 'focoShaky'], ['verify', 'focoVerify'], ['new', 'focoNew']].forEach(([k, str]) => {
-        if (counts[k]) parts.push(tfill(QUIZ_STRINGS[str], { n: counts[k] }));
-      });
-    }
     const focusChip = '<button class="chip focus' + (focusOn() ? ' active' : '') +
-      '" data-focus="1" title="' +
+      '" id="focoChip" data-focus="1" title="' +
       escapeHtml(tfill(QUIZ_STRINGS.focoTitle, { streak: FOCUS_STREAK, cap: Store.newPerDay() })) +
-      '">' + QUIZ_STRINGS.focoChip + parts.map(p => ' · ' + escapeHtml(p)).join('') + '</button>';
+      '">' + focoChipHtml() + '</button>';
     const micChip = (typeof Stt !== 'undefined' && Stt.supported())
       ? '<button class="chip mic' + (micOn() ? ' active' : '') +
         '" data-mic="1" title="' + escapeHtml(QUIZ_STRINGS.micTitle) + '">' +
         QUIZ_STRINGS.micChip + '</button>'
       : '';
-    const total = topicCards(topic).length;
-    const mastered = Store.masteredCount(topic.id);
     return '' +
       '<div class="view-head">' +
         '<h1>' + escapeHtml(topic.label) + '</h1>' +
-        '<p>' + tfill(QUIZ_STRINGS.masteredLine, { n: mastered, total: total }) +
-        (Mode.hard ? '' : QUIZ_STRINGS.easyTag) +
-        (mastered > 0
-          ? ' · <button class="reset-link" type="button" data-reset-topic="' +
-            escapeHtml(topic.id) + '">' + QUIZ_STRINGS.reset + '</button>'
-          : '') + '</p>' +
+        '<p id="masteredLine">' + masteredHtml() + '</p>' +
       '</div>' +
       '<div class="filters" id="filterRow">' + focusChip + micChip + chips + '</div>' +
       '<div class="stats">' +
@@ -258,6 +282,11 @@ const Quiz = (function () {
     const bar = document.getElementById('progressBar');
     if (bar) bar.style.width = pct + '%';
     set('progressPct', pct + '%');
+    // the header follows every answer too: tiers still ahead, cards mastered
+    const chip = document.getElementById('focoChip');
+    if (chip) chip.innerHTML = focoChipHtml();
+    const line = document.getElementById('masteredLine');
+    if (line) line.innerHTML = masteredHtml();
   }
 
   /* ---------------------------------------------------------------- render */
@@ -452,6 +481,7 @@ const Quiz = (function () {
       updateStats();
     } else {
       stats.errors++;
+      missed.add(card.id);
       Store.recordAnswer(topic.id, card.id, false);
       perfect = false;
       input.classList.add('wrong', 'shake');
@@ -461,6 +491,7 @@ const Quiz = (function () {
       feedback.innerHTML = '✗ ' + missWord() + ' ' + QUIZ_STRINGS.answerIs +
         ' <strong>' + escapeHtml(card.answer) + '</strong>' + pron + say;
       revealArea.innerHTML = card.reveal || '';
+      updateStats();   // the chip now shows this card as shaky
     }
 
     requestAnimationFrame(() => {

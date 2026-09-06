@@ -18,8 +18,9 @@
 // 1.12 Foco: expanding review schedule (7/14/30/60/120 by review level), a daily cap on new cards,
 //      reviews-first deck order, and inferred-known verb forms (js/infer.js) that only need confirming
 // 1.12.1 fix: equally overdue reviews were served in data order (stable sort on a tie) — shuffled again
+// 1.13 the drill header is live: the Foco chip tiers and the mastered count follow every answer
 
-const APP_VERSION = '1.12.1';
+const APP_VERSION = '1.13.0';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

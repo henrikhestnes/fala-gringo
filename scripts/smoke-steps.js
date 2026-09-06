@@ -404,15 +404,28 @@ step('the Foco deck puts due reviews before new cards, most overdue first', func
   if (!/· 5 due · 20 new/.test(registry.view.innerHTML)) throw new Error('chip breakdown missing: ' + registry.view.innerHTML.match(/chip focus[^<]*/)[0]);
   var first = shownCard('nouns');
   if (first.id !== due[4].id) throw new Error('first card is "' + first.id + '", expected the most overdue "' + due[4].id + '"');
-  for (var i = 0; i < 5; i++) {
+  // the header follows every answer: a miss reads as shaky, a hit leaves its tier,
+  // and the mastered count moves as soon as a new card is answered right
+  if (!/· 5 due · 20 new$/.test(registry.focoChip.innerHTML)) throw new Error('live chip starts as "' + registry.focoChip.innerHTML + '"');
+  registry.answerInput.value = 'zzz-wrong';
+  registry.actionBtn.fire('click');
+  if (!/· 4 due · 1 shaky · 20 new$/.test(registry.focoChip.innerHTML)) throw new Error('after a miss the chip reads "' + registry.focoChip.innerHTML + '"');
+  registry.actionBtn.fire('click');                          // advance; the missed card cycles back later
+  for (var i = 0; i < 4; i++) {
     var c = shownCard('nouns');
-    if (due.map(function (d) { return d.id; }).indexOf(c.id) === -1) throw new Error('card ' + (i + 1) + ' "' + c.id + '" is not a due review');
+    if (due.map(function (d) { return d.id; }).indexOf(c.id) === -1) throw new Error('card ' + (i + 2) + ' "' + c.id + '" is not a due review');
     registry.answerInput.value = c.answer;
     registry.actionBtn.fire('click'); registry.actionBtn.fire('click');
   }
+  if (!/· 1 shaky · 20 new$/.test(registry.focoChip.innerHTML)) throw new Error('after the due reviews the chip reads "' + registry.focoChip.innerHTML + '"');
   var sixth = shownCard('nouns');
   if (Store.cardState('nouns', sixth.id) !== 'new') throw new Error('sixth card "' + sixth.id + '" is not new');
-  return '5 due first (most overdue leading), then the 20 new';
+  if (!/^5 of \d+ cards mastered/.test(registry.masteredLine.innerHTML)) throw new Error('mastered line reads "' + registry.masteredLine.innerHTML + '"');
+  registry.answerInput.value = sixth.answer;
+  registry.actionBtn.fire('click');
+  if (!/^6 of \d+ cards mastered/.test(registry.masteredLine.innerHTML)) throw new Error('mastered line did not move: "' + registry.masteredLine.innerHTML + '"');
+  if (!/· 1 shaky · 19 new$/.test(registry.focoChip.innerHTML)) throw new Error('after a new card the chip reads "' + registry.focoChip.innerHTML + '"');
+  return '5 due first (most overdue leading), then the 20 new; chip + mastered line follow each answer';
 });
 
 step('equally overdue reviews are shuffled, not served in data order', function () {
