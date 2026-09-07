@@ -1,0 +1,62 @@
+// Headless smoke test for the /noruegues/ subpage — same harness as smoke.jxa,
+// same shared DOM stub, but loading the subpage's script set with the
+// configuration globals its index.html sets before the engine:
+//
+//   osascript -l JavaScript scripts/smoke-noruegues.jxa
+ObjC.import('Foundation');
+
+function read(p) {
+  const s = $.NSString.stringWithContentsOfFileEncodingError($(p), $.NSUTF8StringEncoding, null);
+  if (!s || s.isNil()) throw new Error('cannot read ' + p);
+  return ObjC.unwrap(s);
+}
+const ROOT = ObjC.unwrap($.NSFileManager.defaultManager.currentDirectoryPath);
+
+/* What noruegues/index.html's inline config block does, reduced to what the steps
+   assert on (full PT wording lives only in the shell — the tests only prove
+   the overrides thread through the engine). */
+const CONFIG =
+  "window.APP_LANG = 'nb-NO';\n" +
+  "window.APP_STORE_KEY = 'fg-noruegues:v1';\n" +
+  "window.APP_SYNC_APP = 'noruegues';\n" +
+  "window.APP_STRINGS = { answerIs: 'A resposta é', masteredLine: '{n} de {total} cartas dominadas', statKnown: 'Certas', " +
+  "focoNew: '{n} novas', focoDue: '{n} p/ revisar', emptyFocoWaiting: '{n} esperam por amanhã', " +
+  "syncTitleOff: 'Sync desligado — toque para conectar seus aparelhos' };\n" +
+  // the page's spoken-digit table, reduced to what the mic step asserts on
+  "window.APP_SPOKEN_DIGITS = function (t) { return String(t).replace(/\\b7\\b/g, 'sju').replace(/\\b20\\b/g, 'tjue'); };\n";
+
+const FILES = [
+  'scripts/dom-stub.js',
+  null,  // CONFIG slots in here, after the stub creates `window`
+  'js/lib/text.js', 'js/lib/tts.js', 'js/lib/stt.js', 'js/lib/fx.js', 'js/progress.js',
+  'noruegues/js/data/verbos.js', 'noruegues/js/data/substantivos.js', 'noruegues/js/data/frases.js',
+  'noruegues/js/data/numeros.js', 'noruegues/js/data/palavrinhas.js', 'noruegues/js/topics.js',
+  'js/quiz.js', 'js/app.js', 'js/lib/sync.js', 'js/version.js',
+  'scripts/smoke-noruegues-steps.js'
+];
+
+var results = [];
+function step(name, fn) {
+  try { const d = fn(); results.push({ ok: true, name: name, detail: d || '' }); }
+  catch (e) { results.push({ ok: false, name: name, detail: (e && e.message) || String(e) }); }
+}
+
+var geval = eval;
+
+try {
+  geval(FILES.map(function (f) {
+    return f === null ? '/* inline config */\n' + CONFIG
+                      : '/* ' + f + ' */\n' + read(ROOT + '/' + f);
+  }).join('\n;\n'));
+} catch (e) {
+  results.push({ ok: false, name: 'load/eval', detail: (e && e.message) || String(e) });
+}
+
+results.forEach(r => {
+  console.log((r.ok ? '  ok  ' : 'FAIL  ') + r.name);
+  if (r.detail) String(r.detail).split('\n').forEach(l => console.log('        ' + l));
+});
+const failed = results.filter(r => !r.ok).length;
+console.log('');
+console.log(failed ? ('FAILED: ' + failed + ' of ' + results.length)
+                   : ('PASSED: all ' + results.length + ' smoke steps'));

@@ -20,7 +20,11 @@ const CORE = [
   // the /ingles/ subpage (English for Brazilians) shares the engine above and
   // registers this same root worker, so its own files ride in the same cache
   'ingles/', 'ingles/index.html', 'ingles/js/topics.js',
-  'ingles/js/data/irregulares.js', 'ingles/js/data/phrasal.js'
+  'ingles/js/data/irregulares.js', 'ingles/js/data/phrasal.js',
+  // same deal for /noruegues/ (Norwegian for Brazilians)
+  'noruegues/', 'noruegues/index.html', 'noruegues/js/topics.js',
+  'noruegues/js/data/verbos.js', 'noruegues/js/data/substantivos.js', 'noruegues/js/data/frases.js',
+  'noruegues/js/data/numeros.js', 'noruegues/js/data/palavrinhas.js'
 ];
 
 self.addEventListener('install', e => {

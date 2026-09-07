@@ -1,0 +1,63 @@
+// Headless runner for noruegues/js/checks.js — the /noruegues/ subpage's data
+// invariants, same harness as scripts/check.jxa:
+//
+//   osascript -l JavaScript scripts/check-noruegues.jxa
+
+ObjC.import('Foundation');
+
+function read(path) {
+  const s = $.NSString.stringWithContentsOfFileEncodingError(
+    $(path), $.NSUTF8StringEncoding, null);
+  if (!s || s.isNil()) throw new Error('cannot read ' + path);
+  return ObjC.unwrap(s);
+}
+
+const ROOT = ObjC.unwrap($.NSFileManager.defaultManager.currentDirectoryPath);
+const FILES = [
+  'js/lib/text.js',
+  'noruegues/js/data/verbos.js', 'noruegues/js/data/substantivos.js', 'noruegues/js/data/frases.js',
+  'noruegues/js/data/numeros.js', 'noruegues/js/data/palavrinhas.js',
+  'noruegues/js/topics.js',
+  'noruegues/js/checks.js'
+];
+
+// the data files assign onto `window`; give them one
+var window = this;
+var geval = eval;
+
+var sources = [];
+var loadFailed = false;
+FILES.forEach(function (f) {
+  try {
+    sources.push('/* ' + f + ' */\n' + read(ROOT + '/' + f));
+  } catch (e) {
+    console.log('READ ERROR  ' + f + ': ' + ((e && e.message) || e));
+    loadFailed = true;
+  }
+});
+
+var results = null;
+if (!loadFailed) {
+  try {
+    results = geval(sources.join('\n;\n') + '\n;runChecks();');
+  } catch (e) {
+    console.log('EVAL ERROR: ' + ((e && e.message) || e));
+    loadFailed = true;
+  }
+}
+
+if (loadFailed || !results) {
+  console.log('\nAborting: one or more files failed to parse or execute.');
+} else {
+  const failed = results.filter(r => !r.ok);
+  results.forEach(r => {
+    console.log((r.ok ? '  ok  ' : 'FAIL  ') + r.name);
+    if (r.detail) {
+      r.detail.split('\n').forEach(line => console.log('        ' + line));
+    }
+  });
+  console.log('');
+  console.log(failed.length
+    ? 'FAILED: ' + failed.length + ' of ' + results.length + ' checks'
+    : 'PASSED: all ' + results.length + ' checks');
+}

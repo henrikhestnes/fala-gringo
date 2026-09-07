@@ -4,14 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#009c3b">
-<title>Fala Como Gringo — inglês para brasileiros</title>
-<meta name="description" content="Treine inglês americano digitando as respostas: verbos irregulares e phrasal verbs com pronúncia aproximada para ouvidos brasileiros. Grátis, sem cadastro.">
-<link rel="canonical" href="https://falagringo.com/ingles/">
-<meta property="og:title" content="Fala Como Gringo — inglês para brasileiros">
-<meta property="og:description" content="Treine inglês americano digitando as respostas. Grátis, sem cadastro.">
+<title>Fala Viking — norueguês para brasileiros</title>
+<meta name="description" content="Treine norueguês (bokmål) digitando as respostas: verbos, substantivos com gênero, frases, números e palavrinhas, com pronúncia aproximada para ouvidos brasileiros. Grátis, sem cadastro.">
+<link rel="canonical" href="https://falagringo.com/noruegues/">
+<meta property="og:title" content="Fala Viking — norueguês para brasileiros">
+<meta property="og:description" content="Treine norueguês digitando as respostas. Grátis, sem cadastro.">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://falagringo.com/ingles/">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='10' fill='%233c3b6e'/><text x='32' y='36' font-size='42' text-anchor='middle' dominant-baseline='central'>🗽</text></svg>">
+<meta property="og:url" content="https://falagringo.com/noruegues/">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='10' fill='%23ba0c2f'/><text x='32' y='36' font-size='42' text-anchor='middle' dominant-baseline='central'>🏔️</text></svg>">
 <link rel="stylesheet" href="../css/app.css">
 </head>
 <body>
@@ -20,8 +20,8 @@
   <div class="topbar-inner">
     <span class="brand">
       <!-- emoji nativo em vez de SVG desenhado à mão: nítido em qualquer tamanho -->
-      <span aria-hidden="true" style="font-style:normal;font-size:1.25em;line-height:1">🗽</span>
-      Fala Como Gringo</span>
+      <span aria-hidden="true" style="font-style:normal;font-size:1.25em;line-height:1">🏔️</span>
+      Fala Viking</span>
     <button class="mode-btn" id="modeBtn" type="button" aria-pressed="true">Modo Raiz</button>
     <button class="icon-btn" id="syncBtn" type="button" aria-label="Sincronizar o progresso entre aparelhos" title="Sincronizar o progresso entre aparelhos">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -41,27 +41,53 @@
 <main id="view"></main>
 
 <footer>
-  Inglês americano para brasileiros &mdash; digite a resposta em inglês.<br>
+  Norueguês (bokmål, como se fala em Oslo) para brasileiros &mdash; digite a resposta em norueguês.<br>
+  Pronúncia aproximada: <b>rr</b> = h aspirado &middot; <b>ê</b> (no ø) = e com boca de o &middot;
+  <b>ü</b> (no y) = i com boca de u &middot; <b>ô</b> = å &middot; o acento marca a sílaba forte.<br>
   <a href="../">&larr; Fala Gringo — português para gringos</a> &middot;
-  <a href="../noruegues/">Fala Viking — norueguês para brasileiros</a><br>
+  <a href="../ingles/">Fala Como Gringo — inglês para brasileiros</a><br>
   Feito no Rio ☕ <a href="https://buymeacoffee.com/henrikhestnes" target="_blank" rel="noopener">Me paga um cafezinho</a>
   <span class="build-info" id="buildInfo"></span>
 </footer>
 
 <div class="toast" id="toast"></div>
 
-<!-- Mesma arquitetura do app principal: scripts clássicos, sem build. O motor
-     (quiz.js, app.js, progress.js, js/lib/) é COMPARTILHADO com a raiz; este
-     bloco de configuração roda antes dele e inverte a direção: fala/ouve
-     en-US, guarda o progresso em outra chave e traduz o chrome para PT. O sync
-     (js/lib/sync.js) também é compartilhado: APP_SYNC_APP vira prefixo do código de sync,
-     então o mesmo worker guarda este progresso em outra chave e ele nunca se
-     mistura com o do app principal. -->
+<!-- Mesma arquitetura do app principal e do /ingles/: scripts clássicos, sem
+     build. O motor (quiz.js, app.js, progress.js, js/lib/) é COMPARTILHADO
+     com a raiz; este bloco de configuração roda antes dele e inverte a
+     direção: fala/ouve nb-NO, guarda o progresso em outra chave e traduz o
+     chrome para PT. O sync (js/lib/sync.js) também é compartilhado:
+     APP_SYNC_APP vira prefixo do código de sync, então o mesmo worker guarda
+     este progresso em outra chave e ele nunca se mistura com o dos outros
+     dois apps. -->
 <script>
-window.APP_LANG = 'en-US';
-window.APP_STORE_KEY = 'fg-ingles:v1';
-window.APP_SYNC_APP = 'ingles';
+window.APP_LANG = 'nb-NO';
+window.APP_STORE_KEY = 'fg-noruegues:v1';
+window.APP_SYNC_APP = 'noruegues';
 window.SW_PATH = '../sw.js';
+// modo mic: o reconhecedor devolve "7" e a carta espera "sju" — a expansão
+// de dígitos do motor é só para pt-BR, então a página fornece a sua
+window.APP_SPOKEN_DIGITS = (function () {
+  var W = ['null', 'en', 'to', 'tre', 'fire', 'fem', 'seks', 'sju', 'åtte', 'ni', 'ti',
+           'elleve', 'tolv', 'tretten', 'fjorten', 'femten', 'seksten', 'sytten', 'atten', 'nitten'];
+  var T = { 20: 'tjue', 30: 'tretti', 40: 'førti', 50: 'femti', 60: 'seksti', 70: 'sytti', 80: 'åtti', 90: 'nitti' };
+  var O = { 1: 'første', 2: 'andre', 3: 'tredje' };
+  function words(n) {
+    if (n < 20) return W[n];
+    if (n < 100) return T[n - n % 10] + (n % 10 ? W[n % 10] : '');
+    if (n === 100) return 'hundre';
+    if (n === 1000) return 'tusen';
+    return null;
+  }
+  return function (text) {
+    return String(text).replace(/(\d+)\s*(\.?)/g, function (m, num, dot) {
+      var n = parseInt(num, 10);
+      if (dot && O[n]) return O[n];          // "2." é como o norueguês escreve o ordinal
+      var w = words(n);
+      return w === null ? m : w;
+    });
+  };
+})();
 window.APP_STRINGS = {
   focoTitle: 'As cartas que precisam de atenção, revisões primeiro: vencidas (após 7, 14, 30, 60 ' +
              'e depois 120 dias de acertos confirmados), erradas (até acertar de novo) ' +
@@ -72,9 +98,9 @@ window.APP_STRINGS = {
   focoShaky: '{n} erradas',
   focoVerify: '{n} p/ confirmar',
   focoNew: '{n} novas',
-  micTitle: 'Modo mic: fale a resposta em inglês em vez de digitar — ela é reconhecida, ' +
+  micTitle: 'Modo mic: fale a resposta em norueguês em vez de digitar — ela é reconhecida, ' +
             'corrigida e lida de volta, e o baralho avança sozinho.',
-  micChip: '🎤 Speak',
+  micChip: '🎤 Snakk',
   masteredLine: '{n} de {total} cartas dominadas',
   easyTag: ' · Modo Nutella',
   reset: 'zerar',
@@ -88,10 +114,10 @@ window.APP_STRINGS = {
                     'Desligue o Foco para treinar tudo agora.',
   emptyTitle: 'Sem cartas',
   emptyBody: 'Todas as categorias estão desligadas — religue uma acima.',
-  placeholder: 'escreva em inglês…',
+  placeholder: 'escreva em norueguês…',
   skip: 'Pular →',
   restart: 'Recomeçar ↻',
-  doneTitlePerfect: 'Perfect!',
+  doneTitlePerfect: 'Perfekt!',
   doneTitle: 'Fechou!',
   clearedAll: 'Você fechou todas as {n} cartas',
   clearedPerfect: ' sem errar nenhuma.',
@@ -100,7 +126,7 @@ window.APP_STRINGS = {
   startOver: 'De novo ↻',
   answerIs: 'A resposta é',
   nearIs: 'Quase! Você escreveu “{typed}” — a resposta é',
-  listening: 'Ouvindo… manda aí, em inglês',
+  listening: 'Ouvindo… manda aí, em norueguês',
   listeningEmpty: ' — diga “nada” se nada falta na lacuna',
   micResumeSuffix: ' — toque para ouvir de novo',
   micErrors: {
@@ -110,8 +136,8 @@ window.APP_STRINGS = {
     'audio-capture': 'Nenhum microfone encontrado',
     'network': 'Serviço de voz fora do ar — você está online?'
   },
-  modeHardTitle: 'Modo Raiz (hardcore): sem dica do verbo em inglês. Toque para o Modo Nutella.',
-  modeEasyTitle: 'Modo Nutella: mostra o verbo em inglês como dica. Toque para o Modo Raiz.',
+  modeHardTitle: 'Modo Raiz (hardcore): sem dica em norueguês. Toque para o Modo Nutella.',
+  modeEasyTitle: 'Modo Nutella: mostra uma dica em norueguês (o infinitivo, o substantivo cru). Toque para o Modo Raiz.',
   resetConfirm: 'Zerar o progresso de "{label}"?',
   // sync (js/lib/sync.js)
   syncTitleOff: 'Sync desligado — toque para conectar seus aparelhos',
@@ -124,8 +150,8 @@ window.APP_STRINGS = {
            'ou deixe em branco para criar um novo.',
   syncBadCode: 'Esse código não parece certo',
   syncShowNew: 'Sync LIGADO. Este código é a chave do seu progresso — copie, guarde em ' +
-               'segredo e cole nos seus outros aparelhos. Vale para o Fala Como Gringo e ' +
-               'para o Fala Gringo:',
+               'segredo e cole nos seus outros aparelhos. Vale para o Fala Viking, o Fala Como ' +
+               'Gringo e o Fala Gringo:',
   syncShowOn: 'Sync LIGADO. Seu código está abaixo — copie para conectar outro aparelho.\n\n' +
               'Ou digite "desligar" para desconectar este aparelho.',
   syncOffWord: 'desligar',
@@ -139,8 +165,11 @@ window.APP_STRINGS = {
 <script src="../js/lib/stt.js"></script>
 <script src="../js/lib/fx.js"></script>
 <script src="../js/progress.js"></script>
-<script src="js/data/irregulares.js"></script>
-<script src="js/data/phrasal.js"></script>
+<script src="js/data/verbos.js"></script>
+<script src="js/data/substantivos.js"></script>
+<script src="js/data/frases.js"></script>
+<script src="js/data/numeros.js"></script>
+<script src="js/data/palavrinhas.js"></script>
 <script src="js/topics.js"></script>
 <script src="../js/quiz.js"></script>
 <script src="../js/app.js"></script>

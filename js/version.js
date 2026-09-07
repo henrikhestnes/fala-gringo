@@ -32,8 +32,10 @@
 //        almoçar, jantar, avisar, descobrir, ensinar, gastar, buscar, visitar, virar, arrumar, aproveitar,
 //        desligar); este → esse in three examples
 // 1.16.3 demonstratives: esse/essa/nesse are the canonical answers (este/esta/neste stay accepted) — spoken BR
+// 1.17 /noruegues/ — Fala Viking, Norwegian (bokmål) for Brazilians on the same engine: verbs, nouns with
+//      gender, phrases, numbers, small words; normalize() keeps the ring of å (så ≠ sa)
 
-const APP_VERSION = '1.16.3';
+const APP_VERSION = '1.17.0';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

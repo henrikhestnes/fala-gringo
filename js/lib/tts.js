@@ -13,7 +13,7 @@ const SPEAKER_SVG =
 
 const TTS_LANG = window.APP_LANG || 'pt-BR';
 // the best plain-system voice per language family (Luciana is Apple's pt-BR)
-const TTS_FAVOURITE = { pt: /luciana/i, en: /samantha/i };
+const TTS_FAVOURITE = { pt: /luciana/i, en: /samantha/i, nb: /nora/i };
 
 let ttsVoice = null;
 

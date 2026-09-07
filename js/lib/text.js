@@ -2,12 +2,16 @@
 
 /* Case-, accent- and punctuation-insensitive comparison key.
    Punctuation stripping matters for the sentences topic, where answers are full
-   sentences; it is harmless everywhere else. */
+   sentences; it is harmless everywhere else.
+   The ring above (U+030A) is the one combining mark kept: å is a letter of its
+   own in Norwegian (/noruegues/: så "saw" vs sa "said"), never an accented a — and
+   no Portuguese or English answer carries it, so nothing else changes. ø and æ
+   have no decomposition and stay distinct on their own. */
 function normalize(str) {
   return String(str == null ? '' : str)
     .trim()
     .toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .normalize('NFD').replace(/[\u0300-\u0309\u030b-\u036f]/g, '')
     .replace(/[?!.,;:¿¡"']+/g, '')
     .replace(/\s+/g, ' ')
     .trim();
@@ -71,13 +75,16 @@ function phoneticKey(str) {
    cards of the topic, minus anything this card accepts too. A rival at least
    as close as the best own match makes the answer ambiguous (fala for falo,
    era for eram) and it is NOT accepted: a one-letter difference is often the
-   whole lesson in a conjugation drill. */
+   whole lesson in a conjugation drill.
+   A card with `exact: true` takes no near-misses at all — for /noruegues/'s noun
+   cards, where the one letter that differs (ei/et jente, huset/husen) IS the
+   gender being drilled and no rival card exists to guard it. */
 function matchAnswer(card, value, rivals, spoken) {
   const key = normalize(value);
   const own = card.accepted.map(a => ({ raw: a, key: normalize(a) }));
   const exact = own.find(a => a.key === key);
   if (exact) return { grade: 'exact', hit: exact.raw };
-  if (!key) return null;
+  if (!key || card.exact) return null;
   const toKey = spoken ? phoneticKey : normalize;
   const k = toKey(value);
   const limit = nearLimit(k.length);      // spoken: a sound identity (0 edits) always counts

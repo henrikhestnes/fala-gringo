@@ -28,11 +28,13 @@ osascript -l JavaScript scripts/check.jxa           # data invariants
 osascript -l JavaScript scripts/smoke.jxa           # app behaviour, against a DOM stub
 osascript -l JavaScript scripts/check-ingles.jxa    # /ingles/ data invariants
 osascript -l JavaScript scripts/smoke-ingles.jxa    # /ingles/ behaviour
+osascript -l JavaScript scripts/check-noruegues.jxa     # /noruegues/ data invariants
+osascript -l JavaScript scripts/smoke-noruegues.jxa     # /noruegues/ behaviour
 ```
 
 `verify.html` runs the main data checks in a browser (just open it). There is no build, lint, or package manager; there is no single-test runner — the suites are fast, run them whole.
 
-**Run all suites after any change to `js/` data or logic** (the engine is shared with `/ingles/`, so an engine change can break either app). The checks are the safety net for hand-maintained data.
+**Run all suites after any change to `js/` data or logic** (the engine is shared with `/ingles/` and `/noruegues/`, so an engine change can break any of the three apps). The checks are the safety net for hand-maintained data.
 
 ## Architecture
 
@@ -61,8 +63,10 @@ og.png, 404.html    social-share card + not-found page
 wrangler.jsonc      config for the git-connected Cloudflare Worker serving the site
                     (static assets; not_found_handling makes it serve 404.html)
 ingles/             English-for-Brazilians subpage on the SAME engine — see its section below
+noruegues/            Norwegian-for-Brazilians subpage, same recipe — see its section below
 scripts/            check.jxa, smoke.jxa (+ smoke-steps.js, dom-stub.js), check-ingles.jxa,
-                    smoke-ingles.jxa (+ smoke-ingles-steps.js), generate-verb-pages.jxa,
+                    smoke-ingles.jxa (+ smoke-ingles-steps.js), check-noruegues.jxa,
+                    smoke-noruegues.jxa (+ smoke-noruegues-steps.js), generate-verb-pages.jxa,
                     og-image.html + app-icon.html (headless-Chrome sources for og.png/icons/)
 verbs/              GENERATED static per-verb pages (SEO) — never edit by hand;
                     re-run `osascript -l JavaScript scripts/generate-verb-pages.jxa`
@@ -70,7 +74,7 @@ verbs/              GENERATED static per-verb pages (SEO) — never edit by hand
                     (it also rewrites sitemap.xml and robots.txt in the root)
 ```
 
-The key design decision: instead of one drill engine per topic (each topic's raw data has a different schema), `js/topics.js` normalises everything into one card shape — `{ id, topic, group, meta, hint, prompt, sub, accepted[], answer, pron, speak, reveal, allowEmpty }` — and `js/quiz.js` drives all of them.
+The key design decision: instead of one drill engine per topic (each topic's raw data has a different schema), `js/topics.js` normalises everything into one card shape — `{ id, topic, group, meta, hint, prompt, sub, accepted[], answer, pron, speak, reveal, allowEmpty, exact }` — and `js/quiz.js` drives all of them. (`exact: true` opts a card out of the typed-slip forgiveness; only `/noruegues/`'s noun cards set it.)
 
 `js/data/verbs.js` is the **source of truth for verb forms** — 146 verbs, forms stored explicitly rather than generated at runtime, so a pronunciation hint hangs off each form. A curated 40-verb core additionally carries the imperfect subjunctive. `js/conjugate.js` independently verifies the regular verbs in the checks; the app loads it too, only so `topics.js` can tag each verb form as regular or not for the Foco inference — it never conjugates for display.
 
@@ -87,6 +91,22 @@ The inverse product on the same engine, branded **Fala Como Gringo**: a Portugue
 `ingles/js/topics.js` mirrors the root registry contract (`TOPICS`, `topicById`, `topicCards`, `topicGroups`, `allQuizCards`) and normalises into the same card shape. There is no Browse or Daily tab; `app.js` falls back to `TOPICS[0]`.
 
 Conventions for its content (`ingles/js/data/`): everything the learner **reads** is carioca Portuguese (the ⚠️ rule above applies to the UI and glosses); everything the learner **types/hears** is American English. Pronunciation hints are aportuguesadas for Brazilian ears (`had` = `rréd`, English *h* written as carioca *rr*). The no-ambiguous-prompts invariant is mirrored: a `pt` gloss + meta must identify exactly one English answer (`fazer (ação, tarefa)` = do vs `fazer (criar, produzir)` = make), enforced by `scripts/check-ingles.jxa`.
+
+## /noruegues/ — Fala Viking, Norwegian for Brazilians (subpage)
+
+The same recipe as `/ingles/`, one more time: a Portuguese speaker is shown carioca Portuguese and types **Norwegian Bokmål** (Oslo register — `sju`/`tjue` canonical, `syv`/`tyve` accepted; feminine nouns canonical with `ei`/`-a`, `en`/`-en` accepted). It lives at `/noruegues/`, shares the whole engine verbatim, and is configured by the inline `<script>` in `noruegues/index.html`:
+
+- `window.APP_LANG = 'nb-NO'` (TTS favours Apple's Nora, `TTS_FAVOURITE.nb`), `APP_STORE_KEY = 'fg-noruegues:v1'`, `APP_SYNC_APP = 'noruegues'` (wire prefix `/noruegues<code>`; the code itself is the device-wide `fg:syncCode` shared by all three apps), `SW_PATH = '../sw.js'`, and the same Portuguese `APP_STRINGS` set as `/ingles/`.
+- `window.APP_SPOKEN_DIGITS` — the engine's spoken-digit expansion in `stt.js` is pt-BR only; a non-Portuguese page can supply its own `text → text` function and `/noruegues/` does, so a mic-mode "7" matches `sju` on the numbers tab.
+
+Five drill tabs, registry in `noruegues/js/topics.js`, data in `noruegues/js/data/`: **verbos** (44 verbs × presente + preteritum, `pastAlts` for the bokmål doublets `snakket/snakka`), **substantivos** (44 nouns × indefinite-with-article + definite-suffixed; `g` is `m`/`f`/`n`, `def`/`defAlts`/`indefAlts` override the regular forms), **frases**, **numeros**, **palavrinhas** (pronouns, question words, adverbs, prepositions — a shared `{ no, alts, pt, group, pron, example, examplePt, tip }` shape). Pronunciation hints are aportuguesadas as in `/ingles/` (`rr` = aspirated h, `ê` for ø, `ü` for y, `ô` for å, long o = `u`); the legend is in the page footer.
+
+Two engine consequences worth knowing:
+
+- `normalize()` in `js/lib/text.js` strips every combining mark **except the ring above** — `å` is a letter (`så` "saw" vs `sa` "said" are both verb answers), and no Portuguese or English answer carries a ring, so the root and `/ingles/` behaviour is unchanged. `ø`/`æ` never decomposed and were always distinct.
+- Noun cards carry `exact: true`: the one-letter slip the matcher would forgive (`et jente` for `ei jente`, `husen` for `huset`) is precisely the gender being drilled and no rival card exists to guard it. Verb, phrase and number cards keep the normal near-miss rule.
+
+`scripts/check-noruegues.jxa` mirrors the root invariants (unique prompts, complete cards, example contains the form — with a `\b` replacement that knows æøå — and, new here, no accepted answer shared by two cards of a topic, which is what caught `han` doubling as an alternative for `ham`).
 
 ## Correctness invariants (enforced by the checks)
 
