@@ -621,14 +621,14 @@ step('implied reviews: one form of a known-pattern verb is asked, a clean hit co
       });
       if (Store.reviewLevel('presente', 'falar|2') !== 2) throw new Error('the asked lead did not climb');
       seen++;
-    } else if (!missLead && c.infer && c.infer.regular && Quiz._tierOf(c.id) === 'due' && c.infer.lexeme !== 'falar' &&
-               cards.filter(function (o) { return o.infer && o.infer.lexeme === c.infer.lexeme; }).length === 4) {
-      // miss another lead: its siblings must come back into the deck
+    } else if (!missLead && c.infer && c.infer.lexeme !== 'falar' && Quiz._impliedOf(c.id).length === 3) {
+      // miss another lead carrying three implied siblings: they must come back into the deck
       missLead = c;
       var before = parseInt(registry.statTotal.textContent, 10);
       registry.answerInput.value = 'zzz-wrong'; registry.actionBtn.fire('click');
       var after = parseInt(registry.statTotal.textContent, 10);
       if (after !== before + 3) throw new Error('missing the lead "' + c.id + '" grew the deck ' + before + ' -> ' + after + ', expected +3');
+      if (Quiz._impliedOf(c.id).length) throw new Error('reclaimed siblings still listed as implied');
       seen++;
     } else {
       registry.answerInput.value = c.answer; registry.actionBtn.fire('click');

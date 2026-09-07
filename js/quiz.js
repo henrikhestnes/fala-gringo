@@ -624,7 +624,8 @@ const Quiz = (function () {
     stopVoice: stopVoice,
     isActive: () => !!topic,
     _counts: () => counts,     // exposed for the smoke checks
-    _tierOf: id => tierOf.get(id)
+    _tierOf: id => tierOf.get(id),
+    _impliedOf: id => impliedBy.get(id) || []
   };
 })();
 
