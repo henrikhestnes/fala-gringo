@@ -53,7 +53,13 @@
 // 1.19.3 footer: each sister app on a line of its own behind its flag (🇺🇸 inglês, 🇳🇴 norueguês;
 //        the subpages point back with 🇧🇷)
 
-const APP_VERSION = '1.19.3';
+// 1.20 the Daily keeps a permanent log of finished days (dailyDone): a strict day streak in the header, the
+//      done screen and the share string (from day two), a first-try distribution 7..0 on the done screen; the
+//      share link now points at falagringo.com; the tab strips are stacked by tier (Presente, Nouns, Numbers,
+//      Glossary · Passado, Imperfeito, Pronominais, Adjectives, Adverbs, Connecting · Subjuntivo, Sentences) —
+//      the Daily's date-seeded pick changes once with the order, accepted
+
+const APP_VERSION = '1.20.0';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

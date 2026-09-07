@@ -59,7 +59,7 @@ const GRADUATE_LEVEL = 3;
 const GRADUATE_SHARE = 0.8;
 
 const Store = (function () {
-  const empty = { mastered: {}, daily: {}, prefs: {}, strength: {}, days: {}, drilled: {}, graduated: {} };
+  const empty = { mastered: {}, daily: {}, dailyDone: {}, prefs: {}, strength: {}, days: {}, drilled: {}, graduated: {} };
   let state;
 
   function load() {
@@ -70,6 +70,7 @@ const Store = (function () {
       return {
         mastered: parsed.mastered && typeof parsed.mastered === 'object' ? parsed.mastered : {},
         daily: parsed.daily && typeof parsed.daily === 'object' ? parsed.daily : {},
+        dailyDone: parsed.dailyDone && typeof parsed.dailyDone === 'object' ? parsed.dailyDone : {},
         prefs: parsed.prefs && typeof parsed.prefs === 'object' ? parsed.prefs : {},
         strength: parsed.strength && typeof parsed.strength === 'object' ? parsed.strength : {},
         days: parsed.days && typeof parsed.days === 'object' ? parsed.days : {},
@@ -152,6 +153,7 @@ const Store = (function () {
     resetAll() {
       state.mastered = {};
       state.daily = {};
+      state.dailyDone = {};
       state.strength = {};
       state.days = {};
       state.drilled = {};
@@ -339,7 +341,7 @@ const Store = (function () {
        the merged result back in. Prefs are deliberately per-device. --- */
     snapshot() {
       return JSON.parse(JSON.stringify({
-        mastered: state.mastered, strength: state.strength, daily: state.daily,
+        mastered: state.mastered, strength: state.strength, daily: state.daily, dailyDone: state.dailyDone,
         days: state.days, drilled: state.drilled, graduated: state.graduated
       }));
     },
@@ -347,6 +349,7 @@ const Store = (function () {
       state.mastered = data.mastered && typeof data.mastered === 'object' ? data.mastered : {};
       state.strength = data.strength && typeof data.strength === 'object' ? data.strength : {};
       state.daily = data.daily && typeof data.daily === 'object' ? data.daily : {};
+      state.dailyDone = data.dailyDone && typeof data.dailyDone === 'object' ? data.dailyDone : {};
       state.days = data.days && typeof data.days === 'object' ? data.days : {};
       state.drilled = data.drilled && typeof data.drilled === 'object' ? data.drilled : {};
       state.graduated = data.graduated && typeof data.graduated === 'object' ? data.graduated : {};
@@ -376,6 +379,33 @@ const Store = (function () {
       const keys = Object.keys(state.daily).sort();
       while (keys.length > 30) delete state.daily[keys.shift()];
       save();
+    },
+    /* The permanent record of a finished Daily: YYYYMMDD -> cards solved on the
+       first try. One small number a day, so it is never trimmed — the Daily
+       streak and the first-try distribution (js/daily.js) read this. */
+    setDailyDone(key, firstTry) {
+      if (state.dailyDone[key] === firstTry) return;
+      state.dailyDone[key] = firstTry;
+      save();
+    },
+    /* The log plus any finished Daily still in the 30-day result window that
+       predates the log (1.20) — so an existing learner's recent history counts. */
+    dailyHistory() {
+      const out = Object.assign({}, state.dailyDone);
+      Object.keys(state.daily).forEach(key => {
+        if (key in out) return;
+        const r = state.daily[key];
+        const n = r && Array.isArray(r.attempts) ? r.attempts.length : 0;
+        if (!n) return;
+        let complete = true, firstTry = 0;
+        for (let i = 0; i < n; i++) {
+          const solved = !!(r.solved || [])[i], failed = !!(r.failed || [])[i];
+          if (!solved && !failed) { complete = false; break; }
+          if (solved && r.attempts[i] === 1) firstTry++;
+        }
+        if (complete) out[key] = firstTry;
+      });
+      return out;
     }
   };
 })();

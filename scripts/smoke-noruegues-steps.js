@@ -38,13 +38,15 @@ function rivalsOf(topicId, card) {
   }, []);
 }
 
-step('with no browse tab, the app boots straight into the verbs drill', function () {
-  if (registry.view.dataset.topic !== 'verbos')
+step('with no browse tab, the app boots straight into the first drill — Frases, the beginner tab', function () {
+  if (registry.view.dataset.topic !== 'frases')
     throw new Error('booted into "' + registry.view.dataset.topic + '"');
   if (!registry.answerInput) throw new Error('no answer input rendered');
   var tabs = (registry.tabs.innerHTML.match(/data-tab="/g) || []).length;
   if (tabs !== TOPICS.length) throw new Error('got ' + tabs + ' tabs');
-  return 'default tab = verbos, ' + tabs + ' tabs';
+  var order = TOPICS.map(function (t) { return t.tier; }).join('');
+  if (order !== '11223') throw new Error('tabs not stacked by tier: ' + order);
+  return 'default tab = frases, ' + tabs + ' tabs, tiers ' + order;
 });
 
 step('the chrome uses the Portuguese strings from APP_STRINGS', function () {
@@ -56,6 +58,7 @@ step('the chrome uses the Portuguese strings from APP_STRINGS', function () {
 });
 
 step('a correct Norwegian answer is accepted and marks mastery', function () {
+  goTo('#verbos');                       // the strip now opens on Frases; the verb assertions below want Verbos
   var before = Store.masteredCount('verbos');
   var card = shownCard('verbos');
   registry.answerInput.value = card.answer.toUpperCase();   // case-insensitive too

@@ -9,7 +9,7 @@ const Daily = (function () {
   const SIZE = 7;
   const MAX_ATTEMPTS = 5;
   const EPOCH = new Date(2026, 7, 11);   // 11 Aug 2026 = Daily #1
-  const SHARE_URL = 'henrikhestnes.github.io/fala-gringo#daily';
+  const SHARE_URL = 'falagringo.com/#daily';
 
   let cards = [];
   let attempts = [];
@@ -19,11 +19,44 @@ const Daily = (function () {
   let answered = false;
   let key = '';
 
-  function todayKey() {
-    const d = new Date();
+  function keyOf(d) {
     const m = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return '' + d.getFullYear() + m + day;
+  }
+  function todayKey() { return keyOf(new Date()); }
+
+  /* Consecutive calendar days with a finished Daily, counted back from today —
+     or from yesterday while today is still open, so the header can say what is
+     at stake. Strict, Wordle-style: the Daily is the one thing here you either
+     did today or did not (the drills' 🔥 in the top bar is the forgiving one). */
+  function dailyStreak() {
+    const hist = Store.dailyHistory();
+    const d = new Date();
+    const doneToday = keyOf(d) in hist;
+    if (!doneToday) d.setDate(d.getDate() - 1);
+    let n = 0;
+    while (keyOf(d) in hist) { n++; d.setDate(d.getDate() - 1); }
+    return { n: n, today: doneToday };
+  }
+
+  function streakLabel(n) { return '🔥 ' + n + '-day streak'; }
+
+  /* Finished Dailies by first-try count, 7 down to 0 — the Wordle-style
+     distribution — with today's row marked. */
+  function distributionHtml(todayFirst) {
+    const hist = Store.dailyHistory();
+    const counts = new Array(SIZE + 1).fill(0);
+    Object.keys(hist).forEach(k => { const v = Math.min(SIZE, Math.max(0, hist[k] | 0)); counts[v]++; });
+    const max = Math.max(1, ...counts);
+    const rows = [];
+    for (let v = SIZE; v >= 0; v--) {
+      rows.push('<div class="daily-dist-row' + (v === todayFirst ? ' today' : '') + '">' +
+        '<span class="daily-dist-n">' + v + '</span>' +
+        '<div class="daily-dist-track"><div class="daily-dist-bar" style="width:' +
+          Math.round((counts[v] / max) * 100) + '%">' + (counts[v] || '') + '</div></div></div>');
+    }
+    return '<div class="daily-dist" aria-label="Dailies by cards solved on the first try">' + rows.join('') + '</div>';
   }
 
   function dailyNumber() {
@@ -123,6 +156,8 @@ const Daily = (function () {
     lines.push(cards.map((c, i) => resultDots(i)).join(''));
     const solvedCount = cards.filter((c, i) => solved[i]).length;
     lines.push(solvedCount + '/' + cards.length + ' solved');
+    const st = dailyStreak();
+    if (st.today && st.n >= 2) lines.push(streakLabel(st.n));   // a run worth showing off; day one is not one yet
     lines.push(SHARE_URL);
     return lines.join('\n');
   }
@@ -143,7 +178,8 @@ const Daily = (function () {
     view.innerHTML = '' +
       '<div class="view-head">' +
         '<h1>★ Daily #' + dailyNumber() + '</h1>' +
-        '<p>' + formatDate() + ' — 7 cards from across every topic</p>' +
+        '<p>' + formatDate() + ' — 7 cards from across every topic' +
+          (dailyStreak().n ? ' · ' + streakLabel(dailyStreak().n) + ' — finish today to keep it' : '') + '</p>' +
       '</div>' +
       dotsHtml() +
       '<div class="card">' +
@@ -289,6 +325,9 @@ const Daily = (function () {
     const firstTry = cards.filter((c, i) => solved[i] && attempts[i] === 1).length;
     const allFirst = solvedCount === cards.length && firstTry === cards.length;
     const trophy = allFirst ? '🎆' : (solvedCount === cards.length ? '🏆' : '💪');
+    Store.setDailyDone(key, firstTry);   // today joins the permanent log (idempotent)
+    const st = dailyStreak();
+    const played = Object.keys(Store.dailyHistory()).length;
 
     const rows = cards.map((entry, i) =>
       '<div class="daily-result-row">' +
@@ -305,9 +344,14 @@ const Daily = (function () {
         '<div class="trophy">' + trophy + '</div>' +
         '<h2>' + (allFirst ? 'Perfeito!' : (solvedCount === cards.length ? 'Fechou!' : 'Por hoje é isso')) + '</h2>' +
         '<p>' + solvedCount + ' of ' + cards.length + ' solved · ' +
-          formatCount(firstTry, 'on the first try') + '</p>' +
+          formatCount(firstTry, 'on the first try', 'on the first try') + '</p>' +
         '<div class="share-box" id="shareBox">' + escapeHtml(shareString()) + '</div>' +
         '<div style="text-align:left">' + rows + '</div>' +
+        '<div class="daily-stats">' +
+          '<p class="daily-stats-line">' + formatCount(played, 'Daily played', 'Dailies played') +
+            ' · ' + streakLabel(st.n) + '</p>' +
+          distributionHtml(firstTry) +
+        '</div>' +
         '<div class="controls">' +
           '<button class="btn primary" id="copyBtn" type="button">Copy result</button>' +
         '</div>' +

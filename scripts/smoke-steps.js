@@ -946,6 +946,9 @@ step('sync merges the day log and the drilled-tab stamps by taking the higher va
 step('every drill tab carries a tier from 1 to 3', function () {
   var bad = TOPICS.filter(function (t) { return t.kind === 'quiz' && !(t.tier >= 1 && t.tier <= 3); });
   if (bad.length) throw new Error('no tier: ' + bad.map(function (t) { return t.id; }).join(', '));
+  var order = TOPICS.filter(function (t) { return t.kind === 'quiz'; }).map(function (t) { return t.tier; }).join('');
+  if (order !== '111122222233') throw new Error('tabs not stacked by tier: ' + order);
+  if (TOPICS[0].id !== 'browse' || TOPICS[TOPICS.length - 1].id !== 'daily') throw new Error('Browse/Daily moved');
   var byTier = [1, 2, 3].map(function (n) {
     return n + ': ' + TOPICS.filter(function (t) { return t.tier === n; }).map(function (t) { return t.id; }).join(' ');
   });
@@ -1091,5 +1094,51 @@ step('a backlog of misses is capped at GOAL_MAX a day and the rest waits; dragge
   var c = Quiz._counts();
   if (c.shaky !== ser.length) throw new Error('the deck should still hold the form + its ' + (ser.length - 1) + ' unseen siblings as shaky, got ' + c.shaky);
   return '200 missed -> goal ' + GOAL_MAX + ', 170 wait; 30 right closes it ("still wait", not Tudo em dia); ser miss = 1 review + siblings as new, deck tier unchanged';
+});
+
+/* ------------------------------------------------ the Daily's own streak (1.20) */
+
+step('the Daily keeps a permanent log: strict streak in the header and the share string, first-try distribution', function () {
+  Store.resetAll();
+  function keyOf(d) { return '' + d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0'); }
+  function daysAgo(n) { var d = new Date(); d.setDate(d.getDate() - n); return keyOf(d); }
+  var snap = Store.snapshot();
+  snap.dailyDone = {}; snap.dailyDone[daysAgo(1)] = 5; snap.dailyDone[daysAgo(2)] = 7;
+  // a finished pre-1.20 result still in the 30-day window backfills the log; an unfinished one does not
+  snap.daily = {};
+  snap.daily[daysAgo(3)] = { attempts: [1, 2, 1, 5, 1, 1, 3], failed: [false, false, false, true, false, false, false],
+                             solved: [true, true, true, false, true, true, true], current: 6 };
+  snap.daily[daysAgo(4)] = { attempts: [1, 0, 0, 0, 0, 0, 0], failed: [false, false, false, false, false, false, false],
+                             solved: [true, false, false, false, false, false, false], current: 1 };
+  Store.applySynced(snap);
+  var hist = Store.dailyHistory();
+  if (hist[daysAgo(3)] !== 4 || (daysAgo(4) in hist)) throw new Error('backfill: ' + JSON.stringify(hist));
+  goTo('#daily');
+  if (!/🔥 3-day streak — finish today to keep it/.test(registry.view.innerHTML))
+    throw new Error('header lacks the streak at stake: ' + (registry.view.innerHTML.match(/<p>[^<]*<\/p>/) || [''])[0]);
+  // give up on all seven: a finished day, 0 first-try
+  var guard = 0;
+  while (registry.giveUpBtn && guard++ < 20) { registry.giveUpBtn.fire('click'); flushTimers(); if (registry.actionBtn) registry.actionBtn.fire('click'); }
+  var html = registry.view.innerHTML;
+  if (!/done-screen/.test(html)) throw new Error('daily not finished after ' + guard + ' give-ups');
+  hist = Store.dailyHistory();
+  if (hist[keyOf(new Date())] !== 0) throw new Error('today not logged: ' + JSON.stringify(hist));
+  if (!/0\/7 solved\n🔥 4-day streak\nfalagringo\.com\/#daily/.test(registry.view.innerHTML))
+    throw new Error('share string: ' + registry.view.innerHTML);
+  if (!/4 Dailies played · 🔥 4-day streak/.test(html)) throw new Error('stats line missing: ' + html.slice(-900));
+  var rows = html.match(/daily-dist-row/g) || [];
+  if (rows.length !== 8) throw new Error(rows.length + ' distribution rows');
+  if (!/daily-dist-row today"><span class="daily-dist-n">0</.test(html)) throw new Error('today\'s row (0 first-try) not marked');
+  // a gap breaks the strict streak; day one alone never reaches the share string
+  snap = Store.snapshot();
+  snap.dailyDone = {}; snap.dailyDone[keyOf(new Date())] = 0; snap.dailyDone[daysAgo(2)] = 7;   // today's result stays saved, so the mount lands on the done screen
+  Store.applySynced(snap);
+  Daily.mount();
+  if (/🔥 \d+-day streak\nfalagringo/.test(registry.view.innerHTML)) throw new Error('a 1-day run leaked into the share string');
+  if (!/3 Dailies played · 🔥 1-day streak/.test(registry.view.innerHTML)) throw new Error('stats after the gap: ' + (registry.view.innerHTML.match(/daily-stats-line">[^<]*/) || [''])[0]);
+  var m = Sync._merge({ mastered: {}, strength: {}, daily: {}, dailyDone: { 20260901: 3 } },
+                      { mastered: {}, strength: {}, daily: {}, dailyDone: { 20260901: 5, 20260902: 2 } });
+  if (m.dailyDone[20260901] !== 5 || m.dailyDone[20260902] !== 2) throw new Error('merge: ' + JSON.stringify(m.dailyDone));
+  return 'backfilled 3 days -> header "3-day streak, finish today"; 7 give-ups -> 0/7, "4-day streak" in the share string, 8 rows, today marked; gap -> 1, not shared; merge by max';
 });
 

@@ -150,16 +150,16 @@ function buildPalavrinhaCards() {
 /* ------------------------------------------------------------ registro ---- */
 
 const TOPICS = [
-  { id: 'verbos', label: 'Verbos', kind: 'quiz', tier: 3,
-    groups: ['presente', 'passado'], build: buildVerboCards },
-  { id: 'substantivos', label: 'Substantivos', kind: 'quiz', tier: 2,
-    groups: ['indefinido', 'definido'], build: buildSubstantivoCards },
   { id: 'frases', label: 'Frases', kind: 'quiz', tier: 1,
     groups: () => window.DATA_NO_FRASES.groups, build: buildFraseCards },
   { id: 'numeros', label: 'Números', kind: 'quiz', tier: 1,
     groups: () => window.DATA_NO_NUMEROS.groups, build: buildNumeroCards },
+  { id: 'substantivos', label: 'Substantivos', kind: 'quiz', tier: 2,
+    groups: ['indefinido', 'definido'], build: buildSubstantivoCards },
   { id: 'palavrinhas', label: 'Palavrinhas', kind: 'quiz', tier: 2,
-    groups: () => window.DATA_NO_PALAVRINHAS.groups, build: buildPalavrinhaCards }
+    groups: () => window.DATA_NO_PALAVRINHAS.groups, build: buildPalavrinhaCards },
+  { id: 'verbos', label: 'Verbos', kind: 'quiz', tier: 3,
+    groups: ['presente', 'passado'], build: buildVerboCards }
 ];
 
 const _cardCache = {};
