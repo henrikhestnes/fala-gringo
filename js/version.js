@@ -50,8 +50,10 @@
 //        owed a whole backlog of misses at once; today's goal is now at most 30 cards (GOAL_MAX, pref goalMax) —
 //        reviews first, then up to 10 new (GOAL_NEW, pref goalNew) — and the rest "waits", shown but not owed;
 //        the unseen siblings a missed verb form drags into the deck count as new, not as reviews
+// 1.19.3 footer: each sister app on a line of its own behind its flag (🇺🇸 inglês, 🇳🇴 norueguês;
+//        the subpages point back with 🇧🇷)
 
-const APP_VERSION = '1.19.2';
+const APP_VERSION = '1.19.3';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name
