@@ -31,8 +31,9 @@
 // 1.16.2 21 high-frequency verbs (tomar, olhar, acabar, existir, morrer, nascer, receber, mandar, brincar,
 //        almoçar, jantar, avisar, descobrir, ensinar, gastar, buscar, visitar, virar, arrumar, aproveitar,
 //        desligar); este → esse in three examples
+// 1.16.3 demonstratives: esse/essa/nesse are the canonical answers (este/esta/neste stay accepted) — spoken BR
 
-const APP_VERSION = '1.16.2';
+const APP_VERSION = '1.16.3';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name
