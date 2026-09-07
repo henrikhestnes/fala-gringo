@@ -185,3 +185,14 @@ step('the drill answers above lit today\'s goal ring and the streak in the top b
   return g.active + ' active tab(s), ' + g.done + ' done, ' + g.left + ' left; 🔥1';
 });
 
+step('every drill tab carries a tier, and the title by the flame reads the highest one taken up', function () {
+  var bad = TOPICS.filter(function (t) { return t.kind === 'quiz' && !(t.tier >= 1 && t.tier <= 3); });
+  if (bad.length) throw new Error('no tier: ' + bad.map(function (t) { return t.id; }).join(', '));
+  var best = 0;
+  TOPICS.forEach(function (t) { if (t.kind === 'quiz' && Store.isActiveTopic(t.id) && t.tier > best) best = t.tier; });
+  var name = ['Iniciante', 'Intermediário', 'Avançado'][best - 1];
+  if (!name || registry.goalBtn.innerHTML.indexOf('goal-title">' + name + '<') < 0)
+    throw new Error('expected title ' + name + ' in ' + registry.goalBtn.innerHTML);
+  return TOPICS.filter(function (t) { return t.kind === 'quiz'; }).map(function (t) { return t.id + '=' + t.tier; }).join(' ') + '; title ' + name;
+});
+

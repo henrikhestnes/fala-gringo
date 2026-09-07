@@ -72,9 +72,9 @@ function buildPhrasalCards() {
 /* ------------------------------------------------------------ registro ---- */
 
 const TOPICS = [
-  { id: 'irregulares', label: 'Irregulares', kind: 'quiz',
+  { id: 'irregulares', label: 'Irregulares', kind: 'quiz', tier: 2,
     groups: ['passado', 'particípio'], build: buildIrregularCards },
-  { id: 'phrasal', label: 'Phrasal verbs', kind: 'quiz',
+  { id: 'phrasal', label: 'Phrasal verbs', kind: 'quiz', tier: 3,
     groups: () => window.DATA_EN_PHRASAL.groups, build: buildPhrasalCards }
 ];
 

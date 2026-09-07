@@ -34,8 +34,16 @@ const NEW_PER_DAY = 20;
    and a tab that graduates (nothing due for a month) quietly leaves it. */
 const ACTIVE_DAYS = 30;
 
+/* A tab graduates when this share of its cards sit at review level
+   GRADUATE_LEVEL or higher (confirmed on three distinct days: mastered, +7,
+   +14 — about three weeks of showing up) and none of them is shaky. The 🎓 on
+   the tab follows the live condition; the stamp in the store only makes sure
+   the celebration happens once. */
+const GRADUATE_LEVEL = 3;
+const GRADUATE_SHARE = 0.8;
+
 const Store = (function () {
-  const empty = { mastered: {}, daily: {}, prefs: {}, strength: {}, days: {}, drilled: {} };
+  const empty = { mastered: {}, daily: {}, prefs: {}, strength: {}, days: {}, drilled: {}, graduated: {} };
   let state;
 
   function load() {
@@ -49,7 +57,8 @@ const Store = (function () {
         prefs: parsed.prefs && typeof parsed.prefs === 'object' ? parsed.prefs : {},
         strength: parsed.strength && typeof parsed.strength === 'object' ? parsed.strength : {},
         days: parsed.days && typeof parsed.days === 'object' ? parsed.days : {},
-        drilled: parsed.drilled && typeof parsed.drilled === 'object' ? parsed.drilled : {}
+        drilled: parsed.drilled && typeof parsed.drilled === 'object' ? parsed.drilled : {},
+        graduated: parsed.graduated && typeof parsed.graduated === 'object' ? parsed.graduated : {}
       };
     } catch (e) {
       return JSON.parse(JSON.stringify(empty));
@@ -121,6 +130,7 @@ const Store = (function () {
     resetTopic(topicId) {
       delete state.mastered[topicId];
       delete state.strength[topicId];
+      delete state.graduated[topicId];   // earned again with the progress
       save();
     },
     resetAll() {
@@ -129,6 +139,7 @@ const Store = (function () {
       state.strength = {};
       state.days = {};
       state.drilled = {};
+      state.graduated = {};
       save();
     },
 
@@ -241,6 +252,26 @@ const Store = (function () {
       const d = state.drilled[topicId];
       return !!d && today() - d <= ACTIVE_DAYS;
     },
+    /* Graduation (see GRADUATE_LEVEL): the share of the given cards at the
+       graduating level and not shaky, and whether that clears the bar. */
+    graduation(topicId, cardIds) {
+      let ok = 0;
+      cardIds.forEach(id => {
+        if (this.reviewLevel(topicId, id) >= GRADUATE_LEVEL && this.cardState(topicId, id) !== 'shaky') ok++;
+      });
+      const share = cardIds.length ? ok / cardIds.length : 0;
+      return { share: share, qualifies: cardIds.length > 0 && share >= GRADUATE_SHARE };
+    },
+    graduatedOn(topicId) {
+      return state.graduated[topicId] || 0;
+    },
+    /* Stamp the day a tab first graduated; true when this call did it. */
+    markGraduated(topicId) {
+      if (state.graduated[topicId]) return false;
+      state.graduated[topicId] = today();
+      save();
+      return true;
+    },
     /* Cards answered correctly today in a topic (the done half of the goal ring). */
     doneToday(topicId) {
       const t = state.strength[topicId] || {};
@@ -278,7 +309,7 @@ const Store = (function () {
     snapshot() {
       return JSON.parse(JSON.stringify({
         mastered: state.mastered, strength: state.strength, daily: state.daily,
-        days: state.days, drilled: state.drilled
+        days: state.days, drilled: state.drilled, graduated: state.graduated
       }));
     },
     applySynced(data) {
@@ -287,6 +318,7 @@ const Store = (function () {
       state.daily = data.daily && typeof data.daily === 'object' ? data.daily : {};
       state.days = data.days && typeof data.days === 'object' ? data.days : {};
       state.drilled = data.drilled && typeof data.drilled === 'object' ? data.drilled : {};
+      state.graduated = data.graduated && typeof data.graduated === 'object' ? data.graduated : {};
       save();
     },
 

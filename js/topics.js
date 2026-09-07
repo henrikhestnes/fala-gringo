@@ -356,33 +356,40 @@ function buildSentenceCards() {
 
 const VERB_GROUPS = ['-ar verbs', '-er verbs', '-ir verbs', 'irregular'];
 
+/* Each drill tab carries a `tier` (1 Iniciante, 2 Intermediário, 3 Avançado):
+   the tabs encode a level — a beginner lives on Presente and concrete
+   vocabulary, an advanced learner on Subjuntivo and Sentences. The tier only
+   names the learner (the title in the top bar is the highest tier they have
+   taken up) and orders the "next tab" nudge when a tab graduates; nothing is
+   ever locked, and the tab order itself stays as it is (the Daily's seeded
+   pick depends on it). */
 const TOPICS = [
   { id: 'browse', label: 'Browse', kind: 'browse' },
 
-  { id: 'presente',   label: 'Presente',   kind: 'quiz', groups: VERB_GROUPS,
+  { id: 'presente',   label: 'Presente',   kind: 'quiz', tier: 1, groups: VERB_GROUPS,
     build: () => buildVerbCards('presente', 'Presente') },
-  { id: 'perfeito',   label: 'Passado',    kind: 'quiz', groups: VERB_GROUPS,
+  { id: 'perfeito',   label: 'Passado',    kind: 'quiz', tier: 2, groups: VERB_GROUPS,
     build: () => buildVerbCards('perfeito', 'Pretérito Perfeito') },
-  { id: 'imperfeito', label: 'Imperfeito', kind: 'quiz', groups: VERB_GROUPS,
+  { id: 'imperfeito', label: 'Imperfeito', kind: 'quiz', tier: 2, groups: VERB_GROUPS,
     build: () => buildVerbCards('imperfeito', 'Pretérito Imperfeito') },
-  { id: 'subjuntivo', label: 'Subjuntivo', kind: 'quiz', groups: VERB_GROUPS,
+  { id: 'subjuntivo', label: 'Subjuntivo', kind: 'quiz', tier: 3, groups: VERB_GROUPS,
     build: () => buildVerbCards('subjuntivo', 'Imperfeito do Subjuntivo') },
-  { id: 'pronominal', label: 'Pronominais', kind: 'quiz',
+  { id: 'pronominal', label: 'Pronominais', kind: 'quiz', tier: 2,
     groups: () => window.DATA_PRONOMINAL.groups, build: buildPronominalCards },
 
-  { id: 'nouns',      label: 'Nouns',      kind: 'quiz',
+  { id: 'nouns',      label: 'Nouns',      kind: 'quiz', tier: 1,
     groups: () => window.DATA_NOUNS.groups,      build: buildNounCards },
-  { id: 'adjectives', label: 'Adjectives', kind: 'quiz',
+  { id: 'adjectives', label: 'Adjectives', kind: 'quiz', tier: 2,
     groups: () => window.DATA_ADJECTIVES.groups, build: buildAdjectiveCards },
-  { id: 'adverbs',    label: 'Adverbs',    kind: 'quiz',
+  { id: 'adverbs',    label: 'Adverbs',    kind: 'quiz', tier: 2,
     groups: () => window.DATA_ADVERBS.groups,    build: buildAdverbCards },
-  { id: 'connecting', label: 'Connecting', kind: 'quiz',
+  { id: 'connecting', label: 'Connecting', kind: 'quiz', tier: 2,
     groups: () => window.DATA_CONNECTING.groups, build: buildConnectingCards },
-  { id: 'numbers',    label: 'Numbers', kind: 'quiz',
+  { id: 'numbers',    label: 'Numbers', kind: 'quiz', tier: 1,
     groups: () => window.DATA_NUMBERS.groups,    build: buildNumberCards },
-  { id: 'glossary',   label: 'Glossary',   kind: 'quiz',
+  { id: 'glossary',   label: 'Glossary',   kind: 'quiz', tier: 1,
     groups: () => window.DATA_GLOSSARY.groups,   build: buildGlossaryCards },
-  { id: 'sentences',  label: 'Sentences',  kind: 'quiz',
+  { id: 'sentences',  label: 'Sentences',  kind: 'quiz', tier: 3,
     groups: () => window.DATA_SENTENCES.groups,  build: buildSentenceCards },
 
   { id: 'daily', label: '★ Daily', kind: 'daily' }

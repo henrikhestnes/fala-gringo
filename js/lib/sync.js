@@ -137,7 +137,7 @@ const Sync = (function () {
   }
 
   function mergeStates(x, y) {
-    const out = { mastered: {}, strength: {}, daily: {}, days: {}, drilled: {} };
+    const out = { mastered: {}, strength: {}, daily: {}, days: {}, drilled: {}, graduated: {} };
 
     eachKey(x.mastered, y.mastered, (topic, a, b) => {
       out.mastered[topic] = Object.assign({}, a || {}, b || {});
@@ -177,6 +177,8 @@ const Sync = (function () {
     // (answers = the higher count), a tab drilled anywhere is active (newest day)
     eachKey(x.days || {}, y.days || {}, (day, a, b) => { out.days[day] = Math.max(a || 0, b || 0); });
     eachKey(x.drilled || {}, y.drilled || {}, (topic, a, b) => { out.drilled[topic] = Math.max(a || 0, b || 0); });
+    // a graduation happened once: the earliest day either device saw it
+    eachKey(x.graduated || {}, y.graduated || {}, (topic, a, b) => { out.graduated[topic] = Math.min(a || Infinity, b || Infinity); });
 
     return out;
   }
@@ -194,7 +196,7 @@ const Sync = (function () {
       })
       .then(remote => {
         const local = Store.snapshot();
-        const merged = mergeStates(local, remote || { mastered: {}, strength: {}, daily: {}, days: {}, drilled: {} });
+        const merged = mergeStates(local, remote || { mastered: {}, strength: {}, daily: {}, days: {}, drilled: {}, graduated: {} });
         const mergedJson = JSON.stringify(merged);
         markOk();
         if (mergedJson !== JSON.stringify(local)) {

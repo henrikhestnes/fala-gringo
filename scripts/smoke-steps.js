@@ -929,3 +929,79 @@ step('sync merges the day log and the drilled-tab stamps by taking the higher va
   if (legacy.days[20700] !== 1 || Object.keys(legacy.drilled).length) throw new Error('legacy merge: ' + JSON.stringify(legacy));
   return 'days: 4/3/2; drilled: presente 20701, nouns 20702; legacy blob fine';
 });
+
+/* ------------------------------------------------- tiers + graduation (1.19) */
+
+step('every drill tab carries a tier from 1 to 3', function () {
+  var bad = TOPICS.filter(function (t) { return t.kind === 'quiz' && !(t.tier >= 1 && t.tier <= 3); });
+  if (bad.length) throw new Error('no tier: ' + bad.map(function (t) { return t.id; }).join(', '));
+  var byTier = [1, 2, 3].map(function (n) {
+    return n + ': ' + TOPICS.filter(function (t) { return t.tier === n; }).map(function (t) { return t.id; }).join(' ');
+  });
+  return byTier.join(' · ');
+});
+
+step('a tab graduates at 80% of its cards on review level 3, wears 🎓, and names the next tab once', function () {
+  Store.resetAll();
+  var t = topicById('adverbs');
+  var cards = topicCards(t);
+  var d = Store.today();
+  var snap = Store.snapshot();
+  snap.mastered.adverbs = {}; snap.strength.adverbs = {};
+  var need = Math.ceil(cards.length * GRADUATE_SHARE);         // 23 of 28
+  cards.slice(0, need - 1).forEach(function (c) {              // one short of the bar
+    snap.mastered.adverbs[c.id] = 1;
+    snap.strength.adverbs[c.id] = { s: 3, m: 0, t: d - 1, l: GRADUATE_LEVEL, i: d - 20 };
+  });
+  snap.drilled = { adverbs: d };
+  Store.applySynced(snap);
+  goTo('#adverbs');
+  if (Quiz.graduation(t).qualifies) throw new Error('qualified one card short of the bar');
+  if (!/data-tab="adverbs"[^>]*>Adverbs<span class="pct">\d+%</) throw new Error('tab should still show its %: ' + registry.tabs.innerHTML);
+  if (!/goal-title">Intermediário</.test(registry.goalBtn.innerHTML)) throw new Error('title should be Intermediário (adverbs is tier 2): ' + registry.goalBtn.innerHTML);
+  // the 23rd card: mastered at level 3 too — the bar is met, but no answer has stamped it yet
+  var last = cards[need - 1];
+  snap = Store.snapshot();
+  snap.mastered.adverbs[last.id] = 1;
+  snap.strength.adverbs[last.id] = { s: 3, m: 0, t: d - 1, l: GRADUATE_LEVEL, i: d - 20 };
+  Store.applySynced(snap);
+  App.refresh();
+  if (!Quiz.graduation(t).qualifies) throw new Error('did not qualify at ' + need + '/' + cards.length);
+  if (!/data-tab="adverbs"[^>]*>Adverbs<span class="pct">🎓</.test(registry.tabs.innerHTML)) throw new Error('no 🎓 on the tab: ' + registry.tabs.innerHTML);
+  if (Store.graduatedOn('adverbs')) throw new Error('stamped before any answer');
+  var next = Quiz.nextTopic(t);
+  if (!next || next.tier !== 2 || next.id !== 'perfeito') throw new Error('next after adverbs: ' + (next && next.id));
+  // the deck holds the 5 unseen cards; a correct answer stamps and celebrates
+  var card = shownCard('adverbs');
+  registry.answerInput.value = card.answer;
+  registry.actionBtn.fire('click');
+  if (!Store.graduatedOn('adverbs')) throw new Error('not stamped after a correct answer');
+  if (!/🎓 Adverbs graduated! Next: Passado/.test(registry.toast.textContent)) throw new Error('toast reads "' + registry.toast.textContent + '"');
+  registry.toast.textContent = '';
+  registry.actionBtn.fire('click');
+  card = shownCard('adverbs');
+  registry.answerInput.value = card.answer;
+  registry.actionBtn.fire('click');
+  if (registry.toast.textContent) throw new Error('celebrated twice: ' + registry.toast.textContent);
+  // a miss on a graduated card makes it shaky: the cap comes off until it is earned back
+  Store.recordAnswer('adverbs', cards[0].id, false);
+  App.updateTabPct('adverbs');
+  if (Quiz.graduation(t).qualifies) throw new Error('still qualifies with a shaky card at 22/28');
+  if (Store.graduatedOn('adverbs') === 0) throw new Error('the stamp should survive a slip');
+  Store.resetTopic('adverbs');
+  if (Store.graduatedOn('adverbs')) throw new Error('reset kept the stamp');
+  return need + '/' + cards.length + ' -> 🎓 + title Intermediário; answer stamps once, toast names Passado; a miss lifts the cap; reset clears the stamp';
+});
+
+step('with tier-3 progress the title reads Avançado; graduation stamps merge to the earliest day', function () {
+  var snap = Store.snapshot();
+  snap.drilled = { subjuntivo: Store.today() };
+  Store.applySynced(snap);
+  App.refreshGoal();
+  if (!/goal-title">Avançado</.test(registry.goalBtn.innerHTML)) throw new Error(registry.goalBtn.innerHTML);
+  var m = Sync._merge({ mastered: {}, strength: {}, daily: {}, graduated: { presente: 20700 } },
+                      { mastered: {}, strength: {}, daily: {}, graduated: { presente: 20690, nouns: 20701 } });
+  if (m.graduated.presente !== 20690 || m.graduated.nouns !== 20701) throw new Error(JSON.stringify(m.graduated));
+  return 'Avançado; graduated: presente 20690, nouns 20701';
+});
+

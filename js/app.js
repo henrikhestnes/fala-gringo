@@ -15,7 +15,11 @@
     streakDays: '🔥 {n}-day streak',
     streakDay: '🔥 1-day streak',
     streakAtRisk: 'practice today to keep it',
-    streakCold: 'not yet today'
+    streakCold: 'not yet today',
+    tierNames: ['Iniciante', 'Intermediário', 'Avançado'],
+    tierTitle: 'Level: {tier}',
+    graduatedTitle: '🎓 Graduated — {pct}% of the cards at review level 3 or higher',
+    learnerTitle: 'You: {tier} — the highest level among the tabs you have taken up'
   }, window.APP_STRINGS || {});
 
   function toast(msg) { if (typeof showToast === 'function') showToast(msg); }
@@ -81,19 +85,47 @@
 
   /* ---------------------------------------------------------------- tabs */
 
+  function tierName(tier) {
+    return (tier && APP_STR.tierNames[tier - 1]) || '';
+  }
+
+  /* The pill on a drill tab: its mastery %, or 🎓 once the tab has graduated
+     (Store.graduation — a live condition, so a tab that slips back loses the
+     cap until it earns it again). */
+  function tabBadge(t) {
+    const g = Quiz.graduation(t);
+    if (g.qualifies) return { text: '🎓', title: tfill(APP_STR.graduatedTitle, { pct: Math.round(g.share * 100) }) };
+    const total = topicCards(t).length;
+    const pct = total ? Math.round((Store.masteredCount(t.id) / total) * 100) : 0;
+    return { text: pct + '%', title: t.tier ? tfill(APP_STR.tierTitle, { tier: tierName(t.tier) }) : '' };
+  }
+
   function renderTabs() {
     const activeId = currentTopicId();
     document.getElementById('tabs').innerHTML = TOPICS.map(t => {
-      let extra = '';
+      let extra = '', title = '';
       if (t.kind === 'quiz') {
-        const total = topicCards(t).length;
-        const pct = total ? Math.round((Store.masteredCount(t.id) / total) * 100) : 0;
-        extra = '<span class="pct">' + pct + '%</span>';
+        const b = tabBadge(t);
+        extra = '<span class="pct">' + b.text + '</span>';
+        title = b.title;
       }
       return '<button class="tab' + (t.kind === 'daily' ? ' daily' : '') + '" role="tab" ' +
-        'aria-selected="' + (t.id === activeId) + '" data-tab="' + t.id + '">' +
+        'aria-selected="' + (t.id === activeId) + '" data-tab="' + t.id + '"' +
+        (title ? ' title="' + escapeHtml(title) + '"' : '') + '>' +
         escapeHtml(t.label) + extra + '</button>';
     }).join('');
+  }
+
+  /* The learner's title: the highest tier among the tabs they have taken up —
+     active (drilled this month) or graduated. Nothing to do with the mastered
+     %, so an advanced learner who skipped Presente is Avançado from day one. */
+  function learnerTier() {
+    let best = 0;
+    TOPICS.forEach(t => {
+      if (t.kind !== 'quiz' || !t.tier || t.tier <= best) return;
+      if (Store.isActiveTopic(t.id) || Store.graduatedOn(t.id) || Quiz.graduation(t).qualifies) best = t.tier;
+    });
+    return best;
   }
 
   /* Refresh one tab's mastery percentage in place (the drills and the Daily call
@@ -105,8 +137,10 @@
     if (!t || t.kind !== 'quiz') return;
     const span = document.querySelector('[data-tab="' + topicId + '"] .pct');
     if (!span) { renderTabs(); return; }
-    const total = topicCards(t).length;
-    span.textContent = (total ? Math.round((Store.masteredCount(t.id) / total) * 100) : 0) + '%';
+    const b = tabBadge(t);
+    span.textContent = b.text;
+    const tab = span.parentNode;
+    if (tab && tab.setAttribute) tab.setAttribute('title', b.title);
   }
 
   /* ------------------------------------------------- today's goal + streak */
@@ -127,7 +161,8 @@
     if (!btn) return;
     const st = Store.streak();
     const goal = Quiz.todayGoal();
-    const show = goal.active > 0 || st.n > 0;
+    const tier = learnerTier();
+    const show = goal.active > 0 || st.n > 0 || tier > 0;
     btn.hidden = !show;
     if (!show) { lastLeft = -1; return; }
 
@@ -143,10 +178,12 @@
         '<text x="12" y="12.5" text-anchor="middle" dominant-baseline="middle">' +
           (done ? '✓' : goal.left) + '</text>' +
       '</svg>' +
-      '<span class="goal-streak' + (st.today ? '' : ' cold') + '">🔥' + st.n + '</span>';
+      '<span class="goal-streak' + (st.today ? '' : ' cold') + '">🔥' + st.n + '</span>' +
+      (tier ? '<span class="goal-title">' + escapeHtml(tierName(tier)) + '</span>' : '');
     const title = (done ? APP_STR.goalDone : tfill(APP_STR.goalLeft, { n: goal.left, done: goal.done })) +
       (st.n ? ' · ' + streakLabel(st) + (st.atRisk ? ' — ' + APP_STR.streakAtRisk
-                                         : st.today ? '' : ' — ' + APP_STR.streakCold) : '');
+                                         : st.today ? '' : ' — ' + APP_STR.streakCold) : '') +
+      (tier ? ' · ' + tfill(APP_STR.learnerTitle, { tier: tierName(tier) }) : '');
     btn.setAttribute('title', title);
     btn.setAttribute('aria-label', title);
 
@@ -162,11 +199,13 @@
   function goalTap() {
     const goal = Quiz.todayGoal();
     const st = Store.streak();
+    const tier = learnerTier();
+    const who = tier ? tierName(tier) + ' · ' : '';   // the title is hidden on narrow screens; the tap says it
     if (goal.active && goal.left) {
-      toast(goal.per.filter(p => p.left).map(p => p.topic.label + ' ' + p.left).join(' · '));
+      toast(who + goal.per.filter(p => p.left).map(p => p.topic.label + ' ' + p.left).join(' · '));
       go(goal.per[0].topic.id);
     } else {
-      toast(APP_STR.goalDone + (st.n ? ' ' + streakLabel(st) : ''));
+      toast(who + APP_STR.goalDone + (st.n ? ' ' + streakLabel(st) : ''));
     }
   }
 

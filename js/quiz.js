@@ -52,6 +52,8 @@ const QUIZ_STRINGS = Object.assign({
   todayCaughtUp: 'Tudo em dia por hoje! Nothing left in your tabs.',
   streakDays: '🔥 {n}-day streak',
   streakDay: '🔥 1-day streak',
+  graduatedToast: '🎓 {label} graduated! Next: {next}',
+  graduatedToastLast: '🎓 {label} graduated — every tab is!',
   nearIs: 'Close! You typed “{typed}” — the answer is',
   listening: 'Ouvindo… fala aí',
   listeningEmpty: ' — diga “nada” se nada falta na lacuna',
@@ -248,6 +250,36 @@ const Quiz = (function () {
     });
     per.sort((a, b) => b.left - a.left);
     return { active: per.length, left: left, done: done, per: per };
+  }
+
+  /* Graduation of a whole tab (Store.graduation over all its cards). */
+  function graduation(t) {
+    return Store.graduation(t.id, topicCards(t).map(c => c.id));
+  }
+
+  /* The tab to take up after `t` graduates: the first tab in tab order that
+     has not graduated, of the same tier first, then the tiers above, then any
+     tier below (an advanced learner who never did Presente is pointed back). */
+  function nextTopic(t) {
+    const open = TOPICS.filter(o => o.kind === 'quiz' && o !== t && !graduation(o).qualifies);
+    const tier = t.tier || 0;
+    return open.find(o => (o.tier || 0) === tier) ||
+           open.filter(o => (o.tier || 0) > tier).sort((a, b) => (a.tier || 0) - (b.tier || 0))[0] ||
+           open[0] || null;
+  }
+
+  /* After a correct answer: did this answer graduate the tab? Stamped once,
+     celebrated once (confetti + the "next tab" nudge); the 🎓 on the tab
+     itself follows the live condition (js/app.js). */
+  function checkGraduation() {
+    if (!topic || Store.graduatedOn(topic.id) || !graduation(topic).qualifies) return;
+    Store.markGraduated(topic.id);
+    const next = nextTopic(topic);
+    const msg = next ? tfill(QUIZ_STRINGS.graduatedToast, { label: topic.label, next: next.label })
+                     : tfill(QUIZ_STRINGS.graduatedToastLast, { label: topic.label });
+    if (typeof showToast === 'function') showToast(msg);
+    if (typeof launchFireworks === 'function') launchFireworks();
+    // the 🎓 on the tab and the title by the flame follow via updateStats()
   }
 
   /* One line under a finished or empty deck: where today's work still is
@@ -598,6 +630,7 @@ const Quiz = (function () {
       // a clean hit on a lead confirms the verb's other due forms by implication
       // (clock reset, no climb); a slip is not evidence enough — ask them after all
       if (near) reclaimImplied(card); else confirmImplied(card);
+      checkGraduation();
       updateStats();
     } else {
       stats.errors++;
@@ -680,6 +713,8 @@ const Quiz = (function () {
     stopVoice: stopVoice,
     isActive: () => !!topic,
     todayGoal: todayGoal,
+    graduation: graduation,
+    nextTopic: nextTopic,
     _counts: () => counts,     // exposed for the smoke checks
     _tierOf: id => tierOf.get(id),
     _impliedOf: id => impliedBy.get(id) || []

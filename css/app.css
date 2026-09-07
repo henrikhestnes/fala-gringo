@@ -257,6 +257,18 @@ button { cursor: pointer; touch-action: manipulation; }
 .goal-btn.done { border-color: var(--green); color: var(--green-ink); }
 .goal-btn.done .goal-ring text { fill: var(--green-ink); font-size: 10px; }
 .goal-streak.cold { opacity: .5; filter: grayscale(1); }
+/* the learner's title (Iniciante / Intermediário / Avançado): a quiet tag
+   after the flame; on phones it yields to the ring and the tap reads it out */
+.goal-title {
+  font-size: .66rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  padding-left: .35rem;
+  border-left: 1px solid var(--border);
+}
+@media (max-width: 560px) { .goal-title { display: none; } }
 .goal-btn.celebrate { animation: goal-pop .55s ease; }
 @keyframes goal-pop {
   40% { transform: scale(1.18); }

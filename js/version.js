@@ -40,8 +40,11 @@
 //      midnight, not UTC), a streak with one grace day, and today's goal ring in the top bar — what Foco
 //      still asks across the tabs the learner actually drills (a beginner's goal never includes the
 //      subjunctive), filling as it gets done; the done/empty screens point at where today's work still is
+// 1.19 tiers: every drill tab carries a level (Iniciante / Intermediário / Avançado); the learner's title —
+//      the highest tier among the tabs they have taken up — sits by the flame; a tab GRADUATES (🎓 in place of
+//      its %) once 80% of its cards reach review level 3, celebrated once with confetti and a "next tab" nudge
 
-const APP_VERSION = '1.18.0';
+const APP_VERSION = '1.19.0';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name
