@@ -15,13 +15,14 @@ const Browse = (function () {
     const V = window.DATA_VERBS;
     const blocks = V.tenses.map(t => {
       if (!verb.tenses[t.key]) return '';   // the subjunctive is optional per verb
-      const lines = verb.tenses[t.key].map((r, i) =>
-        '<div class="conj-line">' +
-          '<span class="who">' + escapeHtml(V.personsShort[i]) + '</span>' +
-          '<span class="form" data-speak="' + escapeHtml(V.personsShort[i] + ' ' + r.form) + '">' +
+      const lines = verb.tenses[t.key].map((r, i) => {
+        const who = r.person || V.personsShort[i];
+        return '<div class="conj-line">' +
+          '<span class="who">' + escapeHtml(who) + '</span>' +
+          '<span class="form" data-speak="' + escapeHtml(who + ' ' + r.form) + '">' +
             escapeHtml(r.form) + '</span>' +
           (r.meaning ? '<span class="gloss">' + escapeHtml(r.meaning) + '</span>' : '') +
-        '</div>').join('');
+        '</div>'; }).join('');
       return '<div class="conj-tense"><div class="conj-title">' + escapeHtml(t.label) + '</div>' +
              lines + '</div>';
     }).join('');

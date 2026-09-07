@@ -154,7 +154,7 @@ function tenseTable(v, t) {
   const rows = v.tenses[t.key];
   if (!rows) return '';
   const body = rows.map((r, i) =>
-    '<tr><th scope="row">' + esc(V.persons[i]) + '</th>' +
+    '<tr><th scope="row">' + esc(r.person || V.persons[i]) + '</th>' +
     '<td lang="pt-BR"><strong>' + esc(r.form || '&mdash;') + '</strong>' +
     (r.meaning ? '<span class="vp-gloss">' + esc(r.meaning) + '</span>' : '') + '</td>' +
     '<td class="vp-pron">' + esc(r.pron || '') + '</td>' +

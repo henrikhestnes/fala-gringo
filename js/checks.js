@@ -22,10 +22,10 @@ function runChecks() {
 
   /* -------------------------------------------------------------- verbs --- */
 
-  check('124 verbs in the superset', () =>
-    V.verbs.length === 124 ? true : 'got ' + V.verbs.length);
+  check('125 verbs in the superset', () =>
+    V.verbs.length === 125 ? true : 'got ' + V.verbs.length);
 
-  check('every verb has 3 tenses x 4 persons (1488 forms)', () => {
+  check('every verb has 3 tenses x 4 persons (1500 forms)', () => {
     const bad = [];
     let n = 0;
     V.verbs.forEach(v => TENSES.forEach(t => {
@@ -33,7 +33,7 @@ function runChecks() {
       if (!rows || rows.length !== 4) bad.push(v.pt + '/' + t);
       else n += 4;
     }));
-    return bad.length ? bad.join(', ') : (n === 1488 ? true : 'counted ' + n + ' forms');
+    return bad.length ? bad.join(', ') : (n === 1500 ? true : 'counted ' + n + ' forms');
   });
 
   /* Mic mode accepts a spoken answer by sound (text.js phoneticKey) unless a
@@ -74,6 +74,7 @@ function runChecks() {
     V.verbs.forEach(v => {
       if (v.quiz === false) return;
       TENSES.forEach(t => v.tenses[t].forEach((r, i) => {
+        if (r.quiz === false) return;          // Browse-only row (acontecer's eu / nós)
         if (!r.form || !r.meaning || !r.pron || !r.example) bad.push(v.pt + '/' + t + '/' + i);
       }));
     });

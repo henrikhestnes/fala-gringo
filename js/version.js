@@ -26,8 +26,10 @@
 //      pt-BR sound key — both refused when another form of the topic is just as close
 // 1.16 implied reviews: of a known-pattern verb's due regular forms only the weakest is asked; a clean
 //      hit confirms the rest (clock reset, no climb), a miss reclaims them into the deck
+// 1.16.1 acontecer (to happen): third-person rows drilled with their own subject, eu/nós rows Browse-only;
+//        four "what happened?" sentence cards
 
-const APP_VERSION = '1.16.0';
+const APP_VERSION = '1.16.1';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

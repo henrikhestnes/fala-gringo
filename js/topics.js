@@ -59,7 +59,7 @@ const SYNONYMS = (function () {
 function verbConjTable(verb, tense, tenseLabel, currentIndex) {
   const rows = verb.tenses[tense].map((r, i) =>
     '<tr' + (i === currentIndex ? ' class="is-current"' : '') + '>' +
-    '<td class="conj-pronoun">' + escapeHtml(V.personsShort[i]) + '</td>' +
+    '<td class="conj-pronoun">' + escapeHtml(r.person || V.personsShort[i]) + '</td>' +
     '<td class="conj-form">' + escapeHtml(r.form) + '</td>' +
     '<td class="conj-pron">' + escapeHtml(r.pron) + '</td></tr>').join('');
   return '<div class="conj-table-wrapper"><div class="conj-table-label">' +
@@ -97,8 +97,9 @@ function buildVerbCards(tense, tenseLabel) {
     if (verb.quiz === false) return;
     if (!verb.tenses[tense]) return;   // the subjunctive covers a curated subset
     verb.tenses[tense].forEach((row, i) => {
+      if (row.quiz === false) return;    // e.g. "eu aconteço": grammatical, never said — Browse only
       const infer = verbInfer(verb, tense, i, row.form);
-      const person = V.personsShort[i];
+      const person = row.person || V.personsShort[i];   // acontecer: "isso", "as coisas"
       const full = person + ' ' + row.form;
       const accepted = [row.form, full];
       // the imperfect subjunctive is usually cited with its trigger word

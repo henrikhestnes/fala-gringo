@@ -6,7 +6,7 @@ A tool for learning everyday **Brazilian Portuguese** — the spoken carioca reg
 you actually hear in Rio, not textbook European Portuguese. It is aimed at an
 English speaker: you are shown English and type the Portuguese.
 
-Browse 124 verbs with their conjugations across three indicative tenses — plus the
+Browse 125 verbs with their conjugations across three indicative tenses — plus the
 imperfect subjunctive on a 40-verb core — or drill any of eleven topics by typing
 the answer.
 
@@ -17,10 +17,10 @@ the answer.
 
 | Tab | What it is | Cards |
 |---|---|---|
-| **Browse** | The verb list: tap a word to hide/reveal it, expand a row for all three tenses, tap any form to hear it | 124 verbs |
-| **Presente** | Verb drill, present tense | 492 |
-| **Passado** | Verb drill, pretérito perfeito | 492 |
-| **Imperfeito** | Verb drill, pretérito imperfeito | 492 |
+| **Browse** | The verb list: tap a word to hide/reveal it, expand a row for all three tenses, tap any form to hear it | 125 verbs |
+| **Presente** | Verb drill, present tense | 494 |
+| **Passado** | Verb drill, pretérito perfeito | 494 |
+| **Imperfeito** | Verb drill, pretérito imperfeito | 494 |
 | **Subjuntivo** | Verb drill, imperfeito do subjuntivo — 40 core verbs | 160 |
 | **Nouns** | With gender and article | 83 |
 | **Adjectives** | With agreement | 53 |
@@ -50,7 +50,7 @@ the trigger-prefixed `se/que eu falasse`. The Sentences tab's *Hypotheticals & w
 group practices producing whole trigger sentences.
 
 It covers a curated 40-verb core (the verbs you actually reach for in hypotheticals)
-rather than all 124 — and `haver` stays out for the same reason it is not drilled
+rather than all 125 — and `haver` stays out for the same reason it is not drilled
 elsewhere: only 3sg `houvesse` is live usage.
 
 ## How the drill works
@@ -104,7 +104,7 @@ They use the JavaScriptCore engine bundled with macOS. `verify.html` runs the
 same data checks in the browser — just open it.
 
 `scripts/check.jxa` and `verify.html` share `js/checks.js`, which asserts:
-124 verbs; 1488 forms with all three indicative tenses; every drilled form has a
+125 verbs; 1500 forms with all three indicative tenses; every drilled form has a
 form, meaning, pronunciation and example; every regular verb matches an independent
 conjugation oracle (`js/conjugate.js`); every verb flagged irregular really is;
 40 complete subjunctive blocks whose forms all derive from the perfeito 3pl (a rule
@@ -147,7 +147,7 @@ pronunciations and example sentences, come from
 [gjermundbae/portuguese-verb-flashcards](https://github.com/gjermundbae/portuguese-verb-flashcards),
 whose typing-drill format this tool's quiz is modelled on.
 
-The two verb sets were merged into a 124-verb superset: 105 from this repo, 95
+The two verb sets were merged into a 124-verb superset (`acontecer` was added later, third person only): 105 from this repo, 95
 from theirs, 76 in common. Every shared verb agreed on all three tenses. The 29
 verbs only this repo had needed pronunciations and examples written for them
 (348 forms), following their Rio-register conventions — **those are generated

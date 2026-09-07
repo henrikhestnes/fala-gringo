@@ -1,8 +1,9 @@
-// The 124-verb superset: this repo's own 105 verbs merged with the 95 from the
+// 125 verbs: a 124-verb superset — this repo's own 105 verbs merged with the 95 from the
 // source flashcards repo credited in the README (76 overlap). Forms for every verb were
 // cross-validated: the generated conjugations agree with their hand-written forms on
 // all 285 verb/tense pairs. Pronunciation hints and examples for the 29 study-only
-// verbs were authored to match their Rio-register conventions.
+// verbs were authored to match their Rio-register conventions. `acontecer` (to happen)
+// was added on top: only its third-person rows are drilled, see the entry.
 window.DATA_VERBS = {
   categories: [
     { name: "Essenciais", color: "#ec4899" },
@@ -311,6 +312,32 @@ window.DATA_VERBS = {
           { form: "ficasse", meaning: "if you stayed / became", pron: "fee-KAH-see", example: "Se você ficasse em casa, a gente pedia pizza." },
           { form: "ficássemos", meaning: "if we stayed / became", pron: "fee-KAH-seh-moosh", example: "Era melhor que nós ficássemos quietos na reunião." },
           { form: "ficassem", meaning: "if you all stayed / became", pron: "fee-KAH-seng", example: "Saí antes que vocês ficassem bravos comigo." },
+        ],
+      },
+    },
+    {
+      // Verbs of happening have no real "I" or "we". Those rows stay Browse-only
+      // (row-level quiz: false) and the drilled rows name their own subject
+      // (person) instead of the default você / vocês.
+      pt: "acontecer", en: "to happen", category: "Essenciais",
+      tenses: {
+        presente: [
+          { form: "aconteço", meaning: "I happen (never used)", pron: "ah-kon-TEH-soo", example: "", quiz: false },
+          { form: "acontece", meaning: "it happens", pron: "ah-kon-TEH-see", example: "Isso acontece muito no Rio.", person: "isso" },
+          { form: "acontecemos", meaning: "we happen (never used)", pron: "ah-kon-teh-SEH-moosh", example: "", quiz: false },
+          { form: "acontecem", meaning: "things happen", pron: "ah-kon-TEH-seng", example: "As coisas acontecem, relaxa.", person: "as coisas" },
+        ],
+        perfeito: [
+          { form: "aconteci", meaning: "I happened (never used)", pron: "ah-kon-teh-SEE", example: "", quiz: false },
+          { form: "aconteceu", meaning: "it happened", pron: "ah-kon-teh-SEH-oo", example: "O que aconteceu com você?", person: "isso" },
+          { form: "acontecemos", meaning: "we happened (never used)", pron: "ah-kon-teh-SEH-moosh", example: "", quiz: false },
+          { form: "aconteceram", meaning: "things happened", pron: "ah-kon-teh-SEH-rahng", example: "Muitas coisas aconteceram esse ano.", person: "as coisas" },
+        ],
+        imperfeito: [
+          { form: "acontecia", meaning: "I used to happen (never used)", pron: "ah-kon-teh-SEE-ah", example: "", quiz: false },
+          { form: "acontecia", meaning: "it used to happen", pron: "ah-kon-teh-SEE-ah", example: "Isso acontecia direto quando eu era criança.", person: "isso" },
+          { form: "acontecíamos", meaning: "we used to happen (never used)", pron: "ah-kon-teh-SEE-ah-moosh", example: "", quiz: false },
+          { form: "aconteciam", meaning: "things used to happen", pron: "ah-kon-teh-SEE-ahng", example: "Antigamente as coisas aconteciam mais devagar.", person: "as coisas" },
         ],
       },
     },

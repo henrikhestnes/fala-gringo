@@ -31,6 +31,8 @@ window.DATA_SENTENCES = {
   { en: "I don't speak English.", pt: "Eu não falo inglês.", group: "Present basics",
     note: "Negation is simply 'não' before the verb — no auxiliary needed. Languages take no article: falo inglês, falo português." },
   { en: "I think Norway can win the World Cup.", pt: "Eu acho que a Noruega pode ganhar a Copa do Mundo.", group: "Present basics", note: "'Que' after 'acho' is mandatory — Portuguese never drops the connector the way English drops 'that' ('I think Norway can win'). Template: 'Acho que [alguém] pode [verbo].' = 'I think [someone] can [verb].'" },
+  { en: "It happens.", pt: "Acontece.", group: "Present basics",
+    note: "One word, said with a shrug: 'Acontece.' = it happens / these things happen. Acontecer is only ever conjugated in the 3rd person — 'isso acontece', never 'eu aconteço'." },
   { en: "I'm still learning Portuguese.", pt: "Ainda estou aprendendo português.", group: "Present basics", note: "'Estar + verb-ndo' = present progressive (am/is doing). Pattern: falar → falando, comer → comendo, viver → vivendo. 'Ainda' = still. Contrast: 'já' (already) vs 'ainda não' (not yet)." },
 
   // Ser vs Estar
@@ -135,6 +137,16 @@ window.DATA_SENTENCES = {
   { en: "How much does the coffee cost?", pt: "Quanto custa o café?", group: "Questions",
     note: "Quanto agrees with what it quantifies: quanto (m.sg), quanta (f.sg), quantos (m.pl), quantas (f.pl). The subject can follow the verb in questions: 'custa o café'." },
   { en: "Can you speak more slowly, please?", pt: "Você pode falar mais devagar, por favor?", group: "Questions", note: "'Pode + infinitive' = can + verb — no auxiliary gymnastics, just stack them. 'Mais devagar' = more slowly (devagar = slowly). You'll use this sentence every day." },
+  { en: "What happened?", pt: "O que aconteceu?", group: "Questions",
+    note: "Acontecer (to happen) only ever takes a 3rd-person subject: acontece, aconteceu, acontecia. 'O que aconteceu?' is the everyday 'what happened?' — also the way to ask 'what's wrong?'." },
+  { en: "Did something happen?", pt: "Aconteceu {algo}?",
+    slots: { algo: ["alguma coisa", "algo"] },
+    group: "Questions",
+    note: "Yes/no questions keep statement word order — only the intonation rises. 'Alguma coisa' is the spoken favourite for 'something'; 'algo' works too." },
+  { en: "What's going on?", pt: "O que {esta} acontecendo?",
+    slots: { esta: ["está", "tá"] },
+    group: "Questions",
+    note: "Estar + -ndo = present progressive: acontecer → acontecendo. In carioca speech 'está' shrinks to 'tá', so you will hear 'O que tá acontecendo?' far more often." },
 
   // Time expressions
   { en: "I will stay in Brazil from February to March.",

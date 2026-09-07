@@ -72,7 +72,7 @@ verbs/              GENERATED static per-verb pages (SEO) — never edit by hand
 
 The key design decision: instead of one drill engine per topic (each topic's raw data has a different schema), `js/topics.js` normalises everything into one card shape — `{ id, topic, group, meta, hint, prompt, sub, accepted[], answer, pron, speak, reveal, allowEmpty }` — and `js/quiz.js` drives all of them.
 
-`js/data/verbs.js` is the **source of truth for verb forms** — 124 verbs, forms stored explicitly rather than generated at runtime, so a pronunciation hint hangs off each form. A curated 40-verb core additionally carries the imperfect subjunctive. `js/conjugate.js` independently verifies the regular verbs in the checks; the app loads it too, only so `topics.js` can tag each verb form as regular or not for the Foco inference — it never conjugates for display.
+`js/data/verbs.js` is the **source of truth for verb forms** — 125 verbs, forms stored explicitly rather than generated at runtime, so a pronunciation hint hangs off each form. A curated 40-verb core additionally carries the imperfect subjunctive. `js/conjugate.js` independently verifies the regular verbs in the checks; the app loads it too, only so `topics.js` can tag each verb form as regular or not for the Foco inference — it never conjugates for display.
 
 ## /ingles/ — Fala Como Gringo, English for Brazilians (subpage)
 
@@ -96,7 +96,7 @@ Conventions for its content (`ingles/js/data/`): everything the learner **reads*
 - Every imperfect-subjunctive form derives from the pretérito perfeito 3pl (drop `-ram`, add `-sse/-sse/-ssemos/-ssem` — a rule with no exceptions), and every subjunctive example contains its form inside a trigger context (`se…`, `como se…`, `queria que…`).
 - Every card's canonical answer is among its own accepted answers.
 - Answers are compared case-, accent-, and punctuation-insensitively (`js/lib/text.js` `normalize()`); verbs accept the bare form as well as the pronoun-prefixed one. On top of that, `matchAnswer()` forgives a **typed slip** (one edit from 5 characters, two from 12, none below — a letter IS the answer in falo/fala) as a **near-miss**: the card clears and shows "≈ Close! You typed …", but the review level does not climb. **Spoken** answers (mic mode) also match by pt-BR sound key (`phoneticKey()`: ç/ss/z/ce → s, -ão/-am, dropped final r, final e/o → i/u …) and grade as a full hit. Both are refused whenever a **rival** — any answer of another card in the topic that this card does not accept — is at least as close (fala for falo, era for eram), so a near-miss can never be mistaken for a different form. The checks fail if two distinct forms of one conjugation share a sound key. The Daily tab stays exact-match.
-- `haver` appears in Browse but is deliberately excluded from drills (only 3sg `há`/`houvesse` is live usage) — don't "fix" that.
+- `haver` appears in Browse but is deliberately excluded from drills (only 3sg `há`/`houvesse` is live usage) — don't "fix" that. A single verb row can also opt out with `quiz: false` and name its own subject with `person` (`acontecer`: `eu aconteço` is Browse-only, the drilled rows read `isso acontece` / `as coisas acontecem`).
 
 ## Content notes
 
