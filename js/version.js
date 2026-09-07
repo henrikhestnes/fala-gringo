@@ -28,8 +28,11 @@
 //      hit confirms the rest (clock reset, no climb), a miss reclaims them into the deck
 // 1.16.1 acontecer (to happen): third-person rows drilled with their own subject, eu/nós rows Browse-only;
 //        four "what happened?" sentence cards
+// 1.16.2 21 high-frequency verbs (tomar, olhar, acabar, existir, morrer, nascer, receber, mandar, brincar,
+//        almoçar, jantar, avisar, descobrir, ensinar, gastar, buscar, visitar, virar, arrumar, aproveitar,
+//        desligar); este → esse in three examples
 
-const APP_VERSION = '1.16.1';
+const APP_VERSION = '1.16.2';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

@@ -1,9 +1,12 @@
-// 125 verbs: a 124-verb superset — this repo's own 105 verbs merged with the 95 from the
+// 146 verbs: a 124-verb superset — this repo's own 105 verbs merged with the 95 from the
 // source flashcards repo credited in the README (76 overlap). Forms for every verb were
 // cross-validated: the generated conjugations agree with their hand-written forms on
 // all 285 verb/tense pairs. Pronunciation hints and examples for the 29 study-only
 // verbs were authored to match their Rio-register conventions. `acontecer` (to happen)
-// was added on top: only its third-person rows are drilled, see the entry.
+// was added on top with only its third-person rows drilled, then 21 high-frequency
+// spoken verbs (tomar, olhar, acabar, existir, morrer, nascer, receber, mandar, brincar,
+// almoçar, jantar, avisar, descobrir, ensinar, gastar, buscar, visitar, virar, arrumar,
+// aproveitar, desligar) — each placed in its category block.
 window.DATA_VERBS = {
   categories: [
     { name: "Essenciais", color: "#ec4899" },
@@ -342,6 +345,30 @@ window.DATA_VERBS = {
       },
     },
     {
+      // Like acontecer: "eu existo" is a joke line, not a sentence. Third person only.
+      pt: "existir", en: "to exist", category: "Essenciais",
+      tenses: {
+        presente: [
+          { form: "existo", meaning: "I exist (rare)", pron: "eh-ZEESH-too", example: "", quiz: false },
+          { form: "existe", meaning: "it exists", pron: "eh-ZEESH-chee", example: "Isso ainda existe?", person: "isso" },
+          { form: "existimos", meaning: "we exist (rare)", pron: "eh-zeesh-CHEE-moosh", example: "", quiz: false },
+          { form: "existem", meaning: "they exist", pron: "eh-ZEESH-teng", example: "Eles existem, sim, eu já vi.", person: "eles" },
+        ],
+        perfeito: [
+          { form: "existi", meaning: "I existed (rare)", pron: "eh-zeesh-CHEE", example: "", quiz: false },
+          { form: "existiu", meaning: "it existed", pron: "eh-zeesh-CHEE-oo", example: "Isso existiu mesmo ou é lenda?", person: "isso" },
+          { form: "existimos", meaning: "we existed (rare)", pron: "eh-zeesh-CHEE-moosh", example: "", quiz: false },
+          { form: "existiram", meaning: "they existed", pron: "eh-zeesh-CHEE-rahng", example: "Eles existiram de verdade, não é ficção.", person: "eles" },
+        ],
+        imperfeito: [
+          { form: "existia", meaning: "I used to exist (rare)", pron: "eh-zeesh-CHEE-ah", example: "", quiz: false },
+          { form: "existia", meaning: "it used to exist", pron: "eh-zeesh-CHEE-ah", example: "Isso não existia na minha época.", person: "isso" },
+          { form: "existíamos", meaning: "we used to exist (rare)", pron: "eh-zeesh-CHEE-ah-moosh", example: "", quiz: false },
+          { form: "existiam", meaning: "they used to exist", pron: "eh-zeesh-CHEE-ahng", example: "Naquela época eles nem existiam.", person: "eles" },
+        ],
+      },
+    },
+    {
       pt: "poder", en: "can, to be able to", category: "Modais e cognitivos", irregular: true,
       tenses: {
         presente: [
@@ -493,7 +520,7 @@ window.DATA_VERBS = {
           { form: "conheço", meaning: "I know (a person/place)", pron: "koh-NYEH-soo", example: "Eu conheço esse lugar." },
           { form: "conhece", meaning: "you know (a person/place)", pron: "koh-NYEH-see", example: "Você conhece a Ana?" },
           { form: "conhecemos", meaning: "we know (a person/place)", pron: "koh-nyeh-SEH-moosh", example: "Nós conhecemos bem a cidade." },
-          { form: "conhecem", meaning: "you all know (a person/place)", pron: "koh-NYEH-seng", example: "Vocês conhecem este restaurante?" },
+          { form: "conhecem", meaning: "you all know (a person/place)", pron: "koh-NYEH-seng", example: "Vocês conhecem esse restaurante?" },
         ],
         perfeito: [
           { form: "conheci", meaning: "I met / got to know (a person/place)", pron: "koh-nyeh-SEE", example: "Eu conheci ela na festa ontem." },
@@ -691,6 +718,29 @@ window.DATA_VERBS = {
           { form: "resolvia", meaning: "you used to solve / resolve / were solving", pron: "heh-zohl-VEE-ah", example: "Você resolvia tudo na base da conversa?" },
           { form: "resolvíamos", meaning: "we used to solve / resolve / were solving", pron: "heh-zohl-VEE-ah-moosh", example: "Nós resolvíamos as questões em grupo." },
           { form: "resolviam", meaning: "you all used to solve / resolve", pron: "heh-zohl-VEE-ahng", example: "Vocês resolviam os conflitos com calma?" },
+        ],
+      },
+    },
+    {
+      pt: "descobrir", en: "to find out, to discover", category: "Modais e cognitivos", irregular: true,
+      tenses: {
+        presente: [
+          { form: "descubro", meaning: "I find out", pron: "desh-KOO-broo", example: "Eu descubro tudo pelo Instagram." },
+          { form: "descobre", meaning: "you find out", pron: "desh-KOH-bree", example: "Você sempre descobre a fofoca primeiro." },
+          { form: "descobrimos", meaning: "we find out", pron: "desh-koh-BREE-moosh", example: "Nós descobrimos um boteco ótimo ali." },
+          { form: "descobrem", meaning: "you all find out", pron: "desh-KOH-breng", example: "Vocês descobrem tudo rápido, hein?" },
+        ],
+        perfeito: [
+          { form: "descobri", meaning: "I found out", pron: "desh-koh-BREE", example: "Eu descobri um atalho pra praia." },
+          { form: "descobriu", meaning: "you found out", pron: "desh-koh-BREE-oo", example: "Você descobriu quem foi?" },
+          { form: "descobrimos", meaning: "we found out", pron: "desh-koh-BREE-moosh", example: "Nós descobrimos a verdade ontem." },
+          { form: "descobriram", meaning: "you all found out", pron: "desh-koh-BREE-rahng", example: "Vocês descobriram o resultado?" },
+        ],
+        imperfeito: [
+          { form: "descobria", meaning: "I used to find out", pron: "desh-koh-BREE-ah", example: "Eu sempre descobria a surpresa antes." },
+          { form: "descobria", meaning: "you used to find out", pron: "desh-koh-BREE-ah", example: "Você descobria tudo pela sua irmã?" },
+          { form: "descobríamos", meaning: "we used to find out", pron: "desh-koh-BREE-ah-moosh", example: "Nós descobríamos lugares novos toda semana." },
+          { form: "descobriam", meaning: "you all used to find out", pron: "desh-koh-BREE-ahng", example: "Vocês descobriam as notas antes dos pais?" },
         ],
       },
     },
@@ -915,6 +965,29 @@ window.DATA_VERBS = {
       },
     },
     {
+      pt: "buscar", en: "to fetch, to pick (someone) up", category: "Vida diária e mobilidade",
+      tenses: {
+        presente: [
+          { form: "busco", meaning: "I fetch / pick up", pron: "BOOSH-koo", example: "Eu busco as crianças na escola às cinco." },
+          { form: "busca", meaning: "you fetch / pick up", pron: "BOOSH-kah", example: "Você busca ela no aeroporto?" },
+          { form: "buscamos", meaning: "we fetch / pick up", pron: "boosh-KAH-moosh", example: "Nós buscamos o bolo na confeitaria." },
+          { form: "buscam", meaning: "you all fetch / pick up", pron: "BOOSH-kahng", example: "Vocês buscam o carro hoje?" },
+        ],
+        perfeito: [
+          { form: "busquei", meaning: "I fetched / picked up", pron: "boosh-KAY", example: "Eu busquei ela no trabalho." },
+          { form: "buscou", meaning: "you fetched / picked up", pron: "boosh-KOH", example: "Você buscou a encomenda?" },
+          { form: "buscamos", meaning: "we fetched / picked up", pron: "boosh-KAH-moosh", example: "Nós buscamos os documentos ontem." },
+          { form: "buscaram", meaning: "you all fetched / picked up", pron: "boosh-KAH-rahng", example: "Vocês buscaram as crianças?" },
+        ],
+        imperfeito: [
+          { form: "buscava", meaning: "I used to fetch / pick up", pron: "boosh-KAH-vah", example: "Eu buscava meu irmão na escola." },
+          { form: "buscava", meaning: "you used to fetch / pick up", pron: "boosh-KAH-vah", example: "Você buscava ela todo dia?" },
+          { form: "buscávamos", meaning: "we used to fetch / pick up", pron: "boosh-KAH-vah-moosh", example: "Nós buscávamos pão fresco de manhã." },
+          { form: "buscavam", meaning: "you all used to fetch / pick up", pron: "boosh-KAH-vahng", example: "Vocês buscavam os avós no domingo?" },
+        ],
+      },
+    },
+    {
       pt: "voltar", en: "to return", category: "Vida diária e mobilidade",
       tenses: {
         presente: [
@@ -1009,6 +1082,29 @@ window.DATA_VERBS = {
           { form: "ligava", meaning: "you used to call / turn on / were calling (phone)", pron: "lee-GAH-vah", example: "Você ligava pro trabalho com frequência?" },
           { form: "ligávamos", meaning: "we used to call / turn on / were calling (phone)", pron: "lee-GAH-vah-moosh", example: "Nós ligávamos o rádio de manhã." },
           { form: "ligavam", meaning: "you all used to call / turn on (phone)", pron: "lee-GAH-vahng", example: "Vocês ligavam pra família às vezes?" },
+        ],
+      },
+    },
+    {
+      pt: "desligar", en: "to turn off, to hang up", category: "Vida diária e mobilidade",
+      tenses: {
+        presente: [
+          { form: "desligo", meaning: "I turn off / hang up", pron: "desh-LEE-goo", example: "Eu desligo o celular pra dormir." },
+          { form: "desliga", meaning: "you turn off / hang up", pron: "desh-LEE-gah", example: "Você desliga a luz quando sai?" },
+          { form: "desligamos", meaning: "we turn off / hang up", pron: "desh-lee-GAH-moosh", example: "Nós desligamos o ar antes de sair." },
+          { form: "desligam", meaning: "you all turn off / hang up", pron: "desh-LEE-gahng", example: "Vocês desligam a TV de noite?" },
+        ],
+        perfeito: [
+          { form: "desliguei", meaning: "I turned off / hung up", pron: "desh-lee-GAY", example: "Eu desliguei na cara dele sem querer." },
+          { form: "desligou", meaning: "you turned off / hung up", pron: "desh-lee-GOH", example: "Você desligou o ferro?" },
+          { form: "desligamos", meaning: "we turned off / hung up", pron: "desh-lee-GAH-moosh", example: "Nós desligamos tudo antes de viajar." },
+          { form: "desligaram", meaning: "you all turned off / hung up", pron: "desh-lee-GAH-rahng", example: "Vocês desligaram o chuveiro?" },
+        ],
+        imperfeito: [
+          { form: "desligava", meaning: "I used to turn off / hang up", pron: "desh-lee-GAH-vah", example: "Eu desligava o telefone pra estudar." },
+          { form: "desligava", meaning: "you used to turn off / hang up", pron: "desh-lee-GAH-vah", example: "Você desligava a luz da sala?" },
+          { form: "desligávamos", meaning: "we used to turn off / hang up", pron: "desh-lee-GAH-vah-moosh", example: "Nós desligávamos a TV na hora do jantar." },
+          { form: "desligavam", meaning: "you all used to turn off / hang up", pron: "desh-lee-GAH-vahng", example: "Vocês desligavam o wi-fi de noite?" },
         ],
       },
     },
@@ -1284,6 +1380,29 @@ window.DATA_VERBS = {
       },
     },
     {
+      pt: "ensinar", en: "to teach", category: "Comunicação",
+      tenses: {
+        presente: [
+          { form: "ensino", meaning: "I teach", pron: "en-SEE-noo", example: "Eu ensino inglês pra crianças." },
+          { form: "ensina", meaning: "you teach", pron: "en-SEE-nah", example: "Você ensina português pra gringo?" },
+          { form: "ensinamos", meaning: "we teach", pron: "en-see-NAH-moosh", example: "Nós ensinamos surfe na praia." },
+          { form: "ensinam", meaning: "you all teach", pron: "en-SEE-nahng", example: "Vocês ensinam na mesma escola?" },
+        ],
+        perfeito: [
+          { form: "ensinei", meaning: "I taught", pron: "en-see-NAY", example: "Eu ensinei ela a nadar." },
+          { form: "ensinou", meaning: "you taught", pron: "en-see-NOH", example: "Você ensinou ele a dirigir?" },
+          { form: "ensinamos", meaning: "we taught", pron: "en-see-NAH-moosh", example: "Nós ensinamos a receita pra todo mundo." },
+          { form: "ensinaram", meaning: "you all taught", pron: "en-see-NAH-rahng", example: "Vocês ensinaram o caminho pra ele?" },
+        ],
+        imperfeito: [
+          { form: "ensinava", meaning: "I used to teach", pron: "en-see-NAH-vah", example: "Eu ensinava matemática antes." },
+          { form: "ensinava", meaning: "you used to teach", pron: "en-see-NAH-vah", example: "Você ensinava violão?" },
+          { form: "ensinávamos", meaning: "we used to teach", pron: "en-see-NAH-vah-moosh", example: "Nós ensinávamos as crianças a ler." },
+          { form: "ensinavam", meaning: "you all used to teach", pron: "en-see-NAH-vahng", example: "Vocês ensinavam no mesmo colégio?" },
+        ],
+      },
+    },
+    {
       pt: "sugerir", en: "to suggest", category: "Comunicação", irregular: true,
       tenses: {
         presente: [
@@ -1303,6 +1422,75 @@ window.DATA_VERBS = {
           { form: "sugeria", meaning: "you used to suggest", pron: "soo-zheh-REE-ah", example: "Você sugeria filmes para a gente?" },
           { form: "sugeríamos", meaning: "we used to suggest", pron: "soo-zheh-REE-ah-moosh", example: "Nós sugeríamos lugares para visitar." },
           { form: "sugeriam", meaning: "you all used to suggest", pron: "soo-zheh-REE-ahng", example: "Vocês sugeriam ideias na reunião?" },
+        ],
+      },
+    },
+    {
+      pt: "receber", en: "to receive, to get (mail, a message)", category: "Comunicação",
+      tenses: {
+        presente: [
+          { form: "recebo", meaning: "I receive / get (mail, a message)", pron: "heh-SEH-boo", example: "Eu recebo muita mensagem de trabalho." },
+          { form: "recebe", meaning: "you receive / get (mail, a message)", pron: "heh-SEH-bee", example: "Você recebe o salário no dia cinco?" },
+          { form: "recebemos", meaning: "we receive / get (mail, a message)", pron: "heh-seh-BEH-moosh", example: "Nós recebemos encomenda na portaria." },
+          { form: "recebem", meaning: "you all receive / get (mail, a message)", pron: "heh-SEH-beng", example: "Vocês recebem a conta por e-mail?" },
+        ],
+        perfeito: [
+          { form: "recebi", meaning: "I received / got", pron: "heh-seh-BEE", example: "Eu recebi seu e-mail agora." },
+          { form: "recebeu", meaning: "you received / got", pron: "heh-seh-BEH-oo", example: "Você recebeu a minha mensagem?" },
+          { form: "recebemos", meaning: "we received / got", pron: "heh-seh-BEH-moosh", example: "Nós recebemos a notícia ontem." },
+          { form: "receberam", meaning: "you all received / got", pron: "heh-seh-BEH-rahng", example: "Vocês receberam o convite?" },
+        ],
+        imperfeito: [
+          { form: "recebia", meaning: "I used to receive / get", pron: "heh-seh-BEE-ah", example: "Eu recebia carta da minha avó todo mês." },
+          { form: "recebia", meaning: "you used to receive / get", pron: "heh-seh-BEE-ah", example: "Você recebia visita todo fim de semana?" },
+          { form: "recebíamos", meaning: "we used to receive / get", pron: "heh-seh-BEE-ah-moosh", example: "Nós recebíamos os vizinhos pra jantar." },
+          { form: "recebiam", meaning: "you all used to receive / get", pron: "heh-seh-BEE-ahng", example: "Vocês recebiam ajuda dos pais?" },
+        ],
+      },
+    },
+    {
+      pt: "mandar", en: "to send", category: "Comunicação",
+      tenses: {
+        presente: [
+          { form: "mando", meaning: "I send", pron: "MAHN-doo", example: "Eu mando mensagem quando chegar." },
+          { form: "manda", meaning: "you send", pron: "MAHN-dah", example: "Você manda a localização pra mim?" },
+          { form: "mandamos", meaning: "we send", pron: "mahn-DAH-moosh", example: "Nós mandamos o presente pelo correio." },
+          { form: "mandam", meaning: "you all send", pron: "MAHN-dahng", example: "Vocês mandam foto do bebê?" },
+        ],
+        perfeito: [
+          { form: "mandei", meaning: "I sent", pron: "mahn-DAY", example: "Eu mandei o áudio agora." },
+          { form: "mandou", meaning: "you sent", pron: "mahn-DOH", example: "Você mandou o endereço?" },
+          { form: "mandamos", meaning: "we sent", pron: "mahn-DAH-moosh", example: "Nós mandamos o convite ontem." },
+          { form: "mandaram", meaning: "you all sent", pron: "mahn-DAH-rahng", example: "Vocês mandaram o documento pra ela?" },
+        ],
+        imperfeito: [
+          { form: "mandava", meaning: "I used to send", pron: "mahn-DAH-vah", example: "Eu mandava cartão postal de toda viagem." },
+          { form: "mandava", meaning: "you used to send", pron: "mahn-DAH-vah", example: "Você mandava mensagem todo dia?" },
+          { form: "mandávamos", meaning: "we used to send", pron: "mahn-DAH-vah-moosh", example: "Nós mandávamos e-mail, não WhatsApp." },
+          { form: "mandavam", meaning: "you all used to send", pron: "mahn-DAH-vahng", example: "Vocês mandavam dinheiro pra família?" },
+        ],
+      },
+    },
+    {
+      pt: "avisar", en: "to let (someone) know, to warn", category: "Comunicação",
+      tenses: {
+        presente: [
+          { form: "aviso", meaning: "I let (you) know", pron: "ah-VEE-zoo", example: "Eu aviso quando chegar." },
+          { form: "avisa", meaning: "you let (me) know", pron: "ah-VEE-zah", example: "Você me avisa se atrasar?" },
+          { form: "avisamos", meaning: "we let (you) know", pron: "ah-vee-ZAH-moosh", example: "Nós avisamos o porteiro sempre." },
+          { form: "avisam", meaning: "you all let (me) know", pron: "ah-VEE-zahng", example: "Vocês avisam quando estiverem chegando?" },
+        ],
+        perfeito: [
+          { form: "avisei", meaning: "I let (you) know / warned", pron: "ah-vee-ZAY", example: "Eu avisei que ia chover." },
+          { form: "avisou", meaning: "you let (me) know / warned", pron: "ah-vee-ZOH", example: "Você avisou a sua mãe?" },
+          { form: "avisamos", meaning: "we let (them) know / warned", pron: "ah-vee-ZAH-moosh", example: "Nós avisamos todo mundo do horário novo." },
+          { form: "avisaram", meaning: "you all let (me) know / warned", pron: "ah-vee-ZAH-rahng", example: "Vocês avisaram que não vinham?" },
+        ],
+        imperfeito: [
+          { form: "avisava", meaning: "I used to let (you) know / warn", pron: "ah-vee-ZAH-vah", example: "Eu sempre avisava antes de aparecer." },
+          { form: "avisava", meaning: "you used to let (me) know / warn", pron: "ah-vee-ZAH-vah", example: "Você avisava quando ia chegar tarde?" },
+          { form: "avisávamos", meaning: "we used to let (them) know / warn", pron: "ah-vee-ZAH-vah-moosh", example: "Nós avisávamos a vizinha quando viajávamos." },
+          { form: "avisavam", meaning: "you all used to let (me) know / warn", pron: "ah-vee-ZAH-vahng", example: "Vocês avisavam os pais quando saíam?" },
         ],
       },
     },
@@ -1361,6 +1549,29 @@ window.DATA_VERBS = {
           { form: "pagasse", meaning: "if you paid", pron: "pah-GAH-see", example: "Ela gostaria que você pagasse a sua parte logo." },
           { form: "pagássemos", meaning: "if we paid", pron: "pah-GAH-seh-moosh", example: "Ele sumiu antes que nós pagássemos a conta do bar." },
           { form: "pagassem", meaning: "if you all paid", pron: "pah-GAH-seng", example: "Queria que vocês pagassem o aluguel sem atraso." },
+        ],
+      },
+    },
+    {
+      pt: "gastar", en: "to spend (money)", category: "Consumo e serviços",
+      tenses: {
+        presente: [
+          { form: "gasto", meaning: "I spend (money)", pron: "GAHSH-too", example: "Eu gasto muito com comida." },
+          { form: "gasta", meaning: "you spend (money)", pron: "GAHSH-tah", example: "Você gasta quanto de aluguel?" },
+          { form: "gastamos", meaning: "we spend (money)", pron: "gash-TAH-moosh", example: "Nós gastamos pouco morando juntos." },
+          { form: "gastam", meaning: "you all spend (money)", pron: "GAHSH-tahng", example: "Vocês gastam muito com Uber?" },
+        ],
+        perfeito: [
+          { form: "gastei", meaning: "I spent (money)", pron: "gash-TAY", example: "Eu gastei tudo na viagem." },
+          { form: "gastou", meaning: "you spent (money)", pron: "gash-TOH", example: "Você gastou quanto no mercado?" },
+          { form: "gastamos", meaning: "we spent (money)", pron: "gash-TAH-moosh", example: "Nós gastamos mais do que devíamos." },
+          { form: "gastaram", meaning: "you all spent (money)", pron: "gash-TAH-rahng", example: "Vocês gastaram muito no show?" },
+        ],
+        imperfeito: [
+          { form: "gastava", meaning: "I used to spend (money)", pron: "gash-TAH-vah", example: "Eu gastava tudo em roupa." },
+          { form: "gastava", meaning: "you used to spend (money)", pron: "gash-TAH-vah", example: "Você gastava muito quando era solteiro?" },
+          { form: "gastávamos", meaning: "we used to spend (money)", pron: "gash-TAH-vah-moosh", example: "Nós gastávamos pouco com lazer." },
+          { form: "gastavam", meaning: "you all used to spend (money)", pron: "gash-TAH-vahng", example: "Vocês gastavam mais antes?" },
         ],
       },
     },
@@ -1601,6 +1812,29 @@ window.DATA_VERBS = {
       },
     },
     {
+      pt: "tomar", en: "to take (a shower, a coffee, medicine)", category: "Rotina e lazer",
+      tenses: {
+        presente: [
+          { form: "tomo", meaning: "I take (a shower, a coffee)", pron: "TOH-moo", example: "Eu tomo café sem açúcar." },
+          { form: "toma", meaning: "you take (a shower, a coffee)", pron: "TOH-mah", example: "Você toma banho de manhã ou de noite?" },
+          { form: "tomamos", meaning: "we take (a shower, a coffee)", pron: "toh-MAH-moosh", example: "Nós tomamos uma cerveja depois do trabalho." },
+          { form: "tomam", meaning: "you all take (a shower, a coffee)", pron: "TOH-mahng", example: "Vocês tomam café da manhã em casa?" },
+        ],
+        perfeito: [
+          { form: "tomei", meaning: "I took (a shower, a coffee)", pron: "toh-MAY", example: "Eu tomei um remédio pra dor de cabeça." },
+          { form: "tomou", meaning: "you took (a shower, a coffee)", pron: "toh-MOH", example: "Você já tomou café?" },
+          { form: "tomamos", meaning: "we took (a shower, a coffee)", pron: "toh-MAH-moosh", example: "Nós tomamos um açaí na praia." },
+          { form: "tomaram", meaning: "you all took (a shower, a coffee)", pron: "toh-MAH-rahng", example: "Vocês tomaram sol demais hoje." },
+        ],
+        imperfeito: [
+          { form: "tomava", meaning: "I used to take (a shower, a coffee)", pron: "toh-MAH-vah", example: "Eu tomava banho de mar todo dia." },
+          { form: "tomava", meaning: "you used to take (a shower, a coffee)", pron: "toh-MAH-vah", example: "Você tomava café quando era criança?" },
+          { form: "tomávamos", meaning: "we used to take (a shower, a coffee)", pron: "toh-MAH-vah-moosh", example: "Nós tomávamos suco de laranja toda manhã." },
+          { form: "tomavam", meaning: "you all used to take (a shower, a coffee)", pron: "toh-MAH-vahng", example: "Vocês tomavam ônibus pra escola?" },
+        ],
+      },
+    },
+    {
       pt: "cozinhar", en: "to cook", category: "Rotina e lazer",
       tenses: {
         presente: [
@@ -1620,6 +1854,52 @@ window.DATA_VERBS = {
           { form: "cozinhava", meaning: "you used to cook / were cooking", pron: "koh-zeen-YAH-vah", example: "Você cozinhava em casa todo dia?" },
           { form: "cozinhávamos", meaning: "we used to cook / were cooking", pron: "koh-zeen-YAH-vah-moosh", example: "Nós cozinhávamos juntos nos fins de semana." },
           { form: "cozinhavam", meaning: "you all used to cook", pron: "koh-zeen-YAH-vahng", example: "Vocês cozinhavam a própria comida?" },
+        ],
+      },
+    },
+    {
+      pt: "almoçar", en: "to have lunch", category: "Rotina e lazer",
+      tenses: {
+        presente: [
+          { form: "almoço", meaning: "I have lunch", pron: "ahl-MOH-soo", example: "Eu almoço meio-dia em ponto." },
+          { form: "almoça", meaning: "you have lunch", pron: "ahl-MOH-sah", example: "Você almoça em casa ou na rua?" },
+          { form: "almoçamos", meaning: "we have lunch", pron: "ahl-moh-SAH-moosh", example: "Nós almoçamos juntos toda sexta." },
+          { form: "almoçam", meaning: "you all have lunch", pron: "ahl-MOH-sahng", example: "Vocês almoçam no quilo perto do trabalho?" },
+        ],
+        perfeito: [
+          { form: "almocei", meaning: "I had lunch", pron: "ahl-moh-SAY", example: "Eu almocei tarde hoje." },
+          { form: "almoçou", meaning: "you had lunch", pron: "ahl-moh-SOH", example: "Você já almoçou?" },
+          { form: "almoçamos", meaning: "we had lunch", pron: "ahl-moh-SAH-moosh", example: "Nós almoçamos naquele quilo novo." },
+          { form: "almoçaram", meaning: "you all had lunch", pron: "ahl-moh-SAH-rahng", example: "Vocês almoçaram onde?" },
+        ],
+        imperfeito: [
+          { form: "almoçava", meaning: "I used to have lunch", pron: "ahl-moh-SAH-vah", example: "Eu almoçava na casa da minha avó." },
+          { form: "almoçava", meaning: "you used to have lunch", pron: "ahl-moh-SAH-vah", example: "Você almoçava na escola?" },
+          { form: "almoçávamos", meaning: "we used to have lunch", pron: "ahl-moh-SAH-vah-moosh", example: "Nós almoçávamos todos juntos no domingo." },
+          { form: "almoçavam", meaning: "you all used to have lunch", pron: "ahl-moh-SAH-vahng", example: "Vocês almoçavam no trabalho?" },
+        ],
+      },
+    },
+    {
+      pt: "jantar", en: "to have dinner", category: "Rotina e lazer",
+      tenses: {
+        presente: [
+          { form: "janto", meaning: "I have dinner", pron: "ZHAHN-too", example: "Eu janto cedo durante a semana." },
+          { form: "janta", meaning: "you have dinner", pron: "ZHAHN-tah", example: "Você janta fora muito?" },
+          { form: "jantamos", meaning: "we have dinner", pron: "zhahn-TAH-moosh", example: "Nós jantamos às oito." },
+          { form: "jantam", meaning: "you all have dinner", pron: "ZHAHN-tahng", example: "Vocês jantam juntos todo dia?" },
+        ],
+        perfeito: [
+          { form: "jantei", meaning: "I had dinner", pron: "zhahn-TAY", example: "Eu jantei uma pizza ontem." },
+          { form: "jantou", meaning: "you had dinner", pron: "zhahn-TOH", example: "Você já jantou?" },
+          { form: "jantamos", meaning: "we had dinner", pron: "zhahn-TAH-moosh", example: "Nós jantamos num japonês em Ipanema." },
+          { form: "jantaram", meaning: "you all had dinner", pron: "zhahn-TAH-rahng", example: "Vocês jantaram bem?" },
+        ],
+        imperfeito: [
+          { form: "jantava", meaning: "I used to have dinner", pron: "zhahn-TAH-vah", example: "Eu jantava vendo novela." },
+          { form: "jantava", meaning: "you used to have dinner", pron: "zhahn-TAH-vah", example: "Você jantava tarde quando morava na Espanha?" },
+          { form: "jantávamos", meaning: "we used to have dinner", pron: "zhahn-TAH-vah-moosh", example: "Nós jantávamos na varanda no verão." },
+          { form: "jantavam", meaning: "you all used to have dinner", pron: "zhahn-TAH-vahng", example: "Vocês jantavam com os avós no domingo?" },
         ],
       },
     },
@@ -1808,12 +2088,35 @@ window.DATA_VERBS = {
       },
     },
     {
+      pt: "aproveitar", en: "to make the most of, to take advantage of", category: "Rotina e lazer",
+      tenses: {
+        presente: [
+          { form: "aproveito", meaning: "I make the most of", pron: "ah-proh-VAY-too", example: "Eu aproveito o sol sempre que dá." },
+          { form: "aproveita", meaning: "you make the most of", pron: "ah-proh-VAY-tah", example: "Você aproveita bem o fim de semana?" },
+          { form: "aproveitamos", meaning: "we make the most of", pron: "ah-proh-vay-TAH-moosh", example: "Nós aproveitamos cada dia de férias." },
+          { form: "aproveitam", meaning: "you all make the most of", pron: "ah-proh-VAY-tahng", example: "Vocês aproveitam a praia de manhã?" },
+        ],
+        perfeito: [
+          { form: "aproveitei", meaning: "I made the most of", pron: "ah-proh-vay-TAY", example: "Eu aproveitei muito a viagem." },
+          { form: "aproveitou", meaning: "you made the most of", pron: "ah-proh-vay-TOH", example: "Você aproveitou a promoção?" },
+          { form: "aproveitamos", meaning: "we made the most of", pron: "ah-proh-vay-TAH-moosh", example: "Nós aproveitamos o feriado na praia." },
+          { form: "aproveitaram", meaning: "you all made the most of", pron: "ah-proh-vay-TAH-rahng", example: "Vocês aproveitaram o show?" },
+        ],
+        imperfeito: [
+          { form: "aproveitava", meaning: "I used to make the most of", pron: "ah-proh-vay-TAH-vah", example: "Eu aproveitava cada segundo de férias." },
+          { form: "aproveitava", meaning: "you used to make the most of", pron: "ah-proh-vay-TAH-vah", example: "Você aproveitava as férias na praia?" },
+          { form: "aproveitávamos", meaning: "we used to make the most of", pron: "ah-proh-vay-TAH-vah-moosh", example: "Nós aproveitávamos o verão inteiro na praia." },
+          { form: "aproveitavam", meaning: "you all used to make the most of", pron: "ah-proh-vay-TAH-vahng", example: "Vocês aproveitavam o feriado pra viajar?" },
+        ],
+      },
+    },
+    {
       pt: "frequentar", en: "to attend, to go regularly", category: "Rotina e lazer",
       tenses: {
         presente: [
           { form: "frequento", meaning: "I attend / go to often", pron: "freh-KWEN-too", example: "Eu frequento a academia três vezes por semana." },
           { form: "frequenta", meaning: "you attend / go to often", pron: "freh-KWEN-tah", example: "Você frequenta a mesma padaria?" },
-          { form: "frequentamos", meaning: "we attend / go to often", pron: "freh-kwen-TAH-moosh", example: "Nós frequentamos este restaurante." },
+          { form: "frequentamos", meaning: "we attend / go to often", pron: "freh-kwen-TAH-moosh", example: "Nós frequentamos esse restaurante." },
           { form: "frequentam", meaning: "you all attend / go to often", pron: "freh-KWEN-tahng", example: "Vocês frequentam a aula de português?" },
         ],
         perfeito: [
@@ -1850,6 +2153,29 @@ window.DATA_VERBS = {
           { form: "jogava", meaning: "you used to play / were playing", pron: "zho-GAH-vah", example: "Você jogava videogame depois da escola?" },
           { form: "jogávamos", meaning: "we used to play / were playing", pron: "zho-GAH-vah-moosh", example: "Nós jogávamos cartas na varanda." },
           { form: "jogavam", meaning: "you all used to play / were playing", pron: "zho-GAH-vahng", example: "Vocês jogavam futebol no sábado?" },
+        ],
+      },
+    },
+    {
+      pt: "brincar", en: "to play (kids), to joke", category: "Rotina e lazer",
+      tenses: {
+        presente: [
+          { form: "brinco", meaning: "I play (kids) / joke", pron: "BREEN-koo", example: "Eu brinco com meus sobrinhos no domingo." },
+          { form: "brinca", meaning: "you play (kids) / joke", pron: "BREEN-kah", example: "Você brinca muito, né?" },
+          { form: "brincamos", meaning: "we play (kids) / joke", pron: "breen-KAH-moosh", example: "Nós brincamos de esconde-esconde com as crianças." },
+          { form: "brincam", meaning: "you all play (kids) / joke", pron: "BREEN-kahng", example: "Vocês brincam demais com ele." },
+        ],
+        perfeito: [
+          { form: "brinquei", meaning: "I played (kids) / joked", pron: "breen-KAY", example: "Eu brinquei, não fica bravo." },
+          { form: "brincou", meaning: "you played (kids) / joked", pron: "breen-KOH", example: "Você brincou com o cachorro hoje?" },
+          { form: "brincamos", meaning: "we played (kids) / joked", pron: "breen-KAH-moosh", example: "Nós brincamos na praia a tarde toda." },
+          { form: "brincaram", meaning: "you all played (kids) / joked", pron: "breen-KAH-rahng", example: "Vocês brincaram de pique na rua?" },
+        ],
+        imperfeito: [
+          { form: "brincava", meaning: "I used to play (kids) / joke", pron: "breen-KAH-vah", example: "Eu brincava na rua até escurecer." },
+          { form: "brincava", meaning: "you used to play (kids) / joke", pron: "breen-KAH-vah", example: "Você brincava de boneca?" },
+          { form: "brincávamos", meaning: "we used to play (kids) / joke", pron: "breen-KAH-vah-moosh", example: "Nós brincávamos de bola no quintal." },
+          { form: "brincavam", meaning: "you all used to play (kids) / joke", pron: "breen-KAH-vahng", example: "Vocês brincavam juntos na escola?" },
         ],
       },
     },
@@ -2067,6 +2393,29 @@ window.DATA_VERBS = {
       },
     },
     {
+      pt: "acabar", en: "to end, to end up, to run out (acabar de = to have just)", category: "Ações do dia a dia",
+      tenses: {
+        presente: [
+          { form: "acabo", meaning: "I end up", pron: "ah-KAH-boo", example: "Eu sempre acabo dormindo no sofá." },
+          { form: "acaba", meaning: "you end up / it ends", pron: "ah-KAH-bah", example: "Você sempre acaba chegando atrasado." },
+          { form: "acabamos", meaning: "we end up", pron: "ah-kah-BAH-moosh", example: "Nós acabamos indo pra praia mesmo assim." },
+          { form: "acabam", meaning: "you all end up", pron: "ah-KAH-bahng", example: "Vocês acabam sempre no mesmo boteco." },
+        ],
+        perfeito: [
+          { form: "acabei", meaning: "I ended up / I just…", pron: "ah-kah-BAY", example: "Eu acabei de chegar em casa." },
+          { form: "acabou", meaning: "you ended up / you just… / it ran out", pron: "ah-kah-BOH", example: "Você acabou de acordar?" },
+          { form: "acabamos", meaning: "we ended up / we just…", pron: "ah-kah-BAH-moosh", example: "Nós acabamos de almoçar." },
+          { form: "acabaram", meaning: "you all ended up / you all just…", pron: "ah-kah-BAH-rahng", example: "Vocês acabaram de chegar?" },
+        ],
+        imperfeito: [
+          { form: "acabava", meaning: "I used to end up", pron: "ah-kah-BAH-vah", example: "Eu acabava sempre pagando a conta." },
+          { form: "acabava", meaning: "you used to end up", pron: "ah-kah-BAH-vah", example: "Você acabava dormindo na aula?" },
+          { form: "acabávamos", meaning: "we used to end up", pron: "ah-kah-BAH-vah-moosh", example: "Nós acabávamos sempre na casa da vovó." },
+          { form: "acabavam", meaning: "you all used to end up", pron: "ah-kah-BAH-vahng", example: "Vocês acabavam brigando toda vez?" },
+        ],
+      },
+    },
+    {
       pt: "tentar", en: "to try", category: "Ações do dia a dia",
       tenses: {
         presente: [
@@ -2155,6 +2504,29 @@ window.DATA_VERBS = {
           { form: "limpava", meaning: "you used to clean / were cleaning", pron: "leem-PAH-vah", example: "Você limpava o quarto com frequência?" },
           { form: "limpávamos", meaning: "we used to clean / were cleaning", pron: "leem-PAH-vah-moosh", example: "Nós limpávamos a cozinha depois de comer." },
           { form: "limpavam", meaning: "you all used to clean", pron: "leem-PAH-vahng", example: "Vocês limpavam o apartamento juntos?" },
+        ],
+      },
+    },
+    {
+      pt: "arrumar", en: "to tidy up, to fix (up)", category: "Ações do dia a dia",
+      tenses: {
+        presente: [
+          { form: "arrumo", meaning: "I tidy up / fix", pron: "ah-HOO-moo", example: "Eu arrumo a cama toda manhã." },
+          { form: "arruma", meaning: "you tidy up / fix", pron: "ah-HOO-mah", example: "Você arruma o quarto hoje?" },
+          { form: "arrumamos", meaning: "we tidy up / fix", pron: "ah-hoo-MAH-moosh", example: "Nós arrumamos a casa antes da visita." },
+          { form: "arrumam", meaning: "you all tidy up / fix", pron: "ah-HOO-mahng", example: "Vocês arrumam a mala na véspera?" },
+        ],
+        perfeito: [
+          { form: "arrumei", meaning: "I tidied up / fixed", pron: "ah-hoo-MAY", example: "Eu arrumei a sala rapidinho." },
+          { form: "arrumou", meaning: "you tidied up / fixed", pron: "ah-hoo-MOH", example: "Você arrumou o chuveiro?" },
+          { form: "arrumamos", meaning: "we tidied up / fixed", pron: "ah-hoo-MAH-moosh", example: "Nós arrumamos tudo antes de sair." },
+          { form: "arrumaram", meaning: "you all tidied up / fixed", pron: "ah-hoo-MAH-rahng", example: "Vocês arrumaram a cozinha?" },
+        ],
+        imperfeito: [
+          { form: "arrumava", meaning: "I used to tidy up / fix", pron: "ah-hoo-MAH-vah", example: "Eu arrumava a casa aos sábados." },
+          { form: "arrumava", meaning: "you used to tidy up / fix", pron: "ah-hoo-MAH-vah", example: "Você arrumava seu quarto quando criança?" },
+          { form: "arrumávamos", meaning: "we used to tidy up / fix", pron: "ah-hoo-MAH-vah-moosh", example: "Nós arrumávamos tudo juntos." },
+          { form: "arrumavam", meaning: "you all used to tidy up / fix", pron: "ah-hoo-MAH-vahng", example: "Vocês arrumavam a mesa depois do jantar?" },
         ],
       },
     },
@@ -2545,6 +2917,29 @@ window.DATA_VERBS = {
       },
     },
     {
+      pt: "virar", en: "to turn (a corner), to become", category: "Ações e movimentos",
+      tenses: {
+        presente: [
+          { form: "viro", meaning: "I turn (a corner) / become", pron: "VEE-roo", example: "Eu viro à direita no sinal." },
+          { form: "vira", meaning: "you turn (a corner) / become", pron: "VEE-rah", example: "Você vira a esquina e já vê a praia." },
+          { form: "viramos", meaning: "we turn (a corner) / become", pron: "vee-RAH-moosh", example: "Nós viramos à esquerda ali." },
+          { form: "viram", meaning: "you all turn (a corner) / become", pron: "VEE-rahng", example: "Vocês viram na segunda rua." },
+        ],
+        perfeito: [
+          { form: "virei", meaning: "I turned (a corner) / became", pron: "vee-RAY", example: "Eu virei vegetariano ano passado." },
+          { form: "virou", meaning: "you turned (a corner) / became", pron: "vee-ROH", example: "Você virou carioca de vez!" },
+          { form: "viramos", meaning: "we turned (a corner) / became", pron: "vee-RAH-moosh", example: "Nós viramos amigos rapidinho." },
+          { form: "viraram", meaning: "you all turned (a corner) / became", pron: "vee-RAH-rahng", example: "Vocês viraram a noite estudando?" },
+        ],
+        imperfeito: [
+          { form: "virava", meaning: "I used to turn (a corner) / become", pron: "vee-RAH-vah", example: "Eu virava a noite jogando videogame." },
+          { form: "virava", meaning: "you used to turn (a corner) / become", pron: "vee-RAH-vah", example: "Você virava a esquina errada sempre?" },
+          { form: "virávamos", meaning: "we used to turn (a corner) / become", pron: "vee-RAH-vah-moosh", example: "Nós virávamos a noite conversando." },
+          { form: "viravam", meaning: "you all used to turn (a corner) / become", pron: "vee-RAH-vahng", example: "Vocês viravam a madrugada no carnaval?" },
+        ],
+      },
+    },
+    {
       pt: "sentir", en: "to feel", category: "Sentimentos e percepção", irregular: true,
       tenses: {
         presente: [
@@ -2610,6 +3005,29 @@ window.DATA_VERBS = {
           { form: "parecia", meaning: "you used to seem / look like / were seeming", pron: "pah-reh-SEE-ah", example: "Você parecia tímido quando criança?" },
           { form: "parecíamos", meaning: "we used to seem / look like / were seeming", pron: "pah-reh-SEE-ah-moosh", example: "Nós parecíamos sempre atrasados." },
           { form: "pareciam", meaning: "you all used to seem / look like / were seeming", pron: "pah-reh-SEE-ahng", example: "Vocês pareciam irmãos de verdade?" },
+        ],
+      },
+    },
+    {
+      pt: "olhar", en: "to look (at)", category: "Sentimentos e percepção",
+      tenses: {
+        presente: [
+          { form: "olho", meaning: "I look (at)", pron: "OH-lyoo", example: "Eu olho o celular toda hora." },
+          { form: "olha", meaning: "you look (at)", pron: "OH-lyah", example: "Você olha demais pro lado." },
+          { form: "olhamos", meaning: "we look (at)", pron: "oh-LYAH-moosh", example: "Nós olhamos o cardápio antes de entrar." },
+          { form: "olham", meaning: "you all look (at)", pron: "OH-lyahng", example: "Vocês olham as notícias de manhã?" },
+        ],
+        perfeito: [
+          { form: "olhei", meaning: "I looked (at)", pron: "oh-LYAY", example: "Eu olhei pra ele e ri." },
+          { form: "olhou", meaning: "you looked (at)", pron: "oh-LYOH", example: "Você olhou o preço antes de comprar?" },
+          { form: "olhamos", meaning: "we looked (at)", pron: "oh-LYAH-moosh", example: "Nós olhamos o mapa e seguimos." },
+          { form: "olharam", meaning: "you all looked (at)", pron: "oh-LYAH-rahng", example: "Vocês olharam a previsão do tempo?" },
+        ],
+        imperfeito: [
+          { form: "olhava", meaning: "I used to look (at)", pron: "oh-LYAH-vah", example: "Eu olhava o mar da janela do quarto." },
+          { form: "olhava", meaning: "you used to look (at)", pron: "oh-LYAH-vah", example: "Você olhava tudo com curiosidade." },
+          { form: "olhávamos", meaning: "we used to look (at)", pron: "oh-LYAH-vah-moosh", example: "Nós olhávamos as estrelas na praia." },
+          { form: "olhavam", meaning: "you all used to look (at)", pron: "oh-LYAH-vahng", example: "Vocês olhavam o jogo pela TV do bar?" },
         ],
       },
     },
@@ -2775,6 +3193,55 @@ window.DATA_VERBS = {
       },
     },
     {
+      // "Morrer de" (medo, rir, calor, saudade) is why every person is live speech here.
+      pt: "morrer", en: "to die", category: "Sentimentos e percepção",
+      tenses: {
+        presente: [
+          { form: "morro", meaning: "I die", pron: "MOH-hoo", example: "Eu morro de medo de barata." },
+          { form: "morre", meaning: "you die", pron: "MOH-hee", example: "Você morre de rir com ele, né?" },
+          { form: "morremos", meaning: "we die", pron: "moh-HEH-moosh", example: "Nós morremos de calor no verão." },
+          { form: "morrem", meaning: "you all die", pron: "MOH-heng", example: "Vocês morrem de saudade do Rio?" },
+        ],
+        perfeito: [
+          { form: "morri", meaning: "I died", pron: "moh-HEE", example: "Eu quase morri de susto." },
+          { form: "morreu", meaning: "you died / it died", pron: "moh-HEH-oo", example: "Seu celular morreu de novo?" },
+          { form: "morremos", meaning: "we died", pron: "moh-HEH-moosh", example: "Nós morremos de rir ontem." },
+          { form: "morreram", meaning: "you all died", pron: "moh-HEH-rahng", example: "Vocês morreram de frio lá?" },
+        ],
+        imperfeito: [
+          { form: "morria", meaning: "I used to die", pron: "moh-HEE-ah", example: "Eu morria de vergonha na escola." },
+          { form: "morria", meaning: "you used to die", pron: "moh-HEE-ah", example: "Você morria de medo de escuro?" },
+          { form: "morríamos", meaning: "we used to die", pron: "moh-HEE-ah-moosh", example: "Nós morríamos de rir com as piadas dele." },
+          { form: "morriam", meaning: "you all used to die", pron: "moh-HEE-ahng", example: "Vocês morriam de calor sem ventilador?" },
+        ],
+      },
+    },
+    {
+      // The live tense is the perfeito ("eu nasci em…"). The present is a generic
+      // "a gente nasce" / "bebês nascem"; the imperfeito survives only in the plural.
+      pt: "nascer", en: "to be born", category: "Sentimentos e percepção",
+      tenses: {
+        presente: [
+          { form: "nasço", meaning: "I am born (never used)", pron: "NAH-soo", example: "", quiz: false },
+          { form: "nasce", meaning: "we are born (a gente)", pron: "NAH-see", example: "A gente nasce sem manual.", person: "a gente" },
+          { form: "nascemos", meaning: "we are born (never used)", pron: "nah-SEH-moosh", example: "", quiz: false },
+          { form: "nascem", meaning: "they are born", pron: "NAH-seng", example: "Muitos bebês nascem em setembro.", person: "eles" },
+        ],
+        perfeito: [
+          { form: "nasci", meaning: "I was born", pron: "nah-SEE", example: "Eu nasci em Oslo, mas moro no Rio." },
+          { form: "nasceu", meaning: "you were born", pron: "nah-SEH-oo", example: "Você nasceu aqui no Rio?" },
+          { form: "nascemos", meaning: "we were born", pron: "nah-SEH-moosh", example: "Nós nascemos no mesmo hospital." },
+          { form: "nasceram", meaning: "you all were born", pron: "nah-SEH-rahng", example: "Vocês nasceram no mesmo ano?" },
+        ],
+        imperfeito: [
+          { form: "nascia", meaning: "I used to be born (never used)", pron: "nah-SEE-ah", example: "", quiz: false },
+          { form: "nascia", meaning: "you used to be born (never used)", pron: "nah-SEE-ah", example: "", quiz: false },
+          { form: "nascíamos", meaning: "we used to be born (never used)", pron: "nah-SEE-ah-moosh", example: "", quiz: false },
+          { form: "nasciam", meaning: "they used to be born", pron: "nah-SEE-ahng", example: "Naquela época, eles nasciam em casa mesmo.", person: "eles" },
+        ],
+      },
+    },
+    {
       pt: "odiar", en: "to hate", category: "Sentimentos e percepção", irregular: true,
       tenses: {
         presente: [
@@ -2826,7 +3293,7 @@ window.DATA_VERBS = {
         presente: [
           { form: "gosto", meaning: "I like", pron: "GOH-stoo", example: "Eu gosto de música." },
           { form: "gosta", meaning: "you like", pron: "GOH-stah", example: "Você gosta de café?" },
-          { form: "gostamos", meaning: "we like", pron: "goh-STAH-moosh", example: "Nós gostamos deste lugar." },
+          { form: "gostamos", meaning: "we like", pron: "goh-STAH-moosh", example: "Nós gostamos desse lugar." },
           { form: "gostam", meaning: "you all like", pron: "GOH-stahng", example: "Vocês gostam de viajar?" },
         ],
         perfeito: [
@@ -2927,6 +3394,29 @@ window.DATA_VERBS = {
           { form: "convidava", meaning: "you used to invite / were inviting", pron: "kohn-vee-DAH-vah", example: "Você convidava os colegas?" },
           { form: "convidávamos", meaning: "we used to invite / were inviting", pron: "kohn-vee-DAH-vah-moosh", example: "Nós convidávamos a vizinhança pro aniversário." },
           { form: "convidavam", meaning: "you all used to invite / were inviting", pron: "kohn-vee-DAH-vahng", example: "Vocês convidavam eles sempre?" },
+        ],
+      },
+    },
+    {
+      pt: "visitar", en: "to visit", category: "Interação social",
+      tenses: {
+        presente: [
+          { form: "visito", meaning: "I visit", pron: "vee-ZEE-too", example: "Eu visito minha avó todo domingo." },
+          { form: "visita", meaning: "you visit", pron: "vee-ZEE-tah", example: "Você visita seus pais com frequência?" },
+          { form: "visitamos", meaning: "we visit", pron: "vee-zee-TAH-moosh", example: "Nós visitamos o Cristo com os amigos." },
+          { form: "visitam", meaning: "you all visit", pron: "vee-ZEE-tahng", example: "Vocês visitam o Rio todo ano?" },
+        ],
+        perfeito: [
+          { form: "visitei", meaning: "I visited", pron: "vee-zee-TAY", example: "Eu visitei o Pão de Açúcar ontem." },
+          { form: "visitou", meaning: "you visited", pron: "vee-zee-TOH", example: "Você visitou Paraty?" },
+          { form: "visitamos", meaning: "we visited", pron: "vee-zee-TAH-moosh", example: "Nós visitamos um amigo no hospital." },
+          { form: "visitaram", meaning: "you all visited", pron: "vee-zee-TAH-rahng", example: "Vocês visitaram o museu novo?" },
+        ],
+        imperfeito: [
+          { form: "visitava", meaning: "I used to visit", pron: "vee-zee-TAH-vah", example: "Eu visitava meus avós nas férias." },
+          { form: "visitava", meaning: "you used to visit", pron: "vee-zee-TAH-vah", example: "Você visitava o Brasil quando criança?" },
+          { form: "visitávamos", meaning: "we used to visit", pron: "vee-zee-TAH-vah-moosh", example: "Nós visitávamos a praia todo verão." },
+          { form: "visitavam", meaning: "you all used to visit", pron: "vee-zee-TAH-vahng", example: "Vocês visitavam a família no Natal?" },
         ],
       },
     },

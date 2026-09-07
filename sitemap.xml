@@ -3,6 +3,7 @@
   <url><loc>https://falagringo.com/</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/abrir</loc><lastmod>2026-09-07</lastmod></url>
+  <url><loc>https://falagringo.com/verbs/acabar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/aceitar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/achar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/acontecer</loc><lastmod>2026-09-07</lastmod></url>
@@ -10,12 +11,18 @@
   <url><loc>https://falagringo.com/verbs/acreditar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/agradecer</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/ajudar</loc><lastmod>2026-09-07</lastmod></url>
+  <url><loc>https://falagringo.com/verbs/almocar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/amar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/andar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/aprender</loc><lastmod>2026-09-07</lastmod></url>
+  <url><loc>https://falagringo.com/verbs/aproveitar</loc><lastmod>2026-09-07</lastmod></url>
+  <url><loc>https://falagringo.com/verbs/arrumar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/assistir</loc><lastmod>2026-09-07</lastmod></url>
+  <url><loc>https://falagringo.com/verbs/avisar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/beber</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/botar</loc><lastmod>2026-09-07</lastmod></url>
+  <url><loc>https://falagringo.com/verbs/brincar</loc><lastmod>2026-09-07</lastmod></url>
+  <url><loc>https://falagringo.com/verbs/buscar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/cair</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/caminhar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/chamar</loc><lastmod>2026-09-07</lastmod></url>
@@ -42,12 +49,15 @@
   <url><loc>https://falagringo.com/verbs/depender</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/descansar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/descer</loc><lastmod>2026-09-07</lastmod></url>
+  <url><loc>https://falagringo.com/verbs/descobrir</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/desculpar</loc><lastmod>2026-09-07</lastmod></url>
+  <url><loc>https://falagringo.com/verbs/desligar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/dever</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/dirigir</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/dizer</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/dormir</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/encontrar</loc><lastmod>2026-09-07</lastmod></url>
+  <url><loc>https://falagringo.com/verbs/ensinar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/entender</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/entrar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/escolher</loc><lastmod>2026-09-07</lastmod></url>
@@ -57,6 +67,7 @@
   <url><loc>https://falagringo.com/verbs/esquecer</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/estar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/estudar</loc><lastmod>2026-09-07</lastmod></url>
+  <url><loc>https://falagringo.com/verbs/existir</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/explicar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/falar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/fazer</loc><lastmod>2026-09-07</lastmod></url>
@@ -64,21 +75,27 @@
   <url><loc>https://falagringo.com/verbs/ficar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/frequentar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/ganhar</loc><lastmod>2026-09-07</lastmod></url>
+  <url><loc>https://falagringo.com/verbs/gastar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/gostar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/haver</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/ir</loc><lastmod>2026-09-07</lastmod></url>
+  <url><loc>https://falagringo.com/verbs/jantar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/jogar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/lembrar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/ler</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/levar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/ligar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/limpar</loc><lastmod>2026-09-07</lastmod></url>
+  <url><loc>https://falagringo.com/verbs/mandar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/marcar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/morar</loc><lastmod>2026-09-07</lastmod></url>
+  <url><loc>https://falagringo.com/verbs/morrer</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/mostrar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/mudar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/nadar</loc><lastmod>2026-09-07</lastmod></url>
+  <url><loc>https://falagringo.com/verbs/nascer</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/odiar</loc><lastmod>2026-09-07</lastmod></url>
+  <url><loc>https://falagringo.com/verbs/olhar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/ouvir</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/pagar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/parar</loc><lastmod>2026-09-07</lastmod></url>
@@ -98,6 +115,7 @@
   <url><loc>https://falagringo.com/verbs/preferir</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/procurar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/querer</loc><lastmod>2026-09-07</lastmod></url>
+  <url><loc>https://falagringo.com/verbs/receber</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/recusar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/repetir</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/resolver</loc><lastmod>2026-09-07</lastmod></url>
@@ -116,6 +134,7 @@
   <url><loc>https://falagringo.com/verbs/ter</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/terminar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/tirar</loc><lastmod>2026-09-07</lastmod></url>
+  <url><loc>https://falagringo.com/verbs/tomar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/trabalhar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/trazer</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/treinar</loc><lastmod>2026-09-07</lastmod></url>
@@ -125,6 +144,8 @@
   <url><loc>https://falagringo.com/verbs/ver</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/viajar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/vir</loc><lastmod>2026-09-07</lastmod></url>
+  <url><loc>https://falagringo.com/verbs/virar</loc><lastmod>2026-09-07</lastmod></url>
+  <url><loc>https://falagringo.com/verbs/visitar</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/viver</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://falagringo.com/verbs/voltar</loc><lastmod>2026-09-07</lastmod></url>
 </urlset>

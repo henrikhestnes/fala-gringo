@@ -6,7 +6,7 @@ step('app boots and renders the Browse view', function () {
   var html = registry.view.innerHTML;
   if (!/<h1>Verbos<\/h1>/.test(html)) throw new Error('browse view did not render');
   var rows = (html.match(/class="verb-row"/g) || []).length;
-  if (rows !== 125) throw new Error('expected 125 verb rows, got ' + rows);
+  if (rows !== 146) throw new Error('expected 146 verb rows, got ' + rows);
   return rows + ' verb rows, ' + html.length + ' bytes of HTML';
 });
 
@@ -229,7 +229,7 @@ step('theme cycles auto -> light -> dark -> auto', function () {
   return 'three taps round-trip back to following the system';
 });
 
-step('browse controls all run and keep 125 rows', function () {
+step('browse controls all run and keep 146 rows', function () {
   goTo('#browse');
   Browse.action('shuffle');
   var shuffledRows = (registry.view.innerHTML.match(/class="verb-row"/g) || []).length;
@@ -238,9 +238,9 @@ step('browse controls all run and keep 125 rows', function () {
   Browse.action('hide-en');
   Browse.action('show');
   var rows = (registry.view.innerHTML.match(/class="verb-row"/g) || []).length;
-  if (rows !== 125 || shuffledRows !== 125)
+  if (rows !== 146 || shuffledRows !== 146)
     throw new Error('rows: shuffled=' + shuffledRows + ' final=' + rows);
-  return 'shuffle/reset/hide/show all fine; 125 rows throughout';
+  return 'shuffle/reset/hide/show all fine; 146 rows throughout';
 });
 
 step('browse renders all tenses per verb with glosses', function () {
@@ -251,10 +251,10 @@ step('browse renders all tenses per verb with glosses', function () {
     if (html.indexOf(t) === -1) throw new Error('missing tense block: ' + t);
   });
   var panels = (html.match(/conjugation-panel/g) || []).length;
-  if (panels !== 125) throw new Error('expected 125 panels, got ' + panels);
+  if (panels !== 146) throw new Error('expected 146 panels, got ' + panels);
   var subj = (html.match(/Imperfeito do Subjuntivo/g) || []).length;
   if (subj !== 40) throw new Error('expected 40 subjunctive blocks, got ' + subj);
-  return '125 conjugation panels; 40 carry the subjunctive';
+  return '146 conjugation panels; 40 carry the subjunctive';
 });
 
 step('subjuntivo drill accepts the trigger-prefixed answer', function () {
