@@ -50,6 +50,7 @@ const QUIZ_STRINGS = Object.assign({
   answerIs: 'The answer is',
   todayStill: 'Still today:',
   todayCaughtUp: 'Tudo em dia por hoje! Nothing left in your tabs.',
+  todayGoalHit: 'Daily goal done! {n} reviews still wait — keep going if you like.',
   streakDays: '🔥 {n}-day streak',
   streakDay: '🔥 1-day streak',
   graduatedToast: '🎓 {label} graduated! Next: {next}',
@@ -159,12 +160,12 @@ const Quiz = (function () {
     const weak = new Set();
     cards.forEach(c => { if (Store.isShaky(topicId, c.id)) weak.add(lexeme(c)); });
 
-    const due = [], shaky = [], unseen = [];
+    const due = [], shaky = [], dragged = [], unseen = [];
     cards.forEach(c => {
       const st = Store.cardState(topicId, c.id);
       if (st === 'shaky') shaky.push(c);
       else if (st === 'due') due.push(c);
-      else if (st === 'new') (weak.has(lexeme(c)) ? shaky : unseen).push(c);   // dragged in by a shaky sibling
+      else if (st === 'new') (weak.has(lexeme(c)) ? dragged : unseen).push(c);   // dragged in by a shaky sibling
     });
 
     // inferred-known forms skip the queue (a quick confirmation, not a lesson)
@@ -195,8 +196,10 @@ const Quiz = (function () {
     // most overdue first; shuffle BEFORE the (stable) sort so equally overdue
     // cards — most of them, on any given day — don't come out in data order
     const dueOrdered = shuffle(thinned.ask).sort((a, b) => Store.overdue(topicId, b.id) - Store.overdue(topicId, a.id));
-    return { due: dueOrdered, implied: thinned.implied, shaky: shuffle(shaky), verify: shuffle(verify),
-             intake: shuffle(intake), waiting: waiting };
+    // `shaky` is the missed cards; `dragged` the unseen siblings that ride into
+    // the same tier of the deck — new cards, as far as today's goal is concerned
+    return { due: dueOrdered, implied: thinned.implied, shaky: shuffle(shaky), dragged: shuffle(dragged),
+             verify: shuffle(verify), intake: shuffle(intake), waiting: waiting };
   }
 
   function focusDeck(cards) {
@@ -205,11 +208,12 @@ const Quiz = (function () {
     let impliedN = 0;
     impliedBy.forEach(ids => { impliedN += ids.length; });
 
-    const tiers = [['due', plan.due], ['shaky', plan.shaky], ['verify', plan.verify], ['new', plan.intake]];
+    const shakyTier = shuffle(plan.shaky.concat(plan.dragged));
+    const tiers = [['due', plan.due], ['shaky', shakyTier], ['verify', plan.verify], ['new', plan.intake]];
     tierOf = new Map();
     const out = [];
     tiers.forEach(([name, list]) => list.forEach(c => { tierOf.set(c.id, name); out.push(c); }));
-    counts = { due: plan.due.length, implied: impliedN, shaky: plan.shaky.length, verify: plan.verify.length,
+    counts = { due: plan.due.length, implied: impliedN, shaky: shakyTier.length, verify: plan.verify.length,
                new: plan.intake.length, waiting: plan.waiting };
 
     // stamp every never-seen card that made it into today's deck (new, or dragged
@@ -231,25 +235,43 @@ const Quiz = (function () {
     return shuffle(cards);
   }
 
-  /* Today's goal, the number on the ring in the top bar: what Foco would still
-     put in front of the learner across the tabs they actually drill (Store
-     .isActiveTopic — the tabs encode a level, so a beginner's goal never
-     includes the subjunctive) against what they already got right today.
-     Computed from the store alone, so it follows every answer and is the same
-     whichever tab is open. */
+  /* Today's goal, the number on the ring in the top bar, across the tabs the
+     learner actually drills (Store.isActiveTopic — the tabs encode a level, so
+     a beginner's goal never includes the subjunctive). At most Store.goalMax()
+     cards a day: the REVIEWS Foco owes first (due + missed — the unseen
+     siblings a missed verb form drags into the deck are new cards here), then
+     up to Store.goalNew() NEW cards in total (verify, intake, dragged) if room
+     is left. Both allowances are spent by what was already got right today,
+     and handed to the tabs in registry order (beginner tabs first). Reviews
+     beyond today's ceiling are `waiting`: shown, not owed — a backlog is paid
+     off at the learner's pace, and Foco keeps offering all of it. Computed
+     from the store alone, so it follows every answer and is the same whichever
+     tab is open. */
   function todayGoal() {
+    const active = TOPICS.filter(t => t.kind === 'quiz' && Store.isActiveTopic(t.id));
+    let done = 0, newDone = 0;
+    active.forEach(t => { done += Store.doneToday(t.id); newDone += Store.newDoneToday(t.id); });
+    let room = Math.max(0, Store.goalMax() - done);
+    let allowance = Math.max(0, Store.goalNew() - newDone);
+    const plans = active.map(t => ({ topic: t, plan: focoPlan(t.id, topicCards(t)) }));
     const per = [];
-    let left = 0, done = 0;
-    TOPICS.forEach(t => {
-      if (t.kind !== 'quiz' || !Store.isActiveTopic(t.id)) return;
-      const p = focoPlan(t.id, topicCards(t));
-      const n = p.due.length + p.shaky.length + p.verify.length + p.intake.length;
-      const d = Store.doneToday(t.id);
-      per.push({ topic: t, left: n, done: d });
-      left += n; done += d;
+    let owed = 0, reviews = 0, fresh = 0;
+    plans.forEach(({ topic, plan }) => {                       // reviews first, all tabs
+      const r = plan.due.length + plan.shaky.length;
+      const take = Math.min(r, room);
+      room -= take; owed += r; reviews += take;
+      per.push({ topic: topic, reviews: take, fresh: 0, left: take, done: Store.doneToday(topic.id) });
+    });
+    allowance = Math.min(allowance, room);
+    plans.forEach(({ plan }, i) => {                          // then new cards, in the room left
+      const pool = plan.verify.length + plan.intake.length + plan.dragged.length;
+      const take = Math.min(pool, allowance);
+      allowance -= take; fresh += take;
+      per[i].fresh = take; per[i].left += take;
     });
     per.sort((a, b) => b.left - a.left);
-    return { active: per.length, left: left, done: done, per: per };
+    return { active: active.length, left: reviews + fresh, reviews: reviews, fresh: fresh,
+             waiting: owed - reviews, done: done, per: per };
   }
 
   /* Graduation of a whole tab (Store.graduation over all its cards). */
@@ -295,7 +317,8 @@ const Quiz = (function () {
     }
     const st = Store.streak();
     const flame = st.n ? ' ' + (st.n === 1 ? QUIZ_STRINGS.streakDay : tfill(QUIZ_STRINGS.streakDays, { n: st.n })) : '';
-    return '<p class="today-line caught-up">' + escapeHtml(QUIZ_STRINGS.todayCaughtUp) + escapeHtml(flame) + '</p>';
+    const text = goal.waiting ? tfill(QUIZ_STRINGS.todayGoalHit, { n: goal.waiting }) : QUIZ_STRINGS.todayCaughtUp;
+    return '<p class="today-line caught-up">' + escapeHtml(text) + escapeHtml(flame) + '</p>';
   }
 
   function buildDeck() {

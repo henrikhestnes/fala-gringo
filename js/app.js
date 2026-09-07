@@ -10,8 +10,11 @@
     modeHardTitle: 'Modo Raiz (hardcore): no Portuguese shown. Tap for Modo Nutella.',
     modeEasyTitle: 'Modo Nutella (soft): the Portuguese infinitive is shown as a hint. Tap for Modo Raiz.',
     resetConfirm: 'Reset mastered progress for "{label}"?',
-    goalLeft: '{n} cards left today in your tabs ({done} done)',
-    goalDone: 'Tudo em dia por hoje! Nothing left in your tabs.',
+    goalLeft: '{n} to go today: {reviews} reviews + {fresh} new ({done} done). ' +
+              'The streak only needs one answer a day.',
+    goalWaiting: ' {n} more reviews wait beyond today\'s goal.',
+    goalDone: 'Tudo em dia por hoje! Reviews done, new cards for today done.',
+    goalHit: 'Daily goal done! {n} reviews still wait — keep going if you like.',
     streakDays: '🔥 {n}-day streak',
     streakDay: '🔥 1-day streak',
     streakAtRisk: 'practice today to keep it',
@@ -180,7 +183,10 @@
       '</svg>' +
       '<span class="goal-streak' + (st.today ? '' : ' cold') + '">🔥' + st.n + '</span>' +
       (tier ? '<span class="goal-title">' + escapeHtml(tierName(tier)) + '</span>' : '');
-    const title = (done ? APP_STR.goalDone : tfill(APP_STR.goalLeft, { n: goal.left, done: goal.done })) +
+    const doneText = goal.waiting ? tfill(APP_STR.goalHit, { n: goal.waiting }) : APP_STR.goalDone;
+    const title = (done ? doneText
+                        : tfill(APP_STR.goalLeft, { n: goal.left, reviews: goal.reviews, fresh: goal.fresh, done: goal.done }) +
+                          (goal.waiting ? tfill(APP_STR.goalWaiting, { n: goal.waiting }) : '')) +
       (st.n ? ' · ' + streakLabel(st) + (st.atRisk ? ' — ' + APP_STR.streakAtRisk
                                          : st.today ? '' : ' — ' + APP_STR.streakCold) : '') +
       (tier ? ' · ' + tfill(APP_STR.learnerTitle, { tier: tierName(tier) }) : '');
@@ -190,7 +196,7 @@
     // the moment the last card of the day clears: a small celebration, once
     if (done && lastLeft > 0) {
       btn.classList.add('celebrate');
-      toast(APP_STR.goalDone + (st.n ? ' ' + streakLabel(st) : ''));
+      toast(doneText + (st.n ? ' ' + streakLabel(st) : ''));
     }
     lastLeft = goal.left;
   }
@@ -205,7 +211,8 @@
       toast(who + goal.per.filter(p => p.left).map(p => p.topic.label + ' ' + p.left).join(' · '));
       go(goal.per[0].topic.id);
     } else {
-      toast(who + APP_STR.goalDone + (st.n ? ' ' + streakLabel(st) : ''));
+      toast(who + (goal.waiting ? tfill(APP_STR.goalHit, { n: goal.waiting }) : APP_STR.goalDone) +
+            (st.n ? ' ' + streakLabel(st) : ''));
     }
   }
 

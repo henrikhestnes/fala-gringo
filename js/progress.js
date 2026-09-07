@@ -27,6 +27,22 @@ const REVIEW_INTERVALS = [7, 14, 30, 60, 120];
    overrides it on a device. */
 const NEW_PER_DAY = 20;
 
+/* New cards in TODAY'S GOAL (the ring in the top bar), across all of the
+   learner's tabs together. The per-tab intake (NEW_PER_DAY) is how much Foco
+   will SHOW when a tab is opened; the goal must not sum that over every tab —
+   twelve drilled tabs made a 290-card "day". The goal is the reviews owed plus
+   this many new cards, wherever they come from; the rest is appetite. The
+   `goalNew` pref overrides it on a device. */
+const GOAL_NEW = 10;
+
+/* The most cards TODAY'S GOAL asks for in total. Reviews owed come first (a
+   backlog of 200 missed forms is weeks of lapses — a daily goal that only
+   closes when the whole debt is paid is the opposite of a habit), then the new
+   cards up to GOAL_NEW if there is room. Once this many are right today the
+   ring closes; whatever still waits is shown, not owed. Foco itself keeps
+   offering everything. The `goalMax` pref overrides it on a device. */
+const GOAL_MAX = 30;
+
 /* A tab counts as one of the learner's own — part of today's goal in the top
    bar — for this many days after it was last drilled. The tabs encode a level
    (a beginner lives on Presente, an advanced learner on Subjuntivo and
@@ -283,6 +299,21 @@ const Store = (function () {
     newPerDay() {
       const n = parseInt(this.getPref('newPerDay', NEW_PER_DAY), 10);
       return n > 0 ? n : NEW_PER_DAY;
+    },
+    goalNew() {
+      const n = parseInt(this.getPref('goalNew', GOAL_NEW), 10);
+      return n >= 0 ? n : GOAL_NEW;
+    },
+    goalMax() {
+      const n = parseInt(this.getPref('goalMax', GOAL_MAX), 10);
+      return n > 0 ? n : GOAL_MAX;
+    },
+    /* Unseen cards met and got right today (Foco-introduced, or a verify card
+       confirmed) — what has already been spent of the goal's new-card allowance. */
+    newDoneToday(topicId) {
+      const t = state.strength[topicId] || {};
+      const day = today();
+      return Object.keys(t).filter(id => t[id].t === day && t[id].i === day).length;
     },
     introducedOn(topicId, cardId) {
       const e = state.strength[topicId] && state.strength[topicId][cardId];

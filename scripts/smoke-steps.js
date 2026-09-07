@@ -1016,3 +1016,80 @@ step('with tier-3 progress the title reads Avançado; graduation stamps merge to
   return 'Avançado; graduated: presente 20690, nouns 20701';
 });
 
+step('today\'s goal is the reviews owed plus at most GOAL_NEW new cards in total, not every tab\'s intake', function () {
+  Store.resetAll();
+  var d = Store.today();
+  var snap = Store.snapshot();
+  // six drilled tabs with nothing due: the old ring would have demanded 6 x 20 new cards
+  snap.drilled = { presente: d, perfeito: d, imperfeito: d, nouns: d, adjectives: d, connecting: d };
+  Store.applySynced(snap);
+  var g = Quiz.todayGoal();
+  if (g.reviews !== 0) throw new Error('reviews owed on a fresh profile: ' + g.reviews);
+  if (g.fresh !== GOAL_NEW || g.left !== GOAL_NEW) throw new Error('new allowance: ' + JSON.stringify({ fresh: g.fresh, left: g.left }));
+  if (g.per[0].topic.id !== 'presente' || g.per[0].fresh !== GOAL_NEW) throw new Error('allowance should go to the first tab in order: ' + JSON.stringify(g.per.map(function (p) { return p.topic.id + ':' + p.fresh; })));
+  // reviews are owed in full on top: 3 due nouns
+  snap = Store.snapshot();
+  snap.mastered.nouns = {}; snap.strength.nouns = {};
+  topicCards(topicById('nouns')).slice(0, 3).forEach(function (c) {
+    snap.mastered.nouns[c.id] = 1; snap.strength.nouns[c.id] = { s: 1, m: 0, l: 1, t: d - 8, i: d - 8 };
+  });
+  Store.applySynced(snap);
+  g = Quiz.todayGoal();
+  if (g.reviews !== 3 || g.left !== GOAL_NEW + 3) throw new Error('with 3 due: ' + JSON.stringify({ reviews: g.reviews, left: g.left }));
+  // new cards got right today spend the allowance
+  snap = Store.snapshot();
+  snap.strength.presente = {}; snap.mastered.presente = {};
+  topicCards(topicById('presente')).slice(0, 4).forEach(function (c) {
+    snap.mastered.presente[c.id] = 1; snap.strength.presente[c.id] = { s: 1, m: 0, l: 1, t: d, i: d };
+  });
+  Store.applySynced(snap);
+  g = Quiz.todayGoal();
+  if (g.fresh !== GOAL_NEW - 4 || g.done !== 4) throw new Error('after 4 new done: ' + JSON.stringify({ fresh: g.fresh, done: g.done }));
+  Store.setPref('goalNew', 0);
+  g = Quiz.todayGoal();
+  if (g.fresh !== 0 || g.left !== 3) throw new Error('goalNew=0 should leave reviews only: ' + JSON.stringify({ fresh: g.fresh, left: g.left }));
+  Store.setPref('goalNew', GOAL_NEW);
+  return '6 fresh tabs -> ' + GOAL_NEW + ' new (to presente), not 120; +3 due -> ' + (GOAL_NEW + 3) + '; 4 new done -> ' + (GOAL_NEW - 4) + ' new left; goalNew=0 -> reviews only';
+});
+
+step('a backlog of misses is capped at GOAL_MAX a day and the rest waits; dragged-in siblings count as new', function () {
+  Store.resetAll();
+  var d = Store.today();
+  var cards = topicCards(topicById('presente'));
+  var snap = Store.snapshot();
+  snap.drilled = { presente: d };
+  snap.strength.presente = {}; snap.mastered.presente = {};
+  var missed = cards.slice(0, 200);                 // 200 forms missed and never recovered
+  missed.forEach(function (c) { snap.strength.presente[c.id] = { s: 0, m: 1, l: 0, i: d - 30 }; });
+  Store.applySynced(snap);
+  var g = Quiz.todayGoal();
+  if (g.left !== GOAL_MAX || g.reviews !== GOAL_MAX || g.fresh !== 0)
+    throw new Error('200 shaky: ' + JSON.stringify({ left: g.left, reviews: g.reviews, fresh: g.fresh }));
+  if (g.waiting !== 200 - GOAL_MAX) throw new Error('waiting ' + g.waiting);
+  App.refreshGoal();
+  if (!/beyond today/.test(registry.goalBtn.getAttribute('title'))) throw new Error('tooltip: ' + registry.goalBtn.getAttribute('title'));
+  // 30 right today closes the ring even though 170 still wait; the state says so instead of "Tudo em dia"
+  snap = Store.snapshot();
+  missed.slice(0, GOAL_MAX).forEach(function (c) { snap.mastered.presente[c.id] = 1; snap.strength.presente[c.id] = { s: 1, m: 1, l: 1, t: d, i: d - 30 }; });
+  Store.applySynced(snap);
+  g = Quiz.todayGoal();
+  if (g.left !== 0 || g.done !== GOAL_MAX || g.waiting !== 200 - GOAL_MAX) throw new Error('after 30: ' + JSON.stringify({ left: g.left, done: g.done, waiting: g.waiting }));
+  App.refreshGoal();
+  if (!/goal-btn done/.test(registry.goalBtn.className)) throw new Error('ring not closed');
+  if (!/Daily goal done! 170 reviews still wait/.test(registry.goalBtn.getAttribute('title'))) throw new Error('tooltip: ' + registry.goalBtn.getAttribute('title'));
+  // one missed verb form drags its unseen siblings into the deck's shaky tier — the goal counts them as new
+  Store.resetTopic('presente');
+  snap = Store.snapshot();
+  snap.strength.presente = {}; snap.mastered.presente = {};
+  var ser = cards.filter(function (c) { return c.id.indexOf('ser|') === 0; });
+  snap.strength.presente[ser[0].id] = { s: 0, m: 1, l: 0, i: d };
+  Store.applySynced(snap);
+  g = Quiz.todayGoal();
+  var p = g.per[0];
+  if (p.reviews !== 1 || p.fresh !== GOAL_NEW) throw new Error('one miss + siblings: ' + JSON.stringify({ reviews: p.reviews, fresh: p.fresh, left: p.left }));
+  goTo('#presente');
+  var c = Quiz._counts();
+  if (c.shaky !== ser.length) throw new Error('the deck should still hold the form + its ' + (ser.length - 1) + ' unseen siblings as shaky, got ' + c.shaky);
+  return '200 missed -> goal ' + GOAL_MAX + ', 170 wait; 30 right closes it ("still wait", not Tudo em dia); ser miss = 1 review + siblings as new, deck tier unchanged';
+});
+

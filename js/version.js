@@ -46,7 +46,12 @@
 // 1.19.1 typed slips are keyboard-shaped: a substituted or extra letter counts only on a neighbouring key
 //        (s for a), never a different vowel (e for a) — dropped, doubled and swapped letters stay forgiven
 
-const APP_VERSION = '1.19.1';
+// 1.19.2 fix: the goal ring summed the 20-card intake of EVERY drilled tab (twelve tabs = a 290-card day) and
+//        owed a whole backlog of misses at once; today's goal is now at most 30 cards (GOAL_MAX, pref goalMax) —
+//        reviews first, then up to 10 new (GOAL_NEW, pref goalNew) — and the rest "waits", shown but not owed;
+//        the unseen siblings a missed verb form drags into the deck count as new, not as reviews
+
+const APP_VERSION = '1.19.2';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name
