@@ -34,8 +34,10 @@
 // 1.16.3 demonstratives: esse/essa/nesse are the canonical answers (este/esta/neste stay accepted) — spoken BR
 // 1.17 /noruegues/ — Fala Viking, Norwegian (bokmål) for Brazilians on the same engine: verbs, nouns with
 //      gender, phrases, numbers, small words; normalize() keeps the ring of å (så ≠ sa)
+// 1.17.1 verb pages: an English "how to use" section per verb (meaning, which forms are irregular, the
+//        tenses in English, Rio pronunciation traits) + English tense labels — the pages read as English
 
-const APP_VERSION = '1.17.0';
+const APP_VERSION = '1.17.1';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

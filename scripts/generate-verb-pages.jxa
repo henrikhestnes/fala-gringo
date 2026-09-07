@@ -41,6 +41,18 @@ const ROOT = ObjC.unwrap($.NSFileManager.defaultManager.currentDirectoryPath);
 var window = this;
 eval(read(ROOT + '/js/data/verbs.js'));
 const V = window.DATA_VERBS;
+// the regular-conjugation oracle, so the prose can name exactly which forms of
+// an irregular verb break the pattern (defines conjugateRegular globally)
+eval(read(ROOT + '/js/conjugate.js'));
+
+// English gloss per tense for the headings and the prose — the pages are for
+// English speakers, so the tense names must appear in English too.
+const TENSE_EN = {
+  presente: 'present tense',
+  perfeito: 'simple past',
+  imperfeito: 'past habitual, “used to”',
+  subjuntivo: 'imperfect subjunctive, “if I…”',
+};
 
 function esc(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
@@ -81,6 +93,9 @@ h1 .vp-en { color: var(--text-2); font-size: .65em; text-transform: none; }
 .vp-meta { color: var(--text-2); font-size: .92rem; margin-bottom: .9rem; }
 .vp-lede { margin-bottom: 1.1rem; max-width: 62ch; }
 h2 { font-size: 1.05rem; margin: 1.6rem 0 .55rem; }
+h2 .vp-en { color: var(--text-3); font-weight: 400; font-size: .9em; }
+.vp-about p { max-width: 62ch; margin: 0 0 .8rem; line-height: 1.55; }
+.vp-about .vp-pron { white-space: normal; }
 .vp-scroll { overflow-x: auto; border: 1px solid var(--border);
   border-radius: var(--radius-sm); background: var(--surface); box-shadow: var(--shadow); }
 table { border-collapse: collapse; width: 100%; font-size: .95rem; }
@@ -160,7 +175,9 @@ function tenseTable(v, t) {
     (r.meaning ? '<span class="vp-gloss">' + esc(r.meaning) + '</span>' : '') + '</td>' +
     '<td class="vp-pron">' + esc(r.pron || '') + '</td>' +
     '<td class="vp-ex" lang="pt-BR">' + esc(r.example || '') + '</td></tr>').join('\n');
-  return '<section>\n<h2>' + esc(t.label) + '</h2>\n<div class="vp-scroll"><table>\n' +
+  return '<section>\n<h2>' + esc(t.label) +
+    (TENSE_EN[t.key] ? ' <span class="vp-en">— ' + esc(TENSE_EN[t.key]) + '</span>' : '') +
+    '</h2>\n<div class="vp-scroll"><table>\n' +
     '<thead><tr><th scope="col">Person</th><th scope="col">Form</th>' +
     '<th scope="col">Pronunciation</th><th scope="col">Example</th></tr></thead>\n' +
     '<tbody>\n' + body + '\n</tbody></table></div>\n</section>';
@@ -170,6 +187,127 @@ function linkList(verbs) {
   return '<ul class="vp-links">' + verbs.map(v =>
     '<li><a href="' + slug(v.pt) + '.html" lang="pt-BR">' + esc(v.pt) + '</a> ' +
     '<span class="vp-en">' + esc(v.en) + '</span></li>').join('') + '</ul>';
+}
+
+// ---- English prose per verb ----------------------------------------------------
+// The tables are Portuguese; with nothing else on the page Google files these as
+// Portuguese conjugation tables and shows them to Brazilians searching "verbo
+// cair". This section, built purely from the data, gives each page enough English
+// to read as an English page about a Portuguese verb: meaning, regularity (naming
+// the forms that break the pattern), the tenses explained in English, and the
+// Rio pronunciation traits the hints already encode.
+
+const it = s => '<em lang="pt-BR">' + esc(s) + '</em>';
+const pron = s => '<span class="vp-pron">' + esc(s) + '</span>';
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+const N_SUBJ = V.verbs.filter(v => v.tenses.subjuntivo).length;
+
+// the row worth quoting: eu, unless that row is never used (acontecer's eu rows,
+// haver's archaic ones) — then the você/ele row
+function showcase(v, key) {
+  const rows = v.tenses[key];
+  if (!rows) return null;
+  const r = (v.quiz === false || rows[0].quiz === false) ? rows[1] : rows[0];
+  return r && r.form ? r : null;
+}
+
+// "eu abro", "isso acontece" — or the bare form for a verb with no drilled subject
+function cite(v, key, r) {
+  const subj = v.quiz === false ? '' : (r.person || V.personsShort[v.tenses[key].indexOf(r)]);
+  return it((subj ? subj + ' ' : '') + r.form) + ' — ' + esc(r.meaning);
+}
+
+// forms in the three indicative tenses that differ from the regular oracle
+function irregularForms(v) {
+  const oracle = conjugateRegular(v.pt);
+  if (!oracle) return null;
+  const out = [];
+  ['presente', 'perfeito', 'imperfeito'].forEach(key => {
+    (v.tenses[key] || []).forEach((r, i) => {
+      if (r.form && oracle[key][i] !== r.form && out.indexOf(r.form) === -1) out.push(r.form);
+    });
+  });
+  return out;
+}
+
+function aboutHtml(v) {
+  const m = v.pt.match(/(ar|er|ir)$/);
+  const ending = m ? m[1] : null;
+  const paras = [];
+
+  // 1. meaning and regularity
+  let p1 = '<strong lang="pt-BR">' + esc(cap(v.pt)) + '</strong> is the Brazilian Portuguese ' +
+    'verb for <em>' + esc(v.en) + '</em>. ';
+  if (v.irregular) {
+    const irr = irregularForms(v);
+    if (!irr) {
+      p1 += 'It is irregular throughout — the infinitive does not even end in -ar, -er or ' +
+        '-ir — so every form below is worth learning by heart.';
+    } else if (irr.length) {
+      p1 += 'It is an irregular verb: ' + irr.length + ' of its forms in the three tenses ' +
+        'below break the regular -' + ending + ' pattern (' +
+        irr.slice(0, 6).map(it).join(', ') + (irr.length > 6 ? '…' : '') +
+        '), and those are the ones to learn by heart.';
+    } else {
+      p1 += 'It is flagged irregular.';
+    }
+  } else {
+    // a regular verb whose stem is respelt (cheguei, conheço, comecei) — orthography.
+    // The oracle handles exactly one form per conjugation: eu perfeito for -ar
+    // (c→qu, g→gu, ç→c), eu presente for -er/-ir (c→ç, g→j); compare it with
+    // the naive stem + ending.
+    const stem = v.pt.slice(0, -2);
+    const shifted = [];
+    const probe = ending === 'ar'
+      ? { key: 'perfeito', naive: stem + 'ei' } : { key: 'presente', naive: stem + 'o' };
+    const row = (v.tenses[probe.key] || [])[0];
+    if (row && row.form && row.form !== probe.naive) shifted.push(row.form);
+    p1 += 'It is a regular -' + ending + ' verb, so once you know the endings there are no ' +
+      'surprises' + (shifted.length
+        ? ' — only the spelling shifts in ' + shifted.map(it).join(' and ') +
+          ' to keep the sound of the stem, which is orthography, not irregularity.'
+        : '.');
+  }
+  paras.push(p1);
+
+  // 2. the tenses, in English, each with a quoted form and its meaning
+  const pres = showcase(v, 'presente'), perf = showcase(v, 'perfeito'),
+        imp = showcase(v, 'imperfeito'), subj = showcase(v, 'subjuntivo');
+  if (pres && perf && imp) {
+    let p2 = 'Three tenses do almost all the work in conversation. The presente covers the ' +
+      'present and the near future: ' + cite(v, 'presente', pres) + '. The pretérito ' +
+      'perfeito is the finished past, the English simple past: ' + cite(v, 'perfeito', perf) +
+      '. The pretérito imperfeito is for habits, background and how things used to be: ' +
+      cite(v, 'imperfeito', imp) + '.';
+    if (subj) {
+      p2 += ' Because ' + it(v.pt) + ' is one of the ' + N_SUBJ + ' most-used verbs, the ' +
+        'page also has the imperfeito do subjuntivo, the tense of hypotheticals and wishes: ' +
+        cite(v, 'subjuntivo', subj) + '.';
+    }
+    paras.push(p2);
+  }
+
+  // 3. how it sounds in Rio — only the traits the pronunciation hints actually show
+  if (pres && pres.pron) {
+    let p3 = 'Said the Rio way, ' + it(pres.form) + ' sounds like ' + pron(pres.pron) + '.';
+    const nos = v.tenses.presente[2];
+    if (nos && nos.form && nos.quiz !== false && /sh$/.test(nos.pron || '')) {
+      p3 += ' The nós form ' + it(nos.form) + ' ends in the carioca “sh”, ' + pron(nos.pron) +
+        ' — the most recognisable sound of the Rio accent, where São Paulo says a plain s.';
+    }
+    const pal = ['presente', 'perfeito', 'imperfeito']
+      .reduce((acc, k) => acc.concat(v.tenses[k] || []), [])
+      .find(r => /(de|te)$/.test(r.form || '') && /(djee|chee)$/.test(r.pron || ''));
+    if (pal) {
+      p3 += ' Notice ' + it(pal.form) + ' is ' + pron(pal.pron) + ': in Brazil a final -de ' +
+        'softens to “jee” and -te to “chee”, something European Portuguese never does.';
+    }
+    paras.push(p3);
+  }
+
+  return '<section class="vp-about">\n<h2>How to use <span lang="pt-BR">' + esc(v.pt) +
+    '</span> in Brazilian Portuguese</h2>\n' +
+    paras.map(p => '<p>' + p + '</p>').join('\n') + '\n</section>\n';
 }
 
 function verbPage(v, prev, next) {
@@ -204,6 +342,7 @@ function verbPage(v, prev, next) {
     'hints in the Rio (carioca) accent and example sentences the way Brazilians ' +
     'actually talk — not textbook European Portuguese.</p>\n' + synHtml +
     '<p><a class="vp-cta" href="../index.html#presente">Drill this verb free →</a></p>\n' +
+    aboutHtml(v) +
     V.tenses.map(t => tenseTable(v, t)).join('\n') + '\n' +
     (related.length
       ? '<h2>More “' + esc(v.category) + '” verbs</h2>\n' + linkList(related) + '\n'
