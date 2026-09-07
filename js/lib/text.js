@@ -14,14 +14,36 @@ function normalize(str) {
     .normalize('NFD').replace(/[\u0300-\u0309\u030b-\u036f]/g, '')
     .replace(/[?!.,;:¿¡"']+/g, '')
     .replace(/\s+/g, ' ')
-    .trim();
+    .trim()
+    .normalize('NFC');   // å back to one code point: one key to the slip matcher
 }
 
 /* ------------------------------------------------ forgiving matching ---- */
 
+/* Keyboard neighbours — QWERTY, with the Nordic å/ø/æ in their places (ABNT2's ç
+   never gets here: normalize() strips the cedilla). Rows are staggered half a
+   key to the right, so a key touches the two above it at c/c+1 and the two
+   below at c-1/c. Tells a fat finger from a different letter: s for a is a
+   slip, e for a is a wrong vowel. */
+const KEY_NEAR = (() => {
+  const rows = ['qwertyuiopå', 'asdfghjkløæ', 'zxcvbnm'];
+  const at = (r, c) => (rows[r] || '')[c] || '';
+  const near = {};
+  rows.forEach((row, r) => Array.from(row).forEach((ch, c) => {
+    near[ch] = at(r, c - 1) + at(r, c + 1) + at(r - 1, c) + at(r - 1, c + 1) + at(r + 1, c) + at(r + 1, c - 1);
+  }));
+  return near;
+})();
+function adjacentKeys(a, b) { return !!a && !!b && a !== b && (KEY_NEAR[a] || '').indexOf(b) !== -1; }
+
 /* Optimal-string-alignment distance (Levenshtein + adjacent swap as one edit),
-   capped: returns max+1 as soon as the answer cannot be within `max`. */
-function editDistance(a, b, max) {
+   capped: returns max+1 as soon as the answer cannot be within `max`.
+   With `typed` set, `a` is what the learner typed and `b` the answer, and only
+   the edits a keyboard produces cost one: a dropped letter, two letters
+   swapped, a doubled letter, a letter replaced by — or an extra letter next
+   to — a NEIGHBOURING key. Any other substitution or insertion is a different
+   word ("eu fale" for "eu falo") and costs more than any limit. */
+function editDistance(a, b, max, typed) {
   if (a === b) return 0;
   const la = a.length, lb = b.length;
   if (Math.abs(la - lb) > max) return max + 1;
@@ -31,7 +53,14 @@ function editDistance(a, b, max) {
     const cur = [i];
     let rowMin = i;
     for (let j = 1; j <= lb; j++) {
-      let v = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      const ta = a[i - 1], tb = b[j - 1];
+      let sub = ta === tb ? 0 : 1, extra = 1;          // extra: a[i-1] is a stray typed letter
+      if (typed) {
+        if (sub && !adjacentKeys(ta, tb)) sub = max + 1;
+        const l = a[i - 2], n = a[i];
+        if (!(ta === ' ' || ta === l || ta === n || adjacentKeys(ta, l) || adjacentKeys(ta, n))) extra = max + 1;
+      }
+      let v = Math.min(prev[j] + extra, cur[j - 1] + 1, prev[j - 1] + sub);
       if (prev2 && i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) v = Math.min(v, prev2[j - 2] + 1);
       cur[j] = v;
       if (v < rowMin) rowMin = v;
@@ -68,7 +97,8 @@ function phoneticKey(str) {
 
 /* Grade an answer against a card: { grade: 'exact' | 'near', hit } or null.
      exact — normalize() equality with an accepted answer (unchanged behaviour)
-     near  — within nearLimit() edits of one (typed), or the same/near sound key
+     near  — within nearLimit() keyboard-shaped edits of one (typed, see
+             editDistance), or the same/near sound key
              (spoken, where the recognizer is usually the one at fault, so it
              grades as 'exact')
    `rivals` are every other answer the learner could have meant — the other
@@ -91,7 +121,7 @@ function matchAnswer(card, value, rivals, spoken) {
   let best = null, bestD = limit + 1;
   own.forEach(a => {
     if (!a.key) return;
-    const d = editDistance(k, toKey(a.raw), limit);
+    const d = editDistance(k, toKey(a.raw), limit, !spoken);   // typed: keyboard-shaped edits only
     if (d < bestD) { bestD = d; best = a.raw; }
   });
   if (!best) return null;

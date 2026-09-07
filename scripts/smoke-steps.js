@@ -516,22 +516,33 @@ step('typed near-misses: one unambiguous slip is accepted, an ambiguous one is a
     }, []);
   }
   var falo = byId('falar|0'), falam = byId('falar|3');
-  var m = matchAnswer(falo, 'eu falu', rivals(falo), false);
-  if (!m || m.grade !== 'near' || m.hit !== 'eu falo') throw new Error('"eu falu": ' + JSON.stringify(m));
+  var m = matchAnswer(falo, 'eu fali', rivals(falo), false);
+  if (!m || m.grade !== 'near' || m.hit !== 'eu falo') throw new Error('"eu fali": ' + JSON.stringify(m));
   m = matchAnswer(falo, 'eu faloo', rivals(falo), false);
   if (!m || m.grade !== 'near') throw new Error('"eu faloo": ' + JSON.stringify(m));
   if (matchAnswer(falo, 'eu fala', rivals(falo), false)) throw new Error('"eu fala" accepted for "eu falo" — that is another form');
   if (matchAnswer(falam, 'voces fala', rivals(falam), false)) throw new Error('"vocês fala" accepted for "vocês falam"');
-  if (matchAnswer(falo, 'falu', rivals(falo), false)) throw new Error('a 4-letter slip was tolerated');
-  if (matchAnswer(falo, 'eu fxlo', rivals(falo), false) === null) throw new Error('one substitution rejected');
-  if (matchAnswer(falo, 'eu fxlx', rivals(falo), false)) throw new Error('two substitutions accepted on a short form');
+  if (matchAnswer(falo, 'fali', rivals(falo), false)) throw new Error('a 4-letter slip was tolerated');
+  // a substitution is a slip only between NEIGHBOURING keys: s sits next to a, x and e do not
+  if (matchAnswer(falo, 'eu fslo', rivals(falo), false) === null) throw new Error('one neighbouring-key substitution rejected');
+  if (matchAnswer(falo, 'eu fxlo', rivals(falo), false)) throw new Error('"eu fxlo" accepted — x is not next to a');
+  if (matchAnswer(falo, 'eu fale', [], false)) throw new Error('"eu fale" accepted for "eu falo" — e is a different vowel, not a slip');
+  if (matchAnswer(falo, 'eu fali', [], false) === null) throw new Error('"eu fali" rejected — i sits next to o');
+  if (matchAnswer(falo, 'eu fslp', rivals(falo), false)) throw new Error('two substitutions accepted on a short form');
+  // an extra letter is a slip when it doubles or sits next to a neighbour; a stray one is not
+  if (matchAnswer(falo, 'eu falko', rivals(falo), false) === null) throw new Error('"eu falko" rejected — k sits between l and o');
+  if (matchAnswer(falo, 'eu falzo', rivals(falo), false)) throw new Error('"eu falzo" accepted — z is nowhere near l or o');
+  // dropped letters and swapped neighbours stay free
+  if (matchAnswer(falo, 'eu flao', rivals(falo), false) === null) throw new Error('a swap was rejected');
   var exact = matchAnswer(falo, 'EU FALO!', rivals(falo), false);
   if (!exact || exact.grade !== 'exact') throw new Error('exact match broken: ' + JSON.stringify(exact));
-  // sentence-length answers get two edits
+  // sentence-length answers get two edits (both keyboard-shaped: s for a, p for o)
   var sent = topicCards(topicById('sentences'))[0];
-  var twoOff = sent.answer.replace(/a/, 'e').replace(/o([^o]*)$/, 'u$1');
+  var twoOff = sent.answer.replace(/a/, 's').replace(/o([^o]*)$/, 'p$1');
   var ms = matchAnswer(sent, twoOff, [], false);
   if (sent.answer.length >= 12 && (!ms || ms.grade !== 'near')) throw new Error('two edits on "' + sent.answer + '" -> ' + JSON.stringify(ms));
+  var wrongVowels = sent.answer.replace(/a/, 'e').replace(/o([^o]*)$/, 'u$1');
+  if (matchAnswer(sent, wrongVowels, [], false)) throw new Error('two wrong vowels accepted on "' + sent.answer + '"');
   // through the UI: a fresh topic whose only unseen card is falo
   Store.resetTopic('presente');
   var snap = Store.snapshot();
@@ -545,9 +556,9 @@ step('typed near-misses: one unambiguous slip is accepted, an ambiguous one is a
   Store.applySynced(snap);
   goTo('#browse'); goTo('#presente');
   if (shownCard('presente').id !== falo.id) throw new Error('deck did not isolate falo');
-  registry.answerInput.value = 'eu falu';
+  registry.answerInput.value = 'eu fali';
   registry.actionBtn.fire('click');
-  if (!/^≈ Close! You typed “eu falu”/.test(registry.feedback.innerHTML)) throw new Error('near feedback: ' + registry.feedback.innerHTML);
+  if (!/^≈ Close! You typed “eu fali”/.test(registry.feedback.innerHTML)) throw new Error('near feedback: ' + registry.feedback.innerHTML);
   if (registry.feedback.className !== 'feedback ok near') throw new Error('feedback class "' + registry.feedback.className + '"');
   if (!Store.isMastered('presente', falo.id)) throw new Error('near-miss did not clear the card');
   if (Store.reviewLevel('presente', falo.id) !== 1) throw new Error('first near-miss level is ' + Store.reviewLevel('presente', falo.id));
@@ -557,11 +568,11 @@ step('typed near-misses: one unambiguous slip is accepted, an ambiguous one is a
   Store.applySynced(snap2);
   goTo('#browse'); goTo('#presente');
   if (shownCard('presente').id !== falo.id) throw new Error('due falo not shown');
-  registry.answerInput.value = 'eu falu';
+  registry.answerInput.value = 'eu fali';
   registry.actionBtn.fire('click');
   if (Store.reviewLevel('presente', falo.id) !== 2) throw new Error('near-miss raised the level to ' + Store.reviewLevel('presente', falo.id));
   if (Store.cardState('presente', falo.id) !== 'ok') throw new Error('near-miss did not restart the clock: ' + Store.cardState('presente', falo.id));
-  return '"eu falu" ≈ eu falo (level kept at 2); "eu fala" / "vocês fala" / "falu" rejected; sentences take two edits';
+  return '"eu fali" ≈ eu falo (level kept at 2); "eu fala" / "vocês fala" / "fali" / "fale" rejected; only neighbouring keys slip; sentences take two edits';
 });
 
 step('spoken answers match by sound, guarded by the conjugation', function () {

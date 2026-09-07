@@ -43,8 +43,10 @@
 // 1.19 tiers: every drill tab carries a level (Iniciante / Intermediário / Avançado); the learner's title —
 //      the highest tier among the tabs they have taken up — sits by the flame; a tab GRADUATES (🎓 in place of
 //      its %) once 80% of its cards reach review level 3, celebrated once with confetti and a "next tab" nudge
+// 1.19.1 typed slips are keyboard-shaped: a substituted or extra letter counts only on a neighbouring key
+//        (s for a), never a different vowel (e for a) — dropped, doubled and swapped letters stay forgiven
 
-const APP_VERSION = '1.19.0';
+const APP_VERSION = '1.19.1';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

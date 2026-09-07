@@ -130,7 +130,10 @@ step('typed slips are tolerated, but not into another answer; sound key is ident
   // "femten" (15) vs "femti" (50): two edits apart, both answers, so neither may drift into the other
   var femten = cardById('numeros', 'femten');
   if (matchAnswer(femten, 'femti', rivalsOf('numeros', femten), false)) throw new Error('"femti" accepted for femten');
-  return '"snaker" ≈ snakker; femti refused for femten; sound key is identity in nb-NO';
+  // a wrong vowel is not a slip (a and e are not neighbouring keys); å is one key next to p
+  if (matchAnswer(card, 'snakkar', [], false)) throw new Error('"snakkar" accepted for snakker');
+  if (adjacentKeys('p', normalize('å')) !== true) throw new Error('å is not one key next to p: ' + JSON.stringify(normalize('å')));
+  return '"snaker" ≈ snakker; snakkar and femti refused; sound key is identity in nb-NO';
 });
 
 step('the phrases tab drills with theme chips and accepts an alternative phrase', function () {
