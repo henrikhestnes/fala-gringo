@@ -8,7 +8,8 @@
 // The model is pull-merge-push, never overwrite: on load the remote state is
 // fetched and MERGED into the local one (union of mastered; per-card strength
 // keeps max misses + min streak, so a shaky card can never graduate out of Foco
-// by syncing; the daily log merges element-wise). Pushes send the whole state,
+// by syncing; the daily log merges element-wise; the day log and drilled-tab
+// stamps take the higher value). Pushes send the whole state,
 // throttled to one per minute (KV free tier allows 1,000 writes/day) with a
 // final flush when the tab is hidden or closed. Because every sync merges, a
 // push lost to a dead connection or a killed tab heals on the next load.
@@ -136,7 +137,7 @@ const Sync = (function () {
   }
 
   function mergeStates(x, y) {
-    const out = { mastered: {}, strength: {}, daily: {} };
+    const out = { mastered: {}, strength: {}, daily: {}, days: {}, drilled: {} };
 
     eachKey(x.mastered, y.mastered, (topic, a, b) => {
       out.mastered[topic] = Object.assign({}, a || {}, b || {});
@@ -172,6 +173,11 @@ const Sync = (function () {
       out.daily[day] = m;
     });
 
+    // the day log and the drilled-tab stamps: a day practised anywhere counts
+    // (answers = the higher count), a tab drilled anywhere is active (newest day)
+    eachKey(x.days || {}, y.days || {}, (day, a, b) => { out.days[day] = Math.max(a || 0, b || 0); });
+    eachKey(x.drilled || {}, y.drilled || {}, (topic, a, b) => { out.drilled[topic] = Math.max(a || 0, b || 0); });
+
     return out;
   }
 
@@ -188,7 +194,7 @@ const Sync = (function () {
       })
       .then(remote => {
         const local = Store.snapshot();
-        const merged = mergeStates(local, remote || { mastered: {}, strength: {}, daily: {} });
+        const merged = mergeStates(local, remote || { mastered: {}, strength: {}, daily: {}, days: {}, drilled: {} });
         const mergedJson = JSON.stringify(merged);
         markOk();
         if (mergedJson !== JSON.stringify(local)) {

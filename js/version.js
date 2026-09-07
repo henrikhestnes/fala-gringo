@@ -36,8 +36,12 @@
 //      gender, phrases, numbers, small words; normalize() keeps the ring of å (så ≠ sa)
 // 1.17.1 verb pages: an English "how to use" section per verb (meaning, which forms are irregular, the
 //        tenses in English, Rio pronunciation traits) + English tense labels — the pages read as English
+// 1.18 the habit loop: a day log (answers per LOCAL day — the calendar now turns at the learner's
+//      midnight, not UTC), a streak with one grace day, and today's goal ring in the top bar — what Foco
+//      still asks across the tabs the learner actually drills (a beginner's goal never includes the
+//      subjunctive), filling as it gets done; the done/empty screens point at where today's work still is
 
-const APP_VERSION = '1.17.1';
+const APP_VERSION = '1.18.0';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

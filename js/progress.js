@@ -1,4 +1,5 @@
-// Persistent state: per-card mastery, mode preferences, daily results.
+// Persistent state: per-card mastery, mode preferences, daily results, the
+// day log (answers per day, for the streak) and the tabs the learner drills.
 // One localStorage key, wrapped in try/catch so private browsing degrades to
 // an in-memory session instead of throwing. A page sharing this engine sets
 // window.APP_STORE_KEY before loading this file to keep its own progress blob
@@ -26,8 +27,15 @@ const REVIEW_INTERVALS = [7, 14, 30, 60, 120];
    overrides it on a device. */
 const NEW_PER_DAY = 20;
 
+/* A tab counts as one of the learner's own — part of today's goal in the top
+   bar — for this many days after it was last drilled. The tabs encode a level
+   (a beginner lives on Presente, an advanced learner on Subjuntivo and
+   Sentences), so the goal must never demand the tabs a learner has not chosen,
+   and a tab that graduates (nothing due for a month) quietly leaves it. */
+const ACTIVE_DAYS = 30;
+
 const Store = (function () {
-  const empty = { mastered: {}, daily: {}, prefs: {}, strength: {} };
+  const empty = { mastered: {}, daily: {}, prefs: {}, strength: {}, days: {}, drilled: {} };
   let state;
 
   function load() {
@@ -39,7 +47,9 @@ const Store = (function () {
         mastered: parsed.mastered && typeof parsed.mastered === 'object' ? parsed.mastered : {},
         daily: parsed.daily && typeof parsed.daily === 'object' ? parsed.daily : {},
         prefs: parsed.prefs && typeof parsed.prefs === 'object' ? parsed.prefs : {},
-        strength: parsed.strength && typeof parsed.strength === 'object' ? parsed.strength : {}
+        strength: parsed.strength && typeof parsed.strength === 'object' ? parsed.strength : {},
+        days: parsed.days && typeof parsed.days === 'object' ? parsed.days : {},
+        drilled: parsed.drilled && typeof parsed.drilled === 'object' ? parsed.drilled : {}
       };
     } catch (e) {
       return JSON.parse(JSON.stringify(empty));
@@ -60,7 +70,27 @@ const Store = (function () {
 
   state = load();
 
-  function today() { return Math.floor(Date.now() / 86400000); }
+  /* The calendar day as a number: LOCAL days since the epoch, so a streak, a
+     review clock and "today's new cards" all turn over at the learner's own
+     midnight — a Rio learner drilling at 22:00 is still on today, not on
+     tomorrow's UTC day. (Pre-1.18 records counted UTC days; for a given record
+     the two differ by at most one, which only nudges a review by a day.) */
+  function today() {
+    const now = Date.now();
+    return Math.floor((now - new Date(now).getTimezoneOffset() * 60000) / 86400000);
+  }
+  /* Answers per day, the base of the streak and of "done today". Only the
+     newest DAYS_KEPT days are kept: the streak never needs more. */
+  const DAYS_KEPT = 730;
+  function logDay() {
+    const d = today();
+    state.days[d] = (state.days[d] || 0) + 1;
+    const keys = Object.keys(state.days);
+    if (keys.length > DAYS_KEPT) {
+      keys.map(Number).sort((a, b) => a - b).slice(0, keys.length - DAYS_KEPT)
+        .forEach(k => { delete state.days[k]; });
+    }
+  }
   /* Review level of a strength record; pre-1.12 records carry no `l`. */
   function levelOf(e) { return e.l != null ? e.l : (e.t ? 1 : 0); }
   /* Days until review at a level: level 0 or 1 -> first rung, then up the ladder. */
@@ -70,6 +100,8 @@ const Store = (function () {
   }
 
   return {
+    today: today,
+
     /* --- mastery: a card counts as mastered once answered correctly --- */
     isMastered(topicId, cardId) {
       const t = state.mastered[topicId];
@@ -95,6 +127,8 @@ const Store = (function () {
       state.mastered = {};
       state.daily = {};
       state.strength = {};
+      state.days = {};
+      state.drilled = {};
       save();
     },
 
@@ -120,6 +154,7 @@ const Store = (function () {
         s.s = 0; s.m += 1; s.l = 0;
       }
       state.strength[topicId][cardId] = s;
+      logDay();   // every answer, right or wrong, is a day practised
       save();
     },
     isShaky(topicId, cardId) {
@@ -172,6 +207,47 @@ const Store = (function () {
       return out;
     },
 
+    /* --- the day log: the streak and today's goal (js/app.js renders both) --- */
+    answeredOn(day) {
+      return state.days[day] || 0;
+    },
+    /* Consecutive days practised, counted back from today — or from yesterday
+       when today is not yet done, so the flame does not go out at midnight.
+       One missed day is forgiven (a rest day is not a relapse); two in a row
+       end the run. `atRisk`: the grace day is spent, only today can save it. */
+    streak() {
+      const d = today();
+      const has = k => !!state.days[k];
+      const doneToday = has(d);
+      let n = 0;
+      let cur = doneToday ? d : d - 1;
+      for (;;) {
+        if (has(cur)) { n++; cur--; }
+        else if (has(cur - 1)) { cur--; }   // skip the one gap day; the day before it counts next
+        else break;
+      }
+      return { n: n, today: doneToday, atRisk: n > 0 && !doneToday && !has(d - 1) };
+    },
+    /* Tabs the learner drills: stamped on every drill answer (the Daily does
+       NOT stamp — a beginner meeting one subjunctive card there has not taken
+       up the tab). Active = drilled within ACTIVE_DAYS. */
+    markDrilled(topicId) {
+      const d = today();
+      if (state.drilled[topicId] === d) return;
+      state.drilled[topicId] = d;
+      save();
+    },
+    isActiveTopic(topicId) {
+      const d = state.drilled[topicId];
+      return !!d && today() - d <= ACTIVE_DAYS;
+    },
+    /* Cards answered correctly today in a topic (the done half of the goal ring). */
+    doneToday(topicId) {
+      const t = state.strength[topicId] || {};
+      const day = today();
+      return Object.keys(t).filter(id => t[id].t === day).length;
+    },
+
     /* --- daily intake of unseen cards (the Foco cap) --- */
     newPerDay() {
       const n = parseInt(this.getPref('newPerDay', NEW_PER_DAY), 10);
@@ -201,13 +277,16 @@ const Store = (function () {
        the merged result back in. Prefs are deliberately per-device. --- */
     snapshot() {
       return JSON.parse(JSON.stringify({
-        mastered: state.mastered, strength: state.strength, daily: state.daily
+        mastered: state.mastered, strength: state.strength, daily: state.daily,
+        days: state.days, drilled: state.drilled
       }));
     },
     applySynced(data) {
       state.mastered = data.mastered && typeof data.mastered === 'object' ? data.mastered : {};
       state.strength = data.strength && typeof data.strength === 'object' ? data.strength : {};
       state.daily = data.daily && typeof data.daily === 'object' ? data.daily : {};
+      state.days = data.days && typeof data.days === 'object' ? data.days : {};
+      state.drilled = data.drilled && typeof data.drilled === 'object' ? data.drilled : {};
       save();
     },
 

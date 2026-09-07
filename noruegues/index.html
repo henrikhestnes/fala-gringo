@@ -22,6 +22,7 @@
       <!-- emoji nativo em vez de SVG desenhado à mão: nítido em qualquer tamanho -->
       <span aria-hidden="true" style="font-style:normal;font-size:1.25em;line-height:1">🏔️</span>
       Fala Viking</span>
+    <button class="goal-btn" id="goalBtn" type="button" hidden aria-label="Meta de hoje e sequência"></button>
     <button class="mode-btn" id="modeBtn" type="button" aria-pressed="true">Modo Raiz</button>
     <button class="icon-btn" id="syncBtn" type="button" aria-label="Sincronizar o progresso entre aparelhos" title="Sincronizar o progresso entre aparelhos">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -139,6 +140,15 @@ window.APP_STRINGS = {
   modeHardTitle: 'Modo Raiz (hardcore): sem dica em norueguês. Toque para o Modo Nutella.',
   modeEasyTitle: 'Modo Nutella: mostra uma dica em norueguês (o infinitivo, o substantivo cru). Toque para o Modo Raiz.',
   resetConfirm: 'Zerar o progresso de "{label}"?',
+  // meta do dia + sequência (js/app.js, js/quiz.js)
+  goalLeft: '{n} cartas pra hoje nas suas abas ({done} feitas)',
+  goalDone: 'Tudo em dia por hoje! Nada sobrando nas suas abas.',
+  streakDays: '🔥 {n} dias seguidos',
+  streakDay: '🔥 1 dia',
+  streakAtRisk: 'pratique hoje pra não perder',
+  streakCold: 'hoje ainda não',
+  todayStill: 'Ainda hoje:',
+  todayCaughtUp: 'Tudo em dia por hoje! Nada sobrando nas suas abas.',
   // sync (js/lib/sync.js)
   syncTitleOff: 'Sync desligado — toque para conectar seus aparelhos',
   syncTitleError: 'O último sync falhou — vai tentar de novo',

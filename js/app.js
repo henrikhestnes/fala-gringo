@@ -9,8 +9,16 @@
   const APP_STR = Object.assign({
     modeHardTitle: 'Modo Raiz (hardcore): no Portuguese shown. Tap for Modo Nutella.',
     modeEasyTitle: 'Modo Nutella (soft): the Portuguese infinitive is shown as a hint. Tap for Modo Raiz.',
-    resetConfirm: 'Reset mastered progress for "{label}"?'
+    resetConfirm: 'Reset mastered progress for "{label}"?',
+    goalLeft: '{n} cards left today in your tabs ({done} done)',
+    goalDone: 'Tudo em dia por hoje! Nothing left in your tabs.',
+    streakDays: '🔥 {n}-day streak',
+    streakDay: '🔥 1-day streak',
+    streakAtRisk: 'practice today to keep it',
+    streakCold: 'not yet today'
   }, window.APP_STRINGS || {});
+
+  function toast(msg) { if (typeof showToast === 'function') showToast(msg); }
 
   /* ------------------------------------------------------------- theming */
 
@@ -101,6 +109,67 @@
     span.textContent = (total ? Math.round((Store.masteredCount(t.id) / total) * 100) : 0) + '%';
   }
 
+  /* ------------------------------------------------- today's goal + streak */
+
+  /* The ring in the top bar: cards still ahead today across the tabs the
+     learner drills (Quiz.todayGoal), filling as they get done, with the streak
+     beside it. Hidden until the first drill answer ever, so a newcomer's top
+     bar is not a scoreboard of zeros. The flame dims until today counts. */
+  const RING_C = 2 * Math.PI * 9;   // circumference of the r=9 ring
+  let lastLeft = -1;
+
+  function streakLabel(st) {
+    return st.n === 1 ? APP_STR.streakDay : tfill(APP_STR.streakDays, { n: st.n });
+  }
+
+  function renderGoal() {
+    const btn = document.getElementById('goalBtn');
+    if (!btn) return;
+    const st = Store.streak();
+    const goal = Quiz.todayGoal();
+    const show = goal.active > 0 || st.n > 0;
+    btn.hidden = !show;
+    if (!show) { lastLeft = -1; return; }
+
+    const total = goal.done + goal.left;
+    const frac = total ? goal.done / total : 1;
+    const done = goal.active > 0 && goal.left === 0;
+    btn.className = 'goal-btn' + (done ? ' done' : '');
+    btn.innerHTML = '' +
+      '<svg class="goal-ring" viewBox="0 0 24 24" aria-hidden="true">' +
+        '<circle class="track" cx="12" cy="12" r="9"></circle>' +
+        '<circle class="fill" cx="12" cy="12" r="9" stroke-dasharray="' +
+          (frac * RING_C).toFixed(2) + ' ' + RING_C.toFixed(2) + '"></circle>' +
+        '<text x="12" y="12.5" text-anchor="middle" dominant-baseline="middle">' +
+          (done ? '✓' : goal.left) + '</text>' +
+      '</svg>' +
+      '<span class="goal-streak' + (st.today ? '' : ' cold') + '">🔥' + st.n + '</span>';
+    const title = (done ? APP_STR.goalDone : tfill(APP_STR.goalLeft, { n: goal.left, done: goal.done })) +
+      (st.n ? ' · ' + streakLabel(st) + (st.atRisk ? ' — ' + APP_STR.streakAtRisk
+                                         : st.today ? '' : ' — ' + APP_STR.streakCold) : '');
+    btn.setAttribute('title', title);
+    btn.setAttribute('aria-label', title);
+
+    // the moment the last card of the day clears: a small celebration, once
+    if (done && lastLeft > 0) {
+      btn.classList.add('celebrate');
+      toast(APP_STR.goalDone + (st.n ? ' ' + streakLabel(st) : ''));
+    }
+    lastLeft = goal.left;
+  }
+
+  /* Tap: go where today's work is (the fullest tab), or hear that there is none. */
+  function goalTap() {
+    const goal = Quiz.todayGoal();
+    const st = Store.streak();
+    if (goal.active && goal.left) {
+      toast(goal.per.filter(p => p.left).map(p => p.topic.label + ' ' + p.left).join(' · '));
+      go(goal.per[0].topic.id);
+    } else {
+      toast(APP_STR.goalDone + (st.n ? ' ' + streakLabel(st) : ''));
+    }
+  }
+
   function updateModeButton() {
     const btn = document.getElementById('modeBtn');
     // aria-pressed reflects Hard Mode, which is the default state.
@@ -127,6 +196,7 @@
     if (topic.kind === 'browse') Browse.render();
     else if (topic.kind === 'daily') Daily.mount();
     else Quiz.mount(topic);
+    renderGoal();
   }
 
   function go(id) {
@@ -187,6 +257,8 @@
   });
 
   document.getElementById('themeBtn').addEventListener('click', toggleTheme);
+  const goalBtn = document.getElementById('goalBtn');
+  if (goalBtn) goalBtn.addEventListener('click', goalTap);
   document.getElementById('modeBtn').addEventListener('click', () => {
     Mode.toggle();
     updateModeButton();
@@ -211,5 +283,5 @@
   }
 
   // sync.js re-renders through this after pulling remote progress
-  window.App = { refresh: route, updateTabPct: updateTabPct };
+  window.App = { refresh: route, updateTabPct: updateTabPct, refreshGoal: renderGoal };
 })();

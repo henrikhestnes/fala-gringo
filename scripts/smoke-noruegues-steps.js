@@ -202,3 +202,14 @@ step('sync loads inert, speaks Portuguese, and targets its own prefixed key', fu
   if (localStorage.getItem('fg:syncCode') !== null) throw new Error('off did not clear the shared key');
   return 'off-state tooltip in PT; shared fg:syncCode; endpoint …' + ep.slice(ep.lastIndexOf("/"));
 });
+
+step('the drill answers above lit today\'s goal ring and the streak in the top bar', function () {
+  if (registry.goalBtn.hidden) throw new Error('goal widget hidden after drilling');
+  if (!/🔥1/.test(registry.goalBtn.innerHTML)) throw new Error('streak not shown: ' + registry.goalBtn.innerHTML);
+  var g = Quiz.todayGoal();
+  if (!g.active || !(g.done >= 1)) throw new Error('goal: ' + JSON.stringify({ active: g.active, done: g.done, left: g.left }));
+  var tip = registry.goalBtn.getAttribute('title') || '';
+  if (!/streak/.test(tip)) throw new Error('tooltip reads "' + tip + '"');   // the smoke config leaves these strings in English
+  return g.active + ' active tab(s), ' + g.done + ' done, ' + g.left + ' left; 🔥1';
+});
+

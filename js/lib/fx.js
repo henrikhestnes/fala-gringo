@@ -76,3 +76,16 @@ function launchFireworks() {
   }
   frame();
 }
+
+/* The one toast (the #toast pill in every shell). Lives here, not in daily.js,
+   because every page loads fx.js — the /ingles/ and /noruegues/ shells have no
+   Daily tab, and until 1.18 their sync toasts silently went nowhere. */
+let _toastTimer = 0;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 1800);
+}

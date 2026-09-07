@@ -129,4 +129,4 @@ window._activeRec = null;
 function flushTimers() { const t = timers.splice(0); t.forEach(fn => { try { fn(); } catch (e) {} }); }
 
 // shell elements that both index.html files provide
-['view', 'tabs', 'toast', 'modeBtn', 'themeBtn', 'syncBtn', 'buildInfo'].forEach(id => { registry[id] = new El(id); });
+['view', 'tabs', 'toast', 'modeBtn', 'themeBtn', 'syncBtn', 'goalBtn', 'buildInfo'].forEach(id => { registry[id] = new El(id); });

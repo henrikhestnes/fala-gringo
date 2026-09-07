@@ -217,6 +217,51 @@ button { cursor: pointer; touch-action: manipulation; }
   50% { transform: scale(1.45); opacity: .55; }
 }
 
+/* Today's goal + streak (js/app.js renderGoal): a ring that fills as the
+   day's cards across the learner's tabs get done, the count still ahead inside
+   it, the flame beside it. Hidden (attribute) until the first drill answer. */
+.goal-btn {
+  display: flex;
+  align-items: center;
+  gap: .3rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-2);
+  border-radius: 999px;
+  padding: .14rem .6rem .14rem .2rem;
+  font-size: .76rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  transition: border-color .15s, color .15s, transform .1s;
+}
+.goal-btn[hidden] { display: none; }
+.goal-btn:hover { border-color: var(--border-strong); color: var(--text); }
+.goal-btn:active { transform: scale(.95); }
+.goal-ring { width: 26px; height: 26px; flex: none; }
+.goal-ring circle { fill: none; stroke-width: 2.4; }
+.goal-ring .track { stroke: var(--border-strong); }
+.goal-ring .fill {
+  stroke: var(--green);
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+  transition: stroke-dasharray .4s ease;
+}
+.goal-ring text {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  font-weight: 700;
+  fill: currentColor;
+}
+.goal-btn.done { border-color: var(--green); color: var(--green-ink); }
+.goal-btn.done .goal-ring text { fill: var(--green-ink); font-size: 10px; }
+.goal-streak.cold { opacity: .5; filter: grayscale(1); }
+.goal-btn.celebrate { animation: goal-pop .55s ease; }
+@keyframes goal-pop {
+  40% { transform: scale(1.18); }
+}
+
 .mode-btn {
   border: 1.5px solid var(--border);
   background: var(--surface);
@@ -707,6 +752,32 @@ main { max-width: 880px; width: 100%; margin: 0 auto; padding: 1.1rem 1rem 4rem;
   padding: 2rem 1rem;
 }
 
+/* Under a finished or empty deck: where today's work still is, as tab links
+   (fullest first), or "all caught up" with the streak. */
+.today-line {
+  margin-top: .9rem;
+  font-size: .82rem;
+  color: var(--text-2);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: .35rem;
+}
+.today-line.caught-up { color: var(--green-ink); font-weight: 600; }
+.tab-link {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-2);
+  border-radius: 999px;
+  padding: .18rem .55rem;
+  font-size: .76rem;
+  font-weight: 600;
+  transition: border-color .15s, color .15s;
+}
+.tab-link:hover { border-color: var(--green); color: var(--green-ink); }
+.tab-link b { font-family: var(--mono); font-weight: 600; margin-left: .15em; }
+
 /* ---------- daily ---------- */
 
 .daily-dots { display: flex; gap: .35rem; justify-content: center; margin-bottom: 1rem; }
@@ -878,11 +949,15 @@ footer .build-info {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .shake { animation: none; }
+  .shake, .goal-btn.celebrate { animation: none; }
   * { transition-duration: .01ms !important; }
 }
 
 @media (max-width: 460px) {
+  /* the goal ring took the room: the brand keeps its flag/emoji, drops the words */
+  .brand { font-size: 0; gap: 0; }
+  .brand > * { font-size: 1.25rem !important; }   /* beats the emoji span's inline em size */
+  .topbar-inner { gap: .5rem; }
   .card-prompt { font-size: 1.24rem; }
   .verb-row { grid-template-columns: 1.8rem 1.7rem 1fr 1.7rem; }
   .verb-text { flex-direction: column; gap: .1rem; }

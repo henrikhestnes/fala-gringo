@@ -48,6 +48,10 @@ const QUIZ_STRINGS = Object.assign({
   hardCards: 'Hard Mode cards',
   startOver: 'Start over ↻',
   answerIs: 'The answer is',
+  todayStill: 'Still today:',
+  todayCaughtUp: 'Tudo em dia por hoje! Nothing left in your tabs.',
+  streakDays: '🔥 {n}-day streak',
+  streakDay: '🔥 1-day streak',
   nearIs: 'Close! You typed “{typed}” — the answer is',
   listening: 'Ouvindo… fala aí',
   listeningEmpty: ' — diga “nada” se nada falta na lacuna',
@@ -143,33 +147,37 @@ const Quiz = (function () {
                in data order (the curated "essentials first" order) by whole
                lexeme so a verb arrives with all its forms
      Reviews come before new material so a short session still does what matters.
-     Switching the chip off drills the whole topic. Returns the ordered deck and
-     fills `counts` / `tierOf`. */
-  function focusDeck(cards) {
+     Switching the chip off drills the whole topic.
+
+     focoPlan() is the pure part — it reads the store and touches nothing, so
+     the top bar can ask what every active tab would put in front of the
+     learner today (todayGoal) — and focusDeck() turns the plan for the mounted
+     topic into the deck, stamping today's intake. */
+  function focoPlan(topicId, cards) {
     const weak = new Set();
-    cards.forEach(c => { if (Store.isShaky(topic.id, c.id)) weak.add(lexeme(c)); });
+    cards.forEach(c => { if (Store.isShaky(topicId, c.id)) weak.add(lexeme(c)); });
 
     const due = [], shaky = [], unseen = [];
     cards.forEach(c => {
-      const st = Store.cardState(topic.id, c.id);
+      const st = Store.cardState(topicId, c.id);
       if (st === 'shaky') shaky.push(c);
       else if (st === 'due') due.push(c);
       else if (st === 'new') (weak.has(lexeme(c)) ? shaky : unseen).push(c);   // dragged in by a shaky sibling
     });
 
     // inferred-known forms skip the queue (a quick confirmation, not a lesson)
-    const likely = (window.Infer && Infer.likelyKnown) ? Infer.likelyKnown(topic.id, cards, unseen) : new Set();
+    const likely = (window.Infer && Infer.likelyKnown) ? Infer.likelyKnown(topicId, cards, unseen) : new Set();
     const verify = unseen.filter(c => likely.has(c.id));
 
     // today's intake: what was already introduced today comes back for free,
     // then whole lexemes in data order until the cap is reached
-    const today = Math.floor(Date.now() / 86400000);
+    const today = Store.today();
     const fresh = [], intake = [];
     unseen.forEach(c => {
       if (likely.has(c.id)) return;
-      if (Store.introducedOn(topic.id, c.id) === today) intake.push(c); else fresh.push(c);
+      if (Store.introducedOn(topicId, c.id) === today) intake.push(c); else fresh.push(c);
     });
-    let room = Store.newPerDay() - Store.introducedToday(topic.id);
+    let room = Store.newPerDay() - Store.introducedToday(topicId);
     let waiting = 0;
     const byLex = new Map();
     fresh.forEach(c => { const k = lexeme(c); if (!byLex.has(k)) byLex.set(k, []); byLex.get(k).push(c); });
@@ -180,19 +188,27 @@ const Quiz = (function () {
 
     // reviews thinned by evidence: of a verb's due regular forms in a known
     // pattern only the weakest is asked, the rest ride on its answer (js/infer.js)
-    const thinned = (window.Infer && Infer.implyDue) ? Infer.implyDue(topic.id, cards, due) : { ask: due, implied: new Map() };
-    impliedBy = thinned.implied;
-    let impliedN = 0;
-    impliedBy.forEach(ids => { impliedN += ids.length; });
+    const thinned = (window.Infer && Infer.implyDue) ? Infer.implyDue(topicId, cards, due) : { ask: due, implied: new Map() };
 
     // most overdue first; shuffle BEFORE the (stable) sort so equally overdue
     // cards — most of them, on any given day — don't come out in data order
-    const dueOrdered = shuffle(thinned.ask).sort((a, b) => Store.overdue(topic.id, b.id) - Store.overdue(topic.id, a.id));
-    const tiers = [['due', dueOrdered], ['shaky', shuffle(shaky)], ['verify', shuffle(verify)], ['new', shuffle(intake)]];
+    const dueOrdered = shuffle(thinned.ask).sort((a, b) => Store.overdue(topicId, b.id) - Store.overdue(topicId, a.id));
+    return { due: dueOrdered, implied: thinned.implied, shaky: shuffle(shaky), verify: shuffle(verify),
+             intake: shuffle(intake), waiting: waiting };
+  }
+
+  function focusDeck(cards) {
+    const plan = focoPlan(topic.id, cards);
+    impliedBy = plan.implied;
+    let impliedN = 0;
+    impliedBy.forEach(ids => { impliedN += ids.length; });
+
+    const tiers = [['due', plan.due], ['shaky', plan.shaky], ['verify', plan.verify], ['new', plan.intake]];
     tierOf = new Map();
     const out = [];
     tiers.forEach(([name, list]) => list.forEach(c => { tierOf.set(c.id, name); out.push(c); }));
-    counts = { due: dueOrdered.length, implied: impliedN, shaky: shaky.length, verify: verify.length, new: intake.length, waiting: waiting };
+    counts = { due: plan.due.length, implied: impliedN, shaky: plan.shaky.length, verify: plan.verify.length,
+               new: plan.intake.length, waiting: plan.waiting };
 
     // stamp every never-seen card that made it into today's deck (new, or dragged
     // in by a shaky sibling) as introduced today; verify cards are re-inferred on
@@ -211,6 +227,43 @@ const Quiz = (function () {
     tierOf = new Map();
     impliedBy = new Map();
     return shuffle(cards);
+  }
+
+  /* Today's goal, the number on the ring in the top bar: what Foco would still
+     put in front of the learner across the tabs they actually drill (Store
+     .isActiveTopic — the tabs encode a level, so a beginner's goal never
+     includes the subjunctive) against what they already got right today.
+     Computed from the store alone, so it follows every answer and is the same
+     whichever tab is open. */
+  function todayGoal() {
+    const per = [];
+    let left = 0, done = 0;
+    TOPICS.forEach(t => {
+      if (t.kind !== 'quiz' || !Store.isActiveTopic(t.id)) return;
+      const p = focoPlan(t.id, topicCards(t));
+      const n = p.due.length + p.shaky.length + p.verify.length + p.intake.length;
+      const d = Store.doneToday(t.id);
+      per.push({ topic: t, left: n, done: d });
+      left += n; done += d;
+    });
+    per.sort((a, b) => b.left - a.left);
+    return { active: per.length, left: left, done: done, per: per };
+  }
+
+  /* One line under a finished or empty deck: where today's work still is
+     (tab links, fullest first), or that there is none — with the streak. */
+  function todayLineHtml() {
+    const goal = todayGoal();
+    if (!goal.active) return '';
+    const still = goal.per.filter(p => p.left > 0);
+    if (still.length) {
+      return '<p class="today-line">' + escapeHtml(QUIZ_STRINGS.todayStill) + ' ' +
+        still.map(p => '<button class="tab-link" type="button" data-tab="' + escapeHtml(p.topic.id) + '">' +
+          escapeHtml(p.topic.label) + ' <b>' + p.left + '</b></button>').join('') + '</p>';
+    }
+    const st = Store.streak();
+    const flame = st.n ? ' ' + (st.n === 1 ? QUIZ_STRINGS.streakDay : tfill(QUIZ_STRINGS.streakDays, { n: st.n })) : '';
+    return '<p class="today-line caught-up">' + escapeHtml(QUIZ_STRINGS.todayCaughtUp) + escapeHtml(flame) + '</p>';
   }
 
   function buildDeck() {
@@ -319,6 +372,7 @@ const Quiz = (function () {
     const line = document.getElementById('masteredLine');
     if (line) line.innerHTML = masteredHtml();
     if (window.App && App.updateTabPct) App.updateTabPct(topic.id);   // the tab's mastery % too
+    if (window.App && App.refreshGoal) App.refreshGoal();             // and the ring in the top bar
   }
 
   /* ---------------------------------------------------------------- render */
@@ -340,7 +394,7 @@ const Quiz = (function () {
       area.innerHTML = focusOn()
         ? '<div class="card empty"><h2>' + QUIZ_STRINGS.emptyFocoTitle + '</h2>' +
           '<p>' + (waiting ? tfill(QUIZ_STRINGS.emptyFocoWaiting, { n: waiting })
-                           : QUIZ_STRINGS.emptyFocoBody) + '</p></div>'
+                           : QUIZ_STRINGS.emptyFocoBody) + '</p>' + todayLineHtml() + '</div>'
         : '<div class="card empty"><h2>' + QUIZ_STRINGS.emptyTitle + '</h2>' +
           '<p>' + QUIZ_STRINGS.emptyBody + '</p></div>';
       return;
@@ -407,6 +461,7 @@ const Quiz = (function () {
           '<div class="result-stat"><div class="result-stat-num accent">' + stats.hardSolved +
             '</div><div class="result-stat-lbl">' + QUIZ_STRINGS.hardCards + '</div></div>' +
         '</div>' +
+        todayLineHtml() +
         '<button class="btn primary" id="againBtn" type="button">' +
           escapeHtml(QUIZ_STRINGS.startOver) + '</button>' +
       '</div>';
@@ -515,6 +570,7 @@ const Quiz = (function () {
 
     answered = true;
     input.disabled = true;
+    Store.markDrilled(topic.id);   // this tab is one of the learner's own (today's goal, js/app.js)
 
     const pron = card.pron ? '<span class="pron-tag">' + escapeHtml(card.pron) + '</span>' : '';
     const say = card.speak ? speakButton(card.speak, card.answer) : '';
@@ -623,6 +679,7 @@ const Quiz = (function () {
     resumeMic: resumeMic,
     stopVoice: stopVoice,
     isActive: () => !!topic,
+    todayGoal: todayGoal,
     _counts: () => counts,     // exposed for the smoke checks
     _tierOf: id => tierOf.get(id),
     _impliedOf: id => impliedBy.get(id) || []

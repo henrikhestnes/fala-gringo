@@ -357,7 +357,7 @@ step('review level grows only across distinct days and climbs the interval ladde
   var id = topicCards(topicById('adverbs'))[0].id;
   // start from a card mastered today (the intake spread over two days above)
   var snap0 = Store.snapshot();
-  snap0.strength.adverbs[id] = { s: 1, m: 0, l: 1, t: Math.floor(Date.now() / 86400000) };
+  snap0.strength.adverbs[id] = { s: 1, m: 0, l: 1, t: Store.today() };
   Store.applySynced(snap0);
   var lvl = Store.reviewLevel('adverbs', id);
   if (lvl !== 1) throw new Error('level after first mastery is ' + lvl);
@@ -379,7 +379,7 @@ step('review level grows only across distinct days and climbs the interval ladde
     throw new Error('miss did not reset: level ' + Store.reviewLevel('adverbs', id) + ', ' + Store.cardState('adverbs', id));
   // a pre-1.12 record (no `l`) with a last-correct day counts as level 1
   var snap = Store.snapshot();
-  snap.strength.adverbs[id] = { s: 3, m: 0, t: Math.floor(Date.now() / 86400000) - 8 };
+  snap.strength.adverbs[id] = { s: 3, m: 0, t: Store.today() - 8 };
   Store.applySynced(snap);
   if (Store.reviewLevel('adverbs', id) !== 1 || Store.cardState('adverbs', id) !== 'due')
     throw new Error('legacy record: level ' + Store.reviewLevel('adverbs', id) + ', ' + Store.cardState('adverbs', id));
@@ -389,7 +389,7 @@ step('review level grows only across distinct days and climbs the interval ladde
 step('the Foco deck puts due reviews before new cards, most overdue first', function () {
   Store.resetTopic('nouns');
   var cards = topicCards(topicById('nouns'));
-  var today = Math.floor(Date.now() / 86400000);
+  var today = Store.today();
   var snap = Store.snapshot();
   snap.mastered.nouns = {}; snap.strength.nouns = {};
   var due = cards.slice(-5);                        // the LAST five in data order, so intake order can't mask it
@@ -433,7 +433,7 @@ step('equally overdue reviews are shuffled, not served in data order', function 
   // tab whose cards all fell due together ran through the list verb by verb
   Store.resetTopic('nouns');
   var cards = topicCards(topicById('nouns')).slice(0, 12);
-  var today = Math.floor(Date.now() / 86400000);
+  var today = Store.today();
   var snap = Store.snapshot();
   snap.mastered.nouns = {}; snap.strength.nouns = {};
   cards.forEach(function (c) {
@@ -461,7 +461,7 @@ step('equally overdue reviews are shuffled, not served in data order', function 
 step('inference: a known word + a known pattern makes an unseen regular form a "verify" card', function () {
   ['presente', 'perfeito', 'imperfeito', 'subjuntivo'].forEach(function (t) { Store.resetTopic(t); });
   var cards = topicCards(topicById('presente'));
-  var today = Math.floor(Date.now() / 86400000);
+  var today = Store.today();
   // the regular -ar "vocês" forms, one per verb, in data order
   var voces = cards.filter(function (c) { return c.infer && c.infer.regular && c.infer.pattern === 'ar|presente|3'; });
   if (voces.length < Infer.PATTERN_MIN + 3) throw new Error('only ' + voces.length + ' regular -ar vocês forms');
@@ -535,7 +535,7 @@ step('typed near-misses: one unambiguous slip is accepted, an ambiguous one is a
   // through the UI: a fresh topic whose only unseen card is falo
   Store.resetTopic('presente');
   var snap = Store.snapshot();
-  var today = Math.floor(Date.now() / 86400000);
+  var today = Store.today();
   snap.mastered.presente = {}; snap.strength.presente = {};
   cards.forEach(function (c) {
     if (c.id === falo.id) return;
@@ -590,7 +590,7 @@ step('spoken answers match by sound, guarded by the conjugation', function () {
 step('implied reviews: one form of a known-pattern verb is asked, a clean hit confirms the rest', function () {
   ['presente', 'perfeito', 'imperfeito', 'subjuntivo'].forEach(function (t) { Store.resetTopic(t); });
   var cards = topicCards(topicById('presente'));
-  var today = Math.floor(Date.now() / 86400000);
+  var today = Store.today();
   var snap = Store.snapshot();
   snap.mastered.presente = {}; snap.strength.presente = {};
   cards.forEach(function (c) {                       // the whole tab mastered a week+ ago: all due
@@ -825,4 +825,107 @@ step('mic mode switches off cleanly', function () {
   if (/mic-status/.test(registry.cardArea.innerHTML))
     throw new Error('mic status still rendered');
   return 'listening stopped, status gone, pref = false';
+});
+
+/* ---------------------------------------------------- the habit loop (1.18) */
+
+step('every answer feeds the day log; a drill answer makes its tab one of the learner\'s own', function () {
+  Store.resetAll();
+  Store.setPref('newPerDay', 2);          // a two-card deck, so the done screen is reachable below
+  goTo('#adverbs');                       // routing re-renders the top bar widget
+  if (registry.goalBtn.hidden !== true) throw new Error('goal widget shown on an empty profile');
+  if (Store.isActiveTopic('adverbs')) throw new Error('mounting a tab already made it active');
+  var before = Quiz.todayGoal();
+  if (before.active !== 0) throw new Error('goal counts tabs before any answer: ' + JSON.stringify(before));
+  var card = shownCard('adverbs');
+  registry.answerInput.value = card.answer;
+  registry.actionBtn.fire('click');
+  var d = Store.today();
+  if (Store.answeredOn(d) !== 1) throw new Error('day log reads ' + Store.answeredOn(d));
+  if (!Store.isActiveTopic('adverbs')) throw new Error('drilled tab not active');
+  var g = Quiz.todayGoal();
+  if (g.active !== 1 || g.done !== 1 || g.left !== 1)
+    throw new Error('goal after one hit: ' + JSON.stringify({ active: g.active, done: g.done, left: g.left }));
+  if (registry.goalBtn.hidden) throw new Error('goal widget still hidden');
+  if (!/🔥1/.test(registry.goalBtn.innerHTML)) throw new Error('streak not shown: ' + registry.goalBtn.innerHTML);
+  if (!/>1<\/text>/.test(registry.goalBtn.innerHTML)) throw new Error('ring does not show 1 left: ' + registry.goalBtn.innerHTML);
+  return 'day log 1; adverbs active; goal 1 done / 1 left; ring "1", 🔥1';
+});
+
+step('the done screen says "all caught up" when the learner\'s tabs are empty, and points at the tabs that are not', function () {
+  registry.actionBtn.fire('click');          // advance
+  var card = shownCard('adverbs');
+  registry.answerInput.value = card.answer;
+  registry.actionBtn.fire('click');
+  registry.actionBtn.fire('click');
+  var html = registry.cardArea.innerHTML;
+  if (!/done-screen/.test(html)) throw new Error('no done screen');
+  if (!/today-line caught-up/.test(html) || !/Tudo em dia por hoje/.test(html))
+    throw new Error('done screen lacks the caught-up line: ' + html.slice(-400));
+  if (!/1-day streak/.test(html)) throw new Error('streak missing from the caught-up line');
+  if (!/goal-btn done/.test(registry.goalBtn.className) || !/✓/.test(registry.goalBtn.innerHTML))
+    throw new Error('ring not in its done state: ' + registry.goalBtn.className + ' ' + registry.goalBtn.innerHTML);
+  // the Daily does not take a tab up: a single subjunctive card there must not add 20 new cards to the goal
+  Store.recordAnswer('subjuntivo', topicCards(topicById('subjuntivo'))[0].id, true);
+  if (Store.isActiveTopic('subjuntivo')) throw new Error('an answer outside a drill made the tab active');
+  // another drilled tab with work left shows up as a link, fullest first
+  Store.markDrilled('nouns');
+  App.refreshGoal();
+  var g = Quiz.todayGoal();
+  if (g.active !== 2 || g.left !== 2 || g.per[0].topic.id !== 'nouns')
+    throw new Error('goal with nouns active: ' + JSON.stringify({ active: g.active, left: g.left, first: g.per[0].topic.id }));
+  if (!/>2<\/text>/.test(registry.goalBtn.innerHTML)) throw new Error('ring not showing 2 left');
+  Quiz.rerender();
+  html = registry.cardArea.innerHTML;
+  if (!/Still today:/.test(html) || !/data-tab="nouns"[^>]*>Nouns <b>2<\/b>/.test(html))
+    throw new Error('done screen does not link the tab with work left: ' + html.slice(-400));
+  Store.setPref('newPerDay', NEW_PER_DAY);
+  return 'caught up + 🔥 1-day; Daily-only answer leaves subjuntivo out; nouns drilled -> "Still today: Nouns 2", ring 2';
+});
+
+step('a tab last drilled over ' + ACTIVE_DAYS + ' days ago leaves the goal', function () {
+  var snap = Store.snapshot();
+  var d = Store.today();
+  snap.drilled = { adverbs: d - ACTIVE_DAYS, nouns: d - ACTIVE_DAYS - 1 };
+  Store.applySynced(snap);
+  if (!Store.isActiveTopic('adverbs')) throw new Error('exactly ' + ACTIVE_DAYS + ' days ago should still count');
+  if (Store.isActiveTopic('nouns')) throw new Error(ACTIVE_DAYS + 1 + ' days ago still active');
+  return 'day ' + ACTIVE_DAYS + ' in, day ' + (ACTIVE_DAYS + 1) + ' out';
+});
+
+step('the streak counts consecutive days, forgives one gap, breaks on two, and survives an undone today', function () {
+  var d = Store.today();
+  function withDays(map) {
+    var snap = Store.snapshot();
+    var days = {};
+    Object.keys(map).forEach(function (k) { days[d - Number(k)] = map[k]; });
+    snap.days = days;
+    Store.applySynced(snap);
+    return Store.streak();
+  }
+  var st = withDays({ 0: 3, 1: 2, 3: 1 });          // today, yesterday, gap, three days ago
+  if (st.n !== 3 || !st.today || st.atRisk) throw new Error('gap forgiven: ' + JSON.stringify(st));
+  st = withDays({ 0: 1, 1: 1, 4: 1 });              // two missed days end the run
+  if (st.n !== 2) throw new Error('double gap not a break: ' + JSON.stringify(st));
+  st = withDays({ 1: 1, 2: 1 });                    // not yet today: yesterday's run still stands
+  if (st.n !== 2 || st.today || st.atRisk) throw new Error('undone today: ' + JSON.stringify(st));
+  st = withDays({ 2: 1, 3: 1 });                    // grace day spent: only today can save it
+  if (st.n !== 2 || st.today || !st.atRisk) throw new Error('at-risk: ' + JSON.stringify(st));
+  st = withDays({ 3: 1, 4: 1 });                    // two quiet days: gone
+  if (st.n !== 0) throw new Error('streak survived two quiet days: ' + JSON.stringify(st));
+  st = withDays({ 0: 5 });
+  if (st.n !== 1 || !/🔥1/.test((App.refreshGoal(), registry.goalBtn.innerHTML)))
+    throw new Error('single day: ' + JSON.stringify(st) + ' ' + registry.goalBtn.innerHTML);
+  return '3 over a gap; double gap -> 2; undone today keeps 2; grace spent = at risk; two quiet days -> 0';
+});
+
+step('sync merges the day log and the drilled-tab stamps by taking the higher value', function () {
+  var m = Sync._merge({ mastered: {}, strength: {}, daily: {}, days: { 20700: 4, 20701: 1 }, drilled: { presente: 20701 } },
+                      { mastered: {}, strength: {}, daily: {}, days: { 20701: 3, 20702: 2 }, drilled: { presente: 20690, nouns: 20702 } });
+  if (m.days[20700] !== 4 || m.days[20701] !== 3 || m.days[20702] !== 2) throw new Error('days merged to ' + JSON.stringify(m.days));
+  if (m.drilled.presente !== 20701 || m.drilled.nouns !== 20702) throw new Error('drilled merged to ' + JSON.stringify(m.drilled));
+  // a pre-1.18 blob without the sections merges cleanly
+  var legacy = Sync._merge({ mastered: {}, strength: {}, daily: {} }, { mastered: {}, strength: {}, daily: {}, days: { 20700: 1 } });
+  if (legacy.days[20700] !== 1 || Object.keys(legacy.drilled).length) throw new Error('legacy merge: ' + JSON.stringify(legacy));
+  return 'days: 4/3/2; drilled: presente 20701, nouns 20702; legacy blob fine';
 });

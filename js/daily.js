@@ -213,6 +213,7 @@ const Daily = (function () {
       Store.markMastered(card.topic, card.id);
       Store.recordAnswer(card.topic, card.id, true);
       if (window.App && App.updateTabPct) App.updateTabPct(card.topic);   // that topic's tab % follows
+      if (window.App && App.refreshGoal) App.refreshGoal();               // and the streak / ring
       save();
       requestAnimationFrame(() => {
         const t = document.querySelector('.conj-table-wrapper');
@@ -222,6 +223,7 @@ const Daily = (function () {
       failCard();          // records the miss
     } else {
       Store.recordAnswer(card.topic, card.id, false);
+      if (window.App && App.refreshGoal) App.refreshGoal();   // a miss still lights today's flame
       save();
       input.classList.add('wrong', 'shake');
       feedback.className = 'feedback err';
@@ -247,6 +249,7 @@ const Daily = (function () {
     const entry = cards[current];
     const card = entry.card;
     Store.recordAnswer(card.topic, card.id, false);
+    if (window.App && App.refreshGoal) App.refreshGoal();
     failed[current] = true;
     answered = true;
     if (attempts[current] === 0) attempts[current] = 1;
@@ -333,13 +336,3 @@ const Daily = (function () {
 
   return { mount: mount, rerender: render };
 })();
-
-let _toastTimer = 0;
-function showToast(msg) {
-  const el = document.getElementById('toast');
-  if (!el) return;
-  el.textContent = msg;
-  el.classList.add('show');
-  clearTimeout(_toastTimer);
-  _toastTimer = setTimeout(() => el.classList.remove('show'), 1800);
-}
