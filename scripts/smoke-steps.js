@@ -587,6 +587,59 @@ step('spoken answers match by sound, guarded by the conjugation', function () {
   return 'falão→falam, fasso→faço, falar→fala by sound; fala≠falo guarded; exact hypothesis wins';
 });
 
+step('implied reviews: one form of a known-pattern verb is asked, a clean hit confirms the rest', function () {
+  ['presente', 'perfeito', 'imperfeito', 'subjuntivo'].forEach(function (t) { Store.resetTopic(t); });
+  var cards = topicCards(topicById('presente'));
+  var today = Math.floor(Date.now() / 86400000);
+  var snap = Store.snapshot();
+  snap.mastered.presente = {}; snap.strength.presente = {};
+  cards.forEach(function (c) {                       // the whole tab mastered a week+ ago: all due
+    snap.mastered.presente[c.id] = 1;
+    snap.strength.presente[c.id] = { s: 1, m: c.id === 'falar|2' ? 2 : 0, l: 1, t: today - REVIEW_INTERVALS[0] - 1 };
+  });
+  Store.applySynced(snap);
+  goTo('#browse'); goTo('#presente');
+  var counts = Quiz._counts();
+  var regular = cards.filter(function (c) { return c.infer && c.infer.regular; }).length;
+  var irregular = cards.length - regular;
+  if (counts.due + counts.implied !== cards.length) throw new Error('due + implied = ' + (counts.due + counts.implied) + ', not the whole tab');
+  if (!(counts.implied > regular / 2)) throw new Error('only ' + counts.implied + ' of ' + regular + ' regular forms implied');
+  if (counts.due < irregular) throw new Error('irregular forms (' + irregular + ') must all be asked, due is ' + counts.due);
+  if (!/· \d+ due · \d+ implied$/.test(registry.focoChip.innerHTML)) throw new Error('chip reads "' + registry.focoChip.innerHTML + '"');
+  // falar: the most-missed form leads, its three siblings ride along
+  var falarAsked = cards.filter(function (c) { return c.infer && c.infer.lexeme === 'falar' && Quiz._tierOf(c.id) === 'due'; });
+  if (falarAsked.length !== 1 || falarAsked[0].id !== 'falar|2') throw new Error('falar lead is ' + falarAsked.map(function (c) { return c.id; }).join(','));
+  // walk the deck: a clean hit on the falar lead confirms falar|0/1/3 (clock reset, level kept)
+  var seen = 0, guard = 0, missLead = null;
+  while (registry.answerInput && guard++ < 600) {
+    var c = shownCard('presente');
+    if (c.id === 'falar|2') {
+      registry.answerInput.value = c.answer; registry.actionBtn.fire('click');
+      ['falar|0', 'falar|1', 'falar|3'].forEach(function (id) {
+        if (Store.cardState('presente', id) !== 'ok') throw new Error(id + ' not confirmed by implication: ' + Store.cardState('presente', id));
+        if (Store.reviewLevel('presente', id) !== 1) throw new Error(id + ' climbed to level ' + Store.reviewLevel('presente', id));
+      });
+      if (Store.reviewLevel('presente', 'falar|2') !== 2) throw new Error('the asked lead did not climb');
+      seen++;
+    } else if (!missLead && c.infer && c.infer.regular && Quiz._tierOf(c.id) === 'due' && c.infer.lexeme !== 'falar' &&
+               cards.filter(function (o) { return o.infer && o.infer.lexeme === c.infer.lexeme; }).length === 4) {
+      // miss another lead: its siblings must come back into the deck
+      missLead = c;
+      var before = parseInt(registry.statTotal.textContent, 10);
+      registry.answerInput.value = 'zzz-wrong'; registry.actionBtn.fire('click');
+      var after = parseInt(registry.statTotal.textContent, 10);
+      if (after !== before + 3) throw new Error('missing the lead "' + c.id + '" grew the deck ' + before + ' -> ' + after + ', expected +3');
+      seen++;
+    } else {
+      registry.answerInput.value = c.answer; registry.actionBtn.fire('click');
+    }
+    registry.actionBtn.fire('click');                // advance
+    if (seen === 2) break;
+  }
+  if (seen !== 2) throw new Error('did not reach both leads in ' + guard + ' rounds');
+  return counts.due + ' asked, ' + counts.implied + ' implied of ' + cards.length + '; falar|2 (most missed) led and confirmed its siblings at level 1; a missed lead reclaimed +3';
+});
+
 step('a miss makes only that form shaky; one right answer clears it', function () {
   Store.resetTopic('imperfeito');
   var cards = topicCards(topicById('imperfeito'));

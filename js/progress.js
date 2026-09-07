@@ -153,6 +153,10 @@ const Store = (function () {
       const e = state.strength[topicId] && state.strength[topicId][cardId];
       return e ? levelOf(e) : 0;
     },
+    misses(topicId, cardId) {
+      const e = state.strength[topicId] && state.strength[topicId][cardId];
+      return (e && e.m) || 0;
+    },
     /* Lexemes (the part of a card id before "|") with at least one mastered,
        non-shaky form in ANY topic — "the learner knows this word" (js/infer.js). */
     knownLexemes() {

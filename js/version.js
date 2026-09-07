@@ -24,8 +24,10 @@
 //      its UNSEEN forms — the flat-era rules had kept hundreds of cards "shaky" for weeks
 // 1.15 forgiving matching: a typed slip is a near-miss (clears, no level gain), spoken answers match by
 //      pt-BR sound key — both refused when another form of the topic is just as close
+// 1.16 implied reviews: of a known-pattern verb's due regular forms only the weakest is asked; a clean
+//      hit confirms the rest (clock reset, no climb), a miss reclaims them into the deck
 
-const APP_VERSION = '1.15.0';
+const APP_VERSION = '1.16.0';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name
