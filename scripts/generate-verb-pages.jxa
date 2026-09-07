@@ -4,6 +4,7 @@
 //
 // Reads js/data/verbs.js (the source of truth for verb forms) and emits one
 // crawlable HTML page per verb under verbs/, plus verbs/index.html, sitemap.xml
+// (which also lists the /ingles/ and /noruegues/ shells, see SISTER_APPS)
 // and robots.txt. The app itself renders client-side behind a hash router, which
 // search engines see as a single page — these static pages are what gets indexed.
 // Output is committed to the repo (GitHub Pages runs no build); re-run after any
@@ -261,7 +262,10 @@ sorted.forEach((v, i) => pages.push(verbPage(v, sorted[i - 1], sorted[i + 1])));
 pages.forEach(p => write(ROOT + '/' + p.file, p.html));
 
 const today = new Date().toISOString().slice(0, 10);
-const urls = [SITE_URL + '/'].concat(pages.map(p => p.url));
+// the two sister apps are hand-written shells, not generated here, but they
+// belong in the one sitemap (they are otherwise reachable only via the footer)
+const SISTER_APPS = ['/ingles/', '/noruegues/'];
+const urls = [SITE_URL + '/'].concat(SISTER_APPS.map(a => SITE_URL + a), pages.map(p => p.url));
 write(ROOT + '/sitemap.xml',
   '<?xml version="1.0" encoding="UTF-8"?>\n' +
   '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
