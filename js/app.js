@@ -27,6 +27,14 @@
     sheetTitle: 'Your progress',
     sheetToday: 'Today',
     sheetMilestones: 'Milestones',
+    sheetActivity: 'Activity',
+    heatSummary: '{n} of {total} days practised · {answers} answers',
+    heatDay: '{date} · {n} answers',
+    heatDayOne: '{date} · 1 answer',
+    heatDayNone: '{date} · nothing',
+    heatLess: 'less',
+    heatMore: 'more',
+    heatWeekdays: ['M', '', 'W', '', 'F', '', ''],   // row labels, Monday first; blanks keep the rows aligned
     sheetEarned: 'earned {date}',
     sheetClose: 'Close',
     sheetNoTitle: 'Drill a tab to take it up',
@@ -235,10 +243,43 @@
   /* One page for the learner's standing, opened from the goal ring: the title
      and streak, today's goal with links to the tabs that still have work, and
      the milestones — earned with their date, the rest dimmed with what they take. */
-  function dayToDate(day) {
+  function dayToLocal(day) {
     const d = new Date(day * 86400000);
-    return new Date(d.getTime() + d.getTimezoneOffset() * 60000)
-      .toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    return new Date(d.getTime() + d.getTimezoneOffset() * 60000);
+  }
+  function dayToDate(day) {
+    return dayToLocal(day).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  /* The activity heatmap: the last HEAT_WEEKS weeks of the day log as a
+     GitHub-style grid, one column a week (Monday at the top), each cell shaded
+     by the answers that day. The current week's days still to come are blank
+     cells, so the grid keeps its shape. Read straight from Store.answeredOn. */
+  const HEAT_WEEKS = 12;
+  function heatLevel(n) { return n === 0 ? 0 : n < 10 ? 1 : n < 30 ? 2 : n < 60 ? 3 : 4; }
+  function heatmapHtml() {
+    const today = Store.today();
+    const wd = (dayToLocal(today).getDay() + 6) % 7;           // Monday = 0
+    const first = today - wd - (HEAT_WEEKS - 1) * 7;
+    let cells = '', active = 0, answers = 0, past = 0;
+    for (let day = first; day < first + HEAT_WEEKS * 7; day++) {
+      if (day > today) { cells += '<span class="hm-cell future" aria-hidden="true"></span>'; continue; }
+      const n = Store.answeredOn(day);
+      past++;
+      if (n) { active++; answers += n; }
+      const label = n === 0 ? APP_STR.heatDayNone : n === 1 ? APP_STR.heatDayOne : APP_STR.heatDay;
+      cells += '<span class="hm-cell" data-l="' + heatLevel(n) + '"' + (day === today ? ' data-today="1"' : '') +
+        ' title="' + escapeHtml(tfill(label, { date: dayToDate(day), n: n })) + '"></span>';
+    }
+    return '' +
+      '<p class="hm-summary">' + escapeHtml(tfill(APP_STR.heatSummary, { n: active, total: past, answers: answers })) + '</p>' +
+      '<div class="hm" role="img" aria-label="' + escapeHtml(tfill(APP_STR.heatSummary, { n: active, total: past, answers: answers })) + '">' +
+        '<div class="hm-days" aria-hidden="true">' + APP_STR.heatWeekdays.map(w => '<span>' + escapeHtml(w) + '</span>').join('') + '</div>' +
+        '<div class="hm-grid">' + cells + '</div>' +
+      '</div>' +
+      '<p class="hm-legend" aria-hidden="true">' + escapeHtml(APP_STR.heatLess) +
+        ' <span class="hm-cell" data-l="0"></span><span class="hm-cell" data-l="1"></span><span class="hm-cell" data-l="2"></span>' +
+        '<span class="hm-cell" data-l="3"></span><span class="hm-cell" data-l="4"></span> ' + escapeHtml(APP_STR.heatMore) + '</p>';
   }
 
   function renderSheet() {
@@ -271,6 +312,8 @@
         (still.length ? '<p class="today-line">' + still.map(p =>
           '<button class="tab-link" type="button" data-tab="' + escapeHtml(p.topic.id) + '">' +
             escapeHtml(p.topic.label) + ' <b>' + p.left + '</b></button>').join('') + '</p>' : '') +
+        '<h3>' + escapeHtml(APP_STR.sheetActivity) + '</h3>' +
+        heatmapHtml() +
         '<h3>' + escapeHtml(APP_STR.sheetMilestones) + ' <span class="sheet-count">' + earned + ' / ' + ms.length + '</span></h3>' +
         '<div class="ms-grid">' + ms.map(m =>
           '<div class="ms' + (m.earned ? ' earned' : ' locked') + '" data-ms="' + escapeHtml(m.id) + '">' +

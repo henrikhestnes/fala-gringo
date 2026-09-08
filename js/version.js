@@ -65,7 +65,10 @@
 //      the review ladder, graduations, a whole verb, the Daily — earned with a toast; the goal ring now opens a
 //      progress sheet (title, streak, today's tabs, milestones) instead of jumping to the fullest tab
 
-const APP_VERSION = '1.21.0';
+// 1.22 the progress sheet shows a 12-week activity heatmap (Monday-first weeks, shaded by answers a day, from
+//      the day log), with a "N of M days practised · answers" line
+
+const APP_VERSION = '1.22.0';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

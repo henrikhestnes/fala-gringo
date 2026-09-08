@@ -927,6 +927,48 @@ html.sheet-open { overflow: hidden; }
 .sheet-today.caught-up { color: var(--green-ink); font-weight: 600; }
 .sheet-panel .today-line { justify-content: flex-start; margin-top: .3rem; }
 .sheet-count { color: var(--text-2); font-weight: 600; letter-spacing: 0; text-transform: none; font-size: .78rem; }
+/* activity heatmap: 12 week-columns of 7 day-cells, Monday at the top */
+.hm-summary { font-size: .82rem; color: var(--text-2); margin: 0 0 .45rem; }
+.hm { display: flex; gap: .35rem; align-items: stretch; }
+.hm-days {
+  display: grid;
+  grid-template-rows: repeat(7, 1fr);
+  font-size: .58rem;
+  font-weight: 700;
+  color: var(--text-3);
+  line-height: 1;
+  align-items: center;
+  width: .7rem;
+}
+.hm-grid {
+  flex: 1;
+  display: grid;
+  grid-template-rows: repeat(7, 1fr);
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(9px, 20px);   /* fills a phone, stays a compact strip on a desktop sheet */
+  justify-content: space-between;
+  gap: 3px;
+}
+.hm-cell {
+  display: block;
+  aspect-ratio: 1;
+  min-width: 9px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--border) 70%, var(--surface));
+}
+.hm-cell.future { background: transparent; }
+.hm-cell[data-l="1"] { background: color-mix(in srgb, var(--green) 30%, var(--surface)); }
+.hm-cell[data-l="2"] { background: color-mix(in srgb, var(--green) 55%, var(--surface)); }
+.hm-cell[data-l="3"] { background: color-mix(in srgb, var(--green) 80%, var(--surface)); }
+.hm-cell[data-l="4"] { background: var(--green); }
+.hm-cell[data-today="1"] { outline: 1.5px solid var(--text); outline-offset: -1.5px; }
+.hm-legend {
+  display: flex; align-items: center; gap: 3px;
+  font-size: .62rem; color: var(--text-3);
+  margin: .4rem 0 0; justify-content: flex-end;
+}
+.hm-legend .hm-cell { width: 10px; min-width: 10px; }
+
 .ms-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));

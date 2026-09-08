@@ -1217,3 +1217,24 @@ step('milestones are earned once with a toast, and the goal ring opens the progr
   return 'first card toasted once; seed -> daily7,m100,s7,top,verb; sheet: Iniciante, 7-day, 6/' + ids.length + ' earned, dates + descriptions, tab link; merge by earliest';
 });
 
+step('the progress sheet shows a 12-week heatmap read from the day log', function () {
+  Store.resetAll();
+  var d = Store.today();
+  var snap = Store.snapshot();
+  snap.days = {}; snap.days[d] = 5; snap.days[d - 1] = 12; snap.days[d - 2] = 35; snap.days[d - 3] = 70; snap.days[d - 90] = 9;   // the last one falls outside the window
+  Store.applySynced(snap);
+  App.openSheet();
+  var html = registry.sheet.innerHTML;
+  var cells = (html.match(/class="hm-cell" data-l="\d"(?: data-today="1")? title=/g) || []).length;   // grid cells only, not the legend swatches
+  var future = (html.match(/hm-cell future/g) || []).length;
+  if (cells + future !== 84) throw new Error(cells + ' cells + ' + future + ' future != 84');
+  var wd = (new Date(d * 86400000 + new Date(d * 86400000).getTimezoneOffset() * 60000).getDay() + 6) % 7;
+  if (future !== 6 - wd) throw new Error('future cells ' + future + ' for weekday ' + wd);
+  if (!/4 of \d+ days practised · 122 answers/.test(html)) throw new Error('summary: ' + (html.match(/hm-summary">[^<]*/) || [''])[0]);
+  var levels = (html.match(/data-l="(\d)"(?: data-today="1")? title=/g) || []).map(function (m) { return m.match(/data-l="(\d)"/)[1]; });
+  if (levels.slice(-4).join('') !== '4321') throw new Error('last four days shade as ' + levels.slice(-4).join(''));
+  if (!/data-l="1" data-today="1" title="[^"]*· 5 answers"/.test(html)) throw new Error('today not outlined with its count');
+  App.closeSheet();
+  return '84 cells, ' + future + ' future; 4 of ' + (84 - future) + ' days, 122 answers; shades 4-3-2-1 ending today';
+});
+
