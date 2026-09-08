@@ -70,8 +70,9 @@
 // 1.23 the answer card says when a verb form is irregular: an "irregular" tag by the pronunciation, the letters
 //      that break the regular pattern highlighted in the conjugation table (faço → ç, fizesse → i, quer → the
 //      dropped ending), and a line naming what the regular -ar/-er/-ir pattern would have given
+// 1.23.1 the Browse conjugation panels carry the same irregular marks, with a one-line legend per verb
 
-const APP_VERSION = '1.23.0';
+const APP_VERSION = '1.23.1';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

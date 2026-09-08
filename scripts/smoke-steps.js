@@ -10,6 +10,16 @@ step('app boots and renders the Browse view', function () {
   return rows + ' verb rows, ' + html.length + ' bytes of HTML';
 });
 
+step('Browse conjugation panels highlight the irregular letters', function () {
+  var html = registry.view.innerHTML;
+  if (!/data-speak="eu faço">fa<mark class="irr">ç<\/mark>o</.test(html)) throw new Error('faço not highlighted in Browse');
+  if (!/data-speak="você faz">faz<mark class="irr drop"/.test(html)) throw new Error('dropped ending of faz not marked');
+  if (!/data-speak="eu falo">falo</.test(html)) throw new Error('falo not left plain');
+  var legends = (html.match(/forms? break the regular -(ar|er|ir) pattern/g) || []).length;
+  if (legends < 30) throw new Error('only ' + legends + ' legends');
+  return 'faço → ç, faz → dashed gap, falo plain; ' + legends + ' verbs carry a legend';
+});
+
 step('tab strip lists all 14 tabs, captioned by tier', function () {
   var tabs = (registry.tabs.innerHTML.match(/data-tab="/g) || []).length;
   if (tabs !== 14) throw new Error('got ' + tabs + ' tabs');

@@ -11,22 +11,39 @@ const Browse = (function () {
 
   let shuffled = false;
 
+  /* The same irregularity marks as the drill's answer card (topics.js: the
+     letters that differ from the regular oracle, a dashed gap for a dropped
+     ending), with one legend line under the panel when the verb has any. */
   function conjPanelHtml(verb) {
     const V = window.DATA_VERBS;
+    const m = verb.pt.match(/(ar|er|ir)$/);
+    let irregular = 0;
     const blocks = V.tenses.map(t => {
       if (!verb.tenses[t.key]) return '';   // the subjunctive is optional per verb
+      const expected = regularExpectation(verb, t.key);
       const lines = verb.tenses[t.key].map((r, i) => {
         const who = r.person || V.personsShort[i];
-        return '<div class="conj-line">' +
+        const span = irregularSpan(r.form, expected && expected[i]);
+        if (span) irregular++;
+        return '<div class="conj-line' + (span ? ' is-irregular' : '') + '">' +
           '<span class="who">' + escapeHtml(who) + '</span>' +
           '<span class="form" data-speak="' + escapeHtml(who + ' ' + r.form) + '">' +
-            escapeHtml(r.form) + '</span>' +
+            markIrregular(r.form, span) + '</span>' +
           (r.meaning ? '<span class="gloss">' + escapeHtml(r.meaning) + '</span>' : '') +
         '</div>'; }).join('');
       return '<div class="conj-tense"><div class="conj-title">' + escapeHtml(t.label) + '</div>' +
              lines + '</div>';
     }).join('');
-    return '<div class="conjugation-panel"><div class="conj-body">' + blocks + '</div></div>';
+    let legend = '';
+    if (irregular) {
+      legend = '<div class="conj-note">' + irregular + ' form' + (irregular === 1 ? '' : 's') +
+        ' break the regular -' + m[1] + ' pattern — the highlighted letters are what changes' +
+        ' (a dashed gap: the ending is dropped).</div>';
+    } else if (verb.irregular && !m) {
+      legend = '<div class="conj-note">Irregular verb — ' + escapeHtml(verb.pt) +
+        ' follows no -ar/-er/-ir pattern, so its forms are learnt by heart.</div>';
+    }
+    return '<div class="conjugation-panel"><div class="conj-body">' + blocks + '</div>' + legend + '</div>';
   }
 
   function rowHtml(verb, num, color) {
