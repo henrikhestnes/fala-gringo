@@ -59,7 +59,9 @@
 //      the Daily's date-seeded pick changes once with the order, accepted
 // 1.20.1 /ingles/ and /noruegues/ wear their flags in the top bar and favicon (🇺🇸 for 🗽, 🇳🇴 for 🏔️)
 
-const APP_VERSION = '1.20.1';
+// 1.20.2 the tab strip captions its tiers: INICIANTE · INTERMEDIÁRIO · AVANÇADO open each run of tabs
+
+const APP_VERSION = '1.20.2';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

@@ -230,3 +230,10 @@ step('every drill tab carries a tier, and the title by the flame reads the highe
   return TOPICS.filter(function (t) { return t.kind === 'quiz'; }).map(function (t) { return t.id + '=' + t.tier; }).join(' ') + '; title ' + name;
 });
 
+step('the tab strip captions each tier once, in order', function () {
+  var labels = (registry.tabs.innerHTML.match(/tier-label" data-tier="(\d)"/g) || []).map(function (m) { return m.slice(-2, -1); });
+  var tiers = []; TOPICS.forEach(function (t) { if (t.kind === 'quiz' && tiers.indexOf(t.tier) < 0) tiers.push(t.tier); });
+  if (labels.join('') !== tiers.join('')) throw new Error('captions ' + labels.join('') + ' vs tiers ' + tiers.join(''));
+  return 'captions for tiers ' + labels.join(', ');
+});
+

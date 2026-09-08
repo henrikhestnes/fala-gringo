@@ -103,16 +103,27 @@
     return { text: pct + '%', title: t.tier ? tfill(APP_STR.tierTitle, { tier: tierName(t.tier) }) : '' };
   }
 
+  /* The strip is stacked by tier, and says so: a small caption opens each
+     tier's run of tabs (Iniciante · Presente Nouns … | Intermediário · …), so a
+     newcomer sees where to start and what comes after without a tooltip. The
+     captions are presentational — the tabs themselves carry the level in their
+     title, and the learner's own level sits by the flame. */
   function renderTabs() {
     const activeId = currentTopicId();
+    let lastTier = 0;
     document.getElementById('tabs').innerHTML = TOPICS.map(t => {
-      let extra = '', title = '';
+      let extra = '', title = '', caption = '';
       if (t.kind === 'quiz') {
         const b = tabBadge(t);
         extra = '<span class="pct">' + b.text + '</span>';
         title = b.title;
+        if (t.tier && t.tier !== lastTier) {
+          caption = '<span class="tier-label" data-tier="' + t.tier + '" aria-hidden="true">' +
+            escapeHtml(tierName(t.tier)) + '</span>';
+          lastTier = t.tier;
+        }
       }
-      return '<button class="tab' + (t.kind === 'daily' ? ' daily' : '') + '" role="tab" ' +
+      return caption + '<button class="tab' + (t.kind === 'daily' ? ' daily' : '') + '" role="tab" ' +
         'aria-selected="' + (t.id === activeId) + '" data-tab="' + t.id + '"' +
         (title ? ' title="' + escapeHtml(title) + '"' : '') + '>' +
         escapeHtml(t.label) + extra + '</button>';

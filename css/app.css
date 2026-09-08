@@ -352,6 +352,26 @@ button { cursor: pointer; touch-action: manipulation; }
   opacity: .7;
   font-weight: 500;
 }
+/* Tier captions inside the strip: a quiet uppercase word with a rule before it,
+   inked in the level's colour (green / yellow / blue — the flag's own three). */
+.tier-label {
+  align-self: center;
+  flex: none;
+  font-size: .6rem;
+  font-weight: 800;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--text-3);
+  padding: 0 .15rem 0 .6rem;
+  margin-left: .2rem;
+  border-left: 1.5px solid var(--border-strong);
+  line-height: 1.6;
+}
+.tier-label[data-tier="1"] { color: var(--green-ink); }
+.tier-label[data-tier="2"] { color: var(--yellow-ink); }
+.tier-label[data-tier="3"] { color: var(--blue-ink); }
+
 .tab.daily {
   border-color: var(--yellow);
   color: var(--yellow-ink);

@@ -10,10 +10,17 @@ step('app boots and renders the Browse view', function () {
   return rows + ' verb rows, ' + html.length + ' bytes of HTML';
 });
 
-step('tab strip lists all 14 tabs', function () {
+step('tab strip lists all 14 tabs, captioned by tier', function () {
   var tabs = (registry.tabs.innerHTML.match(/data-tab="/g) || []).length;
   if (tabs !== 14) throw new Error('got ' + tabs + ' tabs');
-  return '14 tabs incl. Browse + Daily';
+  var labels = registry.tabs.innerHTML.match(/tier-label" data-tier="(\d)"[^>]*>([^<]*)</g) || [];
+  if (labels.length !== 3) throw new Error(labels.length + ' tier captions: ' + labels.join(' | '));
+  if (!/data-tier="1"[^>]*>Iniciante<\/span><button class="tab" role="tab"[^>]*data-tab="presente"/.test(registry.tabs.innerHTML))
+    throw new Error('Iniciante caption not right before Presente');
+  if (!/Intermediário<\/span><button[^>]*data-tab="perfeito"/.test(registry.tabs.innerHTML) ||
+      !/Avançado<\/span><button[^>]*data-tab="subjuntivo"/.test(registry.tabs.innerHTML))
+    throw new Error('Intermediário / Avançado captions misplaced');
+  return '14 tabs incl. Browse + Daily; captions before Presente, Passado, Subjuntivo';
 });
 
 step('Hard Mode (Modo Raiz) is the default on a fresh profile', function () {
