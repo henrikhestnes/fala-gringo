@@ -71,8 +71,9 @@
 //      that break the regular pattern highlighted in the conjugation table (faço → ç, fizesse → i, quer → the
 //      dropped ending), and a line naming what the regular -ar/-er/-ir pattern would have given
 // 1.23.1 the Browse conjugation panels carry the same irregular marks, with a one-line legend per verb
+// 1.23.2 the brand in the top bar (flag + name) is a link to the app's front page, in all three apps
 
-const APP_VERSION = '1.23.1';
+const APP_VERSION = '1.23.2';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

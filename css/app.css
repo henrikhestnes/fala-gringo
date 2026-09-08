@@ -171,7 +171,11 @@ button { cursor: pointer; touch-action: manipulation; }
   text-transform: uppercase;
   letter-spacing: .04em;
   margin-right: auto;
+  color: inherit;            /* the brand is a link home (index.html) that keeps its own look */
+  text-decoration: none;
 }
+.brand:hover { color: var(--green-ink); }
+.brand:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; border-radius: 4px; }
 
 /* Inline SVG Brazilian flag; fixed flag colors in both themes. */
 .brand-flag {
