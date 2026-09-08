@@ -72,8 +72,11 @@
 //      dropped ending), and a line naming what the regular -ar/-er/-ir pattern would have given
 // 1.23.1 the Browse conjugation panels carry the same irregular marks, with a one-line legend per verb
 // 1.23.2 the brand in the top bar (flag + name) is a link to the app's front page, in all three apps
+// 1.23.3 fix: that link was index.html, which the host redirects to ./ — the service worker then served the
+//        redirected response to a navigation and Chrome failed the load; the link is ./ (index.html from disk),
+//        the worker caches the pages under ./ only and strips the redirected flag from anything it serves
 
-const APP_VERSION = '1.23.2';
+const APP_VERSION = '1.23.3';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

@@ -450,6 +450,12 @@
   window.addEventListener('hashchange', route);
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
 
+  // The brand links home as "./" (the host redirects index.html there, and the
+  // service worker must never hand a redirected response to a navigation).
+  // Opened from disk "./" would be a folder listing, so point at the file there.
+  if (location.protocol === 'file:')
+    document.querySelectorAll('a.brand').forEach(a => { a.setAttribute('href', 'index.html'); });
+
   applyTheme();
   updateModeButton();
   route();
