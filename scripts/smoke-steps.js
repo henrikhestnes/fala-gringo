@@ -1149,3 +1149,71 @@ step('the Daily keeps a permanent log: strict streak in the header and the share
   return 'backfilled 3 days -> header "3-day streak, finish today"; 7 give-ups -> 0/7, "4-day streak" in the share string, 8 rows, today marked; gap -> 1, not shared; merge by max';
 });
 
+/* --------------------------------------------------------- milestones (1.21) */
+
+step('milestones are earned once with a toast, and the goal ring opens the progress sheet', function () {
+  Store.resetAll();
+  Store.setPref('newPerDay', NEW_PER_DAY); Store.setPref('goalNew', GOAL_NEW); Store.setPref('goalMax', GOAL_MAX);
+  goTo('#nouns');
+  App.refreshGoal();
+  if (Milestones.check().length) throw new Error('a fresh profile earned something');
+  var ids = Milestones.list().map(function (m) { return m.id; });
+  ['first', 'm100', 's7', 'top', 'grad1', 'tier1', 'tier2', 'tier3', 'verb', 'daily7', 'dstreak7'].forEach(function (id) {
+    if (ids.indexOf(id) < 0) throw new Error('main app lacks milestone ' + id + ': ' + ids.join(','));
+  });
+  // the first correct answer earns "first card" — announced once
+  registry.toast.textContent = '';
+  var card = shownCard('nouns');
+  registry.answerInput.value = card.answer;
+  registry.actionBtn.fire('click');
+  if (!Store.milestoneOn('first')) throw new Error('first card not stamped');
+  if (!/🏅 🌱 First card/.test(registry.toast.textContent)) throw new Error('toast: "' + registry.toast.textContent + '"');
+  registry.toast.textContent = '';
+  registry.actionBtn.fire('click');
+  card = shownCard('nouns');
+  registry.answerInput.value = card.answer;
+  registry.actionBtn.fire('click');
+  if (registry.toast.textContent) throw new Error('announced again: ' + registry.toast.textContent);
+  // seeded standing: 120 mastered, a 7-day streak, a level-5 card, a perfect Daily, a whole verb at level 3
+  var d = Store.today();
+  var snap = Store.snapshot();
+  var nouns = topicCards(topicById('nouns'));
+  snap.mastered.presente = {}; snap.strength.presente = {};
+  topicCards(topicById('presente')).slice(0, 120).forEach(function (c) { snap.mastered.presente[c.id] = 1; snap.strength.presente[c.id] = { s: 1, m: 0, l: 1, t: d, i: d }; });
+  for (var k = 0; k < 7; k++) snap.days[d - k] = 1;
+  var lastP = topicCards(topicById('presente')).slice(-1)[0];          // not one of ser's forms, which the loop below sets to level 3
+  snap.mastered.presente[lastP.id] = 1;
+  snap.strength.presente[lastP.id] = { s: 5, m: 0, l: 5, t: d, i: d - 200 };
+  snap.dailyDone = {}; snap.dailyDone['20260901'] = 7;
+  ['presente', 'perfeito', 'imperfeito', 'subjuntivo'].forEach(function (tid) {
+    snap.mastered[tid] = snap.mastered[tid] || {}; snap.strength[tid] = snap.strength[tid] || {};
+    topicCards(topicById(tid)).filter(function (c) { return c.id.indexOf('ser|') === 0; }).forEach(function (c) {
+      snap.mastered[tid][c.id] = 1; snap.strength[tid][c.id] = { s: 3, m: 0, l: 3, t: d - 1, i: d - 30 };
+    });
+  });
+  Store.applySynced(snap);
+  var fresh = Milestones.check().map(function (m) { return m.id; }).sort().join(',');
+  if (fresh !== 'daily7,m100,s7,top,verb') throw new Error('earned: ' + fresh);
+  if (Milestones.check().length) throw new Error('earned twice');
+  // the sheet: tier, streak, today's tab links, milestone grid with dates
+  registry.goalBtn.fire('click');
+  if (registry.sheet.hidden) throw new Error('sheet did not open');
+  var html = registry.sheet.innerHTML;
+  if (!/sheet-tier">Iniciante</.test(html)) throw new Error('sheet lacks the tier: ' + html.slice(0, 400));
+  if (!/7-day streak/.test(html)) throw new Error('sheet lacks the streak');
+  var earned = (html.match(/class="ms earned"/g) || []).length, locked = (html.match(/class="ms locked"/g) || []).length;
+  if (earned !== 6 || locked !== ids.length - 6) throw new Error(earned + ' earned / ' + locked + ' locked of ' + ids.length);
+  if (!/data-ms="m100"[^>]*>.*?earned \d+ \w+ \d{4}</.test(html)) throw new Error('earned card lacks its date');
+  if (!/data-ms="s30"[^>]*>.*?A month of showing up/.test(html)) throw new Error('locked card lacks its description');
+  if (!/data-tab="nouns"/.test(html)) throw new Error('sheet lacks the tab link for today');
+  // a tab link routes and closes the sheet; the ring toggles it
+  goTo('#nouns');
+  if (!registry.sheet.hidden) throw new Error('sheet still open after routing');
+  registry.goalBtn.fire('click'); registry.goalBtn.fire('click');
+  if (!registry.sheet.hidden) throw new Error('second tap did not close the sheet');
+  var m = Sync._merge({ mastered: {}, strength: {}, daily: {}, milestones: { first: 20700 } },
+                      { mastered: {}, strength: {}, daily: {}, milestones: { first: 20690, s7: 20705 } });
+  if (m.milestones.first !== 20690 || m.milestones.s7 !== 20705) throw new Error('merge: ' + JSON.stringify(m.milestones));
+  return 'first card toasted once; seed -> daily7,m100,s7,top,verb; sheet: Iniciante, 7-day, 6/' + ids.length + ' earned, dates + descriptions, tab link; merge by earliest';
+});
+

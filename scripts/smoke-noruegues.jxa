@@ -21,7 +21,8 @@ const CONFIG =
   "window.APP_SYNC_APP = 'noruegues';\n" +
   "window.APP_STRINGS = { answerIs: 'A resposta é', masteredLine: '{n} de {total} cartas dominadas', statKnown: 'Certas', " +
   "focoNew: '{n} novas', focoDue: '{n} p/ revisar', emptyFocoWaiting: '{n} esperam por amanhã', " +
-  "syncTitleOff: 'Sync desligado — toque para conectar seus aparelhos' };\n" +
+  "syncTitleOff: 'Sync desligado — toque para conectar seus aparelhos', " +
+  "sheetTitle: 'Seu progresso', sheetMilestones: 'Marcos', milestones: { first: ['Primeira carta', 'Sua primeira carta dominada.'] } };\n" +
   // the page's spoken-digit table, reduced to what the mic step asserts on
   "window.APP_SPOKEN_DIGITS = function (t) { return String(t).replace(/\\b7\\b/g, 'sju').replace(/\\b20\\b/g, 'tjue'); };\n";
 
@@ -31,7 +32,7 @@ const FILES = [
   'js/lib/text.js', 'js/lib/tts.js', 'js/lib/stt.js', 'js/lib/fx.js', 'js/progress.js',
   'noruegues/js/data/verbos.js', 'noruegues/js/data/substantivos.js', 'noruegues/js/data/frases.js',
   'noruegues/js/data/numeros.js', 'noruegues/js/data/palavrinhas.js', 'noruegues/js/topics.js',
-  'js/quiz.js', 'js/app.js', 'js/lib/sync.js', 'js/version.js',
+  'js/quiz.js', 'js/milestones.js', 'js/app.js', 'js/lib/sync.js', 'js/version.js',
   'scripts/smoke-noruegues-steps.js'
 ];
 

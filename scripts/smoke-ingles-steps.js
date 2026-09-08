@@ -203,3 +203,16 @@ step('the tab strip captions each tier once, in order', function () {
   return 'captions for tiers ' + labels.join(', ');
 });
 
+step('milestones list only what this app can reach; the sheet opens in Portuguese', function () {
+  var ids = Milestones.list().map(function (m) { return m.id; });
+  ['verb', 'daily7', 'dstreak7', 'tier1'].forEach(function (id) { if (ids.indexOf(id) >= 0) throw new Error(id + ' should not apply here: ' + ids.join(',')); });
+  if (ids.indexOf('first') < 0 || ids.indexOf('s7') < 0) throw new Error('core milestones missing: ' + ids.join(','));
+  if (!Store.milestoneOn('first')) throw new Error('the correct answers above did not earn "first"');
+  registry.goalBtn.fire('click');
+  if (registry.sheet.hidden) throw new Error('sheet did not open');
+  if (!/Seu progresso/.test(registry.sheet.innerHTML) || !/Marcos/.test(registry.sheet.innerHTML) || !/Primeira carta/.test(registry.sheet.innerHTML))
+    throw new Error('sheet not in Portuguese: ' + registry.sheet.innerHTML.slice(0, 300));
+  registry.goalBtn.fire('click');
+  return ids.length + ' milestones: ' + ids.join(' ');
+});
+

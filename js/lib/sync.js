@@ -137,7 +137,7 @@ const Sync = (function () {
   }
 
   function mergeStates(x, y) {
-    const out = { mastered: {}, strength: {}, daily: {}, dailyDone: {}, days: {}, drilled: {}, graduated: {} };
+    const out = { mastered: {}, strength: {}, daily: {}, dailyDone: {}, days: {}, drilled: {}, graduated: {}, milestones: {} };
 
     eachKey(x.mastered, y.mastered, (topic, a, b) => {
       out.mastered[topic] = Object.assign({}, a || {}, b || {});
@@ -181,6 +181,7 @@ const Sync = (function () {
     eachKey(x.dailyDone || {}, y.dailyDone || {}, (day, a, b) => { out.dailyDone[day] = Math.max(a || 0, b || 0); });
     // a graduation happened once: the earliest day either device saw it
     eachKey(x.graduated || {}, y.graduated || {}, (topic, a, b) => { out.graduated[topic] = Math.min(a || Infinity, b || Infinity); });
+    eachKey(x.milestones || {}, y.milestones || {}, (id, a, b) => { out.milestones[id] = Math.min(a || Infinity, b || Infinity); });
 
     return out;
   }
@@ -198,7 +199,7 @@ const Sync = (function () {
       })
       .then(remote => {
         const local = Store.snapshot();
-        const merged = mergeStates(local, remote || { mastered: {}, strength: {}, daily: {}, dailyDone: {}, days: {}, drilled: {}, graduated: {} });
+        const merged = mergeStates(local, remote || { mastered: {}, strength: {}, daily: {}, dailyDone: {}, days: {}, drilled: {}, graduated: {}, milestones: {} });
         const mergedJson = JSON.stringify(merged);
         markOk();
         if (mergedJson !== JSON.stringify(local)) {

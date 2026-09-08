@@ -360,6 +360,7 @@ const Daily = (function () {
       '</div>';
 
     document.getElementById('copyBtn').addEventListener('click', copyResult);
+    if (window.App && App.refreshGoal) App.refreshGoal();   // the finished day may earn a milestone
     if (allFirst) launchFireworks();
   }
 
@@ -378,5 +379,5 @@ const Daily = (function () {
     }
   }
 
-  return { mount: mount, rerender: render };
+  return { mount: mount, rerender: render, streak: dailyStreak };
 })();

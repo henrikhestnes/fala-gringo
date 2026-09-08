@@ -61,7 +61,11 @@
 
 // 1.20.2 the tab strip captions its tiers: INICIANTE · INTERMEDIÁRIO · AVANÇADO open each run of tabs
 
-const APP_VERSION = '1.20.2';
+// 1.21 milestones (js/milestones.js): ~a dozen markers tied to learning — cards mastered, the streak, the top of
+//      the review ladder, graduations, a whole verb, the Daily — earned with a toast; the goal ring now opens a
+//      progress sheet (title, streak, today's tabs, milestones) instead of jumping to the fullest tab
+
+const APP_VERSION = '1.21.0';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

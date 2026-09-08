@@ -16,7 +16,7 @@ const CORE = [
   'js/data/adjectives.js', 'js/data/adverbs.js', 'js/data/connecting.js',
   'js/data/numbers.js', 'js/data/glossary.js', 'js/data/sentences.js',
   'js/topics.js', 'js/infer.js', 'js/quiz.js', 'js/browse.js', 'js/daily.js',
-  'js/app.js', 'js/lib/sync.js', 'js/version.js',
+  'js/milestones.js', 'js/app.js', 'js/lib/sync.js', 'js/version.js',
   // the /ingles/ subpage (English for Brazilians) shares the engine above and
   // registers this same root worker, so its own files ride in the same cache
   'ingles/', 'ingles/index.html', 'ingles/js/topics.js',

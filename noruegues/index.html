@@ -52,6 +52,7 @@
 </footer>
 
 <div class="toast" id="toast"></div>
+<div class="sheet" id="sheet" hidden></div>
 
 <!-- Mesma arquitetura do app principal e do /ingles/: scripts clássicos, sem
      build. O motor (quiz.js, app.js, progress.js, js/lib/) é COMPARTILHADO
@@ -147,6 +148,32 @@ window.APP_STRINGS = {
   goalDone: 'Tudo em dia por hoje! Revisões feitas, novas de hoje feitas.',
   goalHit: 'Meta do dia batida! Ainda esperam {n} revisões — continue se quiser.',
   todayGoalHit: 'Meta do dia batida! Ainda esperam {n} revisões — continue se quiser.',
+  // marcos + a folha de progresso (js/milestones.js, js/app.js)
+  milestoneToast: '🏅 {label}',
+  sheetTitle: 'Seu progresso',
+  sheetToday: 'Hoje',
+  sheetMilestones: 'Marcos',
+  sheetEarned: 'em {date}',
+  sheetClose: 'Fechar',
+  sheetNoTitle: 'Treine uma aba para pegá-la',
+  streakNone: 'sem sequência ainda — hoje começa uma',
+  milestones: {
+    first:    ['Primeira carta', 'Sua primeira carta dominada.'],
+    m100:     ['100 cartas', '100 cartas dominadas nas suas abas.'],
+    m500:     ['500 cartas', '500 cartas dominadas nas suas abas.'],
+    m1000:    ['1.000 cartas', '1.000 cartas dominadas nas suas abas.'],
+    s7:       ['7 dias seguidos', 'Uma semana praticando sem falhar.'],
+    s30:      ['30 dias seguidos', 'Um mês aparecendo todo dia.'],
+    s100:     ['100 dias seguidos', 'Cem dias. Isso é constância.'],
+    top:      ['Topo da escada', 'Uma carta confirmada em cinco dias diferentes — a revisão de 120 dias.'],
+    grad1:    ['Primeira formatura', 'Uma aba inteira no nível 3 ou mais de revisão.'],
+    tier1:    ['{tier} completo', 'Todas as abas de {tier} formadas.'],
+    tier2:    ['{tier} completo', 'Todas as abas de {tier} formadas.'],
+    tier3:    ['{tier} completo', 'Todas as abas de {tier} formadas.'],
+    verb:     ['Um verbo inteiro', 'Todas as formas de um verbo no nível 3 ou mais.'],
+    daily7:   ['Daily perfeito', 'As sete cartas do Daily de primeira.'],
+    dstreak7: ['7 Dailies seguidos', 'O Daily fechado sete dias em sequência.']
+  },
   streakDays: '🔥 {n} dias seguidos',
   streakDay: '🔥 1 dia',
   streakAtRisk: 'pratique hoje pra não perder',
@@ -193,6 +220,7 @@ window.APP_STRINGS = {
 <script src="js/data/palavrinhas.js"></script>
 <script src="js/topics.js"></script>
 <script src="../js/quiz.js"></script>
+<script src="../js/milestones.js"></script>
 <script src="../js/app.js"></script>
 <script src="../js/lib/sync.js"></script>
 <script src="../js/version.js"></script>

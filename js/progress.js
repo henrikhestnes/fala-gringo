@@ -59,7 +59,7 @@ const GRADUATE_LEVEL = 3;
 const GRADUATE_SHARE = 0.8;
 
 const Store = (function () {
-  const empty = { mastered: {}, daily: {}, dailyDone: {}, prefs: {}, strength: {}, days: {}, drilled: {}, graduated: {} };
+  const empty = { mastered: {}, daily: {}, dailyDone: {}, prefs: {}, strength: {}, days: {}, drilled: {}, graduated: {}, milestones: {} };
   let state;
 
   function load() {
@@ -75,7 +75,8 @@ const Store = (function () {
         strength: parsed.strength && typeof parsed.strength === 'object' ? parsed.strength : {},
         days: parsed.days && typeof parsed.days === 'object' ? parsed.days : {},
         drilled: parsed.drilled && typeof parsed.drilled === 'object' ? parsed.drilled : {},
-        graduated: parsed.graduated && typeof parsed.graduated === 'object' ? parsed.graduated : {}
+        graduated: parsed.graduated && typeof parsed.graduated === 'object' ? parsed.graduated : {},
+        milestones: parsed.milestones && typeof parsed.milestones === 'object' ? parsed.milestones : {}
       };
     } catch (e) {
       return JSON.parse(JSON.stringify(empty));
@@ -158,6 +159,7 @@ const Store = (function () {
       state.days = {};
       state.drilled = {};
       state.graduated = {};
+      state.milestones = {};
       save();
     },
 
@@ -290,6 +292,22 @@ const Store = (function () {
       save();
       return true;
     },
+    /* Milestones (js/milestones.js): id -> the day it was earned. */
+    milestoneOn(id) {
+      return state.milestones[id] || 0;
+    },
+    markMilestone(id) {
+      if (state.milestones[id]) return false;
+      state.milestones[id] = today();
+      save();
+      return true;
+    },
+    /* Any card anywhere at this review level or higher (not shaky). */
+    hasLevel(level) {
+      return Object.keys(state.strength).some(topicId =>
+        Object.keys(state.strength[topicId]).some(id =>
+          levelOf(state.strength[topicId][id]) >= level && this.cardState(topicId, id) !== 'shaky'));
+    },
     /* Cards answered correctly today in a topic (the done half of the goal ring). */
     doneToday(topicId) {
       const t = state.strength[topicId] || {};
@@ -342,7 +360,7 @@ const Store = (function () {
     snapshot() {
       return JSON.parse(JSON.stringify({
         mastered: state.mastered, strength: state.strength, daily: state.daily, dailyDone: state.dailyDone,
-        days: state.days, drilled: state.drilled, graduated: state.graduated
+        days: state.days, drilled: state.drilled, graduated: state.graduated, milestones: state.milestones
       }));
     },
     applySynced(data) {
@@ -353,6 +371,7 @@ const Store = (function () {
       state.days = data.days && typeof data.days === 'object' ? data.days : {};
       state.drilled = data.drilled && typeof data.drilled === 'object' ? data.drilled : {};
       state.graduated = data.graduated && typeof data.graduated === 'object' ? data.graduated : {};
+      state.milestones = data.milestones && typeof data.milestones === 'object' ? data.milestones : {};
       save();
     },
 

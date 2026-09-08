@@ -21,14 +21,15 @@ const CONFIG =
   "window.APP_SYNC_APP = 'ingles';\n" +
   "window.APP_STRINGS = { answerIs: 'A resposta é', masteredLine: '{n} de {total} cartas dominadas', statKnown: 'Certas', " +
   "focoNew: '{n} novas', focoDue: '{n} p/ revisar', emptyFocoWaiting: '{n} esperam por amanhã', " +
-  "syncTitleOff: 'Sync desligado — toque para conectar seus aparelhos' };\n";
+  "syncTitleOff: 'Sync desligado — toque para conectar seus aparelhos', " +
+  "sheetTitle: 'Seu progresso', sheetMilestones: 'Marcos', milestones: { first: ['Primeira carta', 'Sua primeira carta dominada.'] } };\n";
 
 const FILES = [
   'scripts/dom-stub.js',
   null,  // CONFIG slots in here, after the stub creates `window`
   'js/lib/text.js', 'js/lib/tts.js', 'js/lib/stt.js', 'js/lib/fx.js', 'js/progress.js',
   'ingles/js/data/irregulares.js', 'ingles/js/data/phrasal.js', 'ingles/js/topics.js',
-  'js/quiz.js', 'js/app.js', 'js/lib/sync.js', 'js/version.js',
+  'js/quiz.js', 'js/milestones.js', 'js/app.js', 'js/lib/sync.js', 'js/version.js',
   'scripts/smoke-ingles-steps.js'
 ];
 

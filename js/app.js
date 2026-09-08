@@ -22,7 +22,15 @@
     tierNames: ['Iniciante', 'Intermediário', 'Avançado'],
     tierTitle: 'Level: {tier}',
     graduatedTitle: '🎓 Graduated — {pct}% of the cards at review level 3 or higher',
-    learnerTitle: 'You: {tier} — the highest level among the tabs you have taken up'
+    learnerTitle: 'You: {tier} — the highest level among the tabs you have taken up',
+    milestoneToast: '🏅 {label}',
+    sheetTitle: 'Your progress',
+    sheetToday: 'Today',
+    sheetMilestones: 'Milestones',
+    sheetEarned: 'earned {date}',
+    sheetClose: 'Close',
+    sheetNoTitle: 'Drill a tab to take it up',
+    streakNone: 'no streak yet — today starts one'
   }, window.APP_STRINGS || {});
 
   function toast(msg) { if (typeof showToast === 'function') showToast(msg); }
@@ -210,21 +218,89 @@
       toast(doneText + (st.n ? ' ' + streakLabel(st) : ''));
     }
     lastLeft = goal.left;
+
+    // anything newly earned by the answer that triggered this refresh
+    if (window.Milestones) {
+      const fresh = Milestones.check();
+      if (fresh.length) {
+        btn.classList.add('celebrate');
+        toast(fresh.map(m => tfill(APP_STR.milestoneToast, { label: m.icon + ' ' + m.label })).join(' · '));
+      }
+    }
+    if (!document.getElementById('sheet').hidden) renderSheet();   // keep an open sheet live
   }
 
-  /* Tap: go where today's work is (the fullest tab), or hear that there is none. */
-  function goalTap() {
-    const goal = Quiz.todayGoal();
+  /* ------------------------------------------------------- progress sheet */
+
+  /* One page for the learner's standing, opened from the goal ring: the title
+     and streak, today's goal with links to the tabs that still have work, and
+     the milestones — earned with their date, the rest dimmed with what they take. */
+  function dayToDate(day) {
+    const d = new Date(day * 86400000);
+    return new Date(d.getTime() + d.getTimezoneOffset() * 60000)
+      .toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  function renderSheet() {
+    const el = document.getElementById('sheet');
+    if (!el) return;
     const st = Store.streak();
+    const goal = Quiz.todayGoal();
     const tier = learnerTier();
-    const who = tier ? tierName(tier) + ' · ' : '';   // the title is hidden on narrow screens; the tap says it
-    if (goal.active && goal.left) {
-      toast(who + goal.per.filter(p => p.left).map(p => p.topic.label + ' ' + p.left).join(' · '));
-      go(goal.per[0].topic.id);
-    } else {
-      toast(who + (goal.waiting ? tfill(APP_STR.goalHit, { n: goal.waiting }) : APP_STR.goalDone) +
-            (st.n ? ' ' + streakLabel(st) : ''));
-    }
+    const done = goal.active > 0 && goal.left === 0;
+    const still = goal.per.filter(p => p.left > 0);
+    const streakText = st.n
+      ? streakLabel(st) + (st.atRisk ? ' — ' + APP_STR.streakAtRisk : st.today ? '' : ' — ' + APP_STR.streakCold)
+      : APP_STR.streakNone;
+    const todayText = !goal.active ? APP_STR.sheetNoTitle
+      : done ? (goal.waiting ? tfill(APP_STR.goalHit, { n: goal.waiting }) : APP_STR.goalDone)
+      : tfill(APP_STR.goalLeft, { n: goal.left, reviews: goal.reviews, fresh: goal.fresh, done: goal.done }) +
+        (goal.waiting ? tfill(APP_STR.goalWaiting, { n: goal.waiting }) : '');
+    const ms = window.Milestones ? Milestones.list() : [];
+    const earned = ms.filter(m => m.earned).length;
+    el.innerHTML = '' +
+      '<div class="sheet-backdrop" data-sheet-close="1"></div>' +
+      '<div class="sheet-panel" role="dialog" aria-modal="true" aria-label="' + escapeHtml(APP_STR.sheetTitle) + '">' +
+        '<button class="sheet-close" type="button" data-sheet-close="1" aria-label="' + escapeHtml(APP_STR.sheetClose) + '">×</button>' +
+        '<h2>' + escapeHtml(APP_STR.sheetTitle) + '</h2>' +
+        '<p class="sheet-standing">' +
+          (tier ? '<span class="sheet-tier">' + escapeHtml(tierName(tier)) + '</span> · ' : '') +
+          escapeHtml(streakText) + '</p>' +
+        '<h3>' + escapeHtml(APP_STR.sheetToday) + '</h3>' +
+        '<p class="sheet-today' + (done ? ' caught-up' : '') + '">' + escapeHtml(todayText) + '</p>' +
+        (still.length ? '<p class="today-line">' + still.map(p =>
+          '<button class="tab-link" type="button" data-tab="' + escapeHtml(p.topic.id) + '">' +
+            escapeHtml(p.topic.label) + ' <b>' + p.left + '</b></button>').join('') + '</p>' : '') +
+        '<h3>' + escapeHtml(APP_STR.sheetMilestones) + ' <span class="sheet-count">' + earned + ' / ' + ms.length + '</span></h3>' +
+        '<div class="ms-grid">' + ms.map(m =>
+          '<div class="ms' + (m.earned ? ' earned' : ' locked') + '" data-ms="' + escapeHtml(m.id) + '">' +
+            '<span class="ms-icon" aria-hidden="true">' + m.icon + '</span>' +
+            '<b>' + escapeHtml(m.label) + '</b>' +
+            '<small>' + escapeHtml(m.earned ? tfill(APP_STR.sheetEarned, { date: dayToDate(m.earned) }) : m.desc) + '</small>' +
+          '</div>').join('') + '</div>' +
+      '</div>';
+  }
+
+  function openSheet() {
+    const el = document.getElementById('sheet');
+    if (!el) return;
+    renderSheet();
+    el.hidden = false;
+    document.documentElement.classList.add('sheet-open');
+  }
+
+  function closeSheet() {
+    const el = document.getElementById('sheet');
+    if (!el || el.hidden) return;
+    el.hidden = true;
+    el.innerHTML = '';
+    document.documentElement.classList.remove('sheet-open');
+  }
+
+  /* Tap: the progress sheet — title, streak, today's tabs, milestones. */
+  function goalTap() {
+    const el = document.getElementById('sheet');
+    if (el && !el.hidden) closeSheet(); else openSheet();
   }
 
   function updateModeButton() {
@@ -248,6 +324,7 @@
   function route() {
     const topic = topicById(currentTopicId());
     Quiz.stopVoice();   // leaving a drill must stop the mic + pending auto-advance
+    closeSheet();       // a tab link on the sheet lands on the tab, not behind the sheet
     renderTabs();
     window.scrollTo(0, 0);
     if (topic.kind === 'browse') Browse.render();
@@ -266,6 +343,8 @@
   document.addEventListener('click', e => {
     const tab = e.target.closest('[data-tab]');
     if (tab) { go(tab.dataset.tab); return; }
+
+    if (e.target.closest('[data-sheet-close]')) { closeSheet(); return; }
 
     const say = e.target.closest('[data-speak]');
     if (say) {
@@ -326,6 +405,7 @@
   });
 
   window.addEventListener('hashchange', route);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
 
   applyTheme();
   updateModeButton();
@@ -340,5 +420,5 @@
   }
 
   // sync.js re-renders through this after pulling remote progress
-  window.App = { refresh: route, updateTabPct: updateTabPct, refreshGoal: renderGoal };
+  window.App = { refresh: route, updateTabPct: updateTabPct, refreshGoal: renderGoal, openSheet: openSheet, closeSheet: closeSheet };
 })();
