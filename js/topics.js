@@ -56,15 +56,90 @@ const SYNONYMS = (function () {
   return map;
 })();
 
+/* ---- irregularity, shown on the answer card ----
+   The regular expectation for a tense: the oracle's forms, or for the imperfect
+   subjunctive what a REGULAR perfeito 3pl would derive to (fazer → fazeram →
+   fazesse, so fizesse shows its irregular "iz"). null when the oracle has nothing
+   to say — pôr has no -ar/-er/-ir ending — or the page skipped js/conjugate.js. */
+function regularExpectation(verb, tense) {
+  if (typeof conjugateRegular !== 'function') return null;
+  const oracle = conjugateRegular(verb.pt);
+  if (!oracle) return null;
+  if (tense === 'subjuntivo') {
+    return typeof subjImperfectFromPerfeito3pl === 'function'
+      ? subjImperfectFromPerfeito3pl(oracle.perfeito[3], verb.pt) : null;
+  }
+  return oracle[tense] || null;
+}
+
+/* Where a form breaks the pattern: the letters left once the longest common prefix
+   and suffix with the regular expectation are peeled off (faço/fazo → "ç",
+   fizéssemos/fazêssemos → "izé", é/se → the whole form). null = regular. */
+function irregularSpan(form, expected) {
+  if (!expected || form === expected) return null;
+  let a = 0;
+  while (a < form.length && a < expected.length && form[a] === expected[a]) a++;
+  let b = 0;
+  while (b < form.length - a && b < expected.length - a &&
+         form[form.length - 1 - b] === expected[expected.length - 1 - b]) b++;
+  // quer/diz/traz: nothing is respelt, the ending is simply dropped — `drop` marks the gap
+  return { pre: form.slice(0, a), mid: form.slice(a, form.length - b), post: form.slice(form.length - b),
+           drop: a + b === form.length };
+}
+
+function markIrregular(form, span) {
+  if (!span) return escapeHtml(form);
+  const mark = span.drop ? '<mark class="irr drop" title="ending dropped"></mark>'
+                         : '<mark class="irr">' + escapeHtml(span.mid) + '</mark>';
+  return escapeHtml(span.pre) + mark + escapeHtml(span.post);
+}
+
+/* One line under the table about the form just answered. */
+function conjNote(verb, expected, spans, i) {
+  const m = verb.pt.match(/(ar|er|ir)$/);
+  const ending = m ? '-' + m[1] : null;
+  const it = f => '<i>' + escapeHtml(f) + '</i>';
+  let text;
+  if (!expected) {
+    if (!verb.irregular) return '';
+    text = 'Irregular verb — ' + escapeHtml(verb.pt) + ' follows no -ar/-er/-ir pattern, so its forms are learnt by heart.';
+  } else if (spans[i]) {
+    const sp = spans[i];
+    if (sp.drop) {
+      text = 'Irregular — the regular ' + ending + ' ending is dropped here (the pattern would give ' + it(expected[i]) + ').';
+    } else if (!sp.pre && !sp.post) {
+      text = 'Irregular form — nothing here follows the regular ' + ending + ' pattern.';
+    } else {
+      text = 'Irregular in the highlighted letters — the regular ' + ending + ' pattern would give ' + it(expected[i]) + '.';
+    }
+  } else if (spans.some(Boolean)) {
+    text = 'This form is regular; the highlighted forms of ' + escapeHtml(verb.pt) + ' break the ' + ending + ' pattern.';
+  } else {
+    return '';
+  }
+  return '<div class="conj-note">' + text + '</div>';
+}
+
 function verbConjTable(verb, tense, tenseLabel, currentIndex) {
+  const expected = regularExpectation(verb, tense);
+  const spans = verb.tenses[tense].map((r, i) => irregularSpan(r.form, expected && expected[i]));
   const rows = verb.tenses[tense].map((r, i) =>
-    '<tr' + (i === currentIndex ? ' class="is-current"' : '') + '>' +
+    '<tr class="' + (i === currentIndex ? 'is-current' : '') + (spans[i] ? ' is-irregular' : '') + '">' +
     '<td class="conj-pronoun">' + escapeHtml(r.person || V.personsShort[i]) + '</td>' +
-    '<td class="conj-form">' + escapeHtml(r.form) + '</td>' +
+    '<td class="conj-form">' + markIrregular(r.form, spans[i]) + '</td>' +
     '<td class="conj-pron">' + escapeHtml(r.pron) + '</td></tr>').join('');
   return '<div class="conj-table-wrapper"><div class="conj-table-label">' +
          escapeHtml(verb.pt + ' — ' + tenseLabel) + '</div>' +
-         '<table class="conj-table">' + rows + '</table></div>';
+         '<table class="conj-table">' + rows + '</table>' +
+         conjNote(verb, expected, spans, currentIndex) + '</div>';
+}
+
+/* The card's flag for the feedback line: "irregular" when this form breaks the
+   pattern (or the verb has no pattern at all). Regular forms carry none. */
+function verbFlag(verb, tense, i, form) {
+  const expected = regularExpectation(verb, tense);
+  if (!expected) return verb.irregular ? 'irregular' : '';
+  return irregularSpan(form, expected[i]) ? 'irregular' : '';
 }
 
 /* Inference metadata for js/infer.js: the word, the pattern (class|tense|person),
@@ -124,6 +199,7 @@ function buildVerbCards(tense, tenseLabel) {
         accepted: accepted,
         answer: full,
         pron: row.pron,
+        flag: verbFlag(verb, tense, i, row.form),
         speak: full,
         reveal: exampleBlock(row.example) +
                 verbConjTable(verb, tense, tenseLabel, i),

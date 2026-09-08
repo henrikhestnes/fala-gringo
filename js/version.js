@@ -67,8 +67,11 @@
 
 // 1.22 the progress sheet shows a 12-week activity heatmap (Monday-first weeks, shaded by answers a day, from
 //      the day log), with a "N of M days practised · answers" line
+// 1.23 the answer card says when a verb form is irregular: an "irregular" tag by the pronunciation, the letters
+//      that break the regular pattern highlighted in the conjugation table (faço → ç, fizesse → i, quer → the
+//      dropped ending), and a line naming what the regular -ar/-er/-ir pattern would have given
 
-const APP_VERSION = '1.22.0';
+const APP_VERSION = '1.23.0';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

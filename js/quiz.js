@@ -627,7 +627,8 @@ const Quiz = (function () {
     input.disabled = true;
     Store.markDrilled(topic.id);   // this tab is one of the learner's own (today's goal, js/app.js)
 
-    const pron = card.pron ? '<span class="pron-tag">' + escapeHtml(card.pron) + '</span>' : '';
+    const pron = (card.pron ? '<span class="pron-tag">' + escapeHtml(card.pron) + '</span>' : '') +
+                 (card.flag ? '<span class="pron-tag flag-tag">' + escapeHtml(card.flag) + '</span>' : '');
     const say = card.speak ? speakButton(card.speak, card.answer) : '';
 
     const res = gradeTyped(card, input.value);

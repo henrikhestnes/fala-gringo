@@ -720,6 +720,18 @@ main { max-width: 880px; width: 100%; margin: 0 auto; padding: 1.1rem 1rem 4rem;
 .conj-table .conj-form { font-family: var(--mono); font-weight: 600; }
 .conj-table .conj-pron { font-family: var(--mono); font-size: .76rem; color: var(--text-3); text-align: right; }
 .conj-table tr.is-current td { background: var(--green-soft); }
+/* the letters that break the regular pattern (topics.js irregularSpan) */
+.conj-table mark.irr {
+  background: var(--yellow-soft);
+  color: var(--yellow-ink);
+  border-radius: 3px;
+  padding: 0 .08em;
+  box-shadow: 0 1px 0 var(--yellow-ink);
+}
+.conj-table mark.irr.drop { display: inline-block; width: .45em; height: .9em; vertical-align: -.1em; padding: 0; margin-left: .08em; border: 1px dashed var(--yellow-ink); background: transparent; box-shadow: none; }
+.conj-note { font-size: .78rem; color: var(--text-2); margin-top: .45rem; line-height: 1.4; }
+.conj-note i { font-family: var(--mono); font-style: normal; }
+.pron-tag.flag-tag { background: var(--yellow-soft); color: var(--yellow-ink); border-color: color-mix(in srgb, var(--yellow) 45%, transparent); }
 
 /* ---------- controls ---------- */
 

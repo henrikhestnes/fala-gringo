@@ -118,6 +118,26 @@ step('a wrong answer reveals the answer and does not count as known', function (
   return 'answer revealed with conjugation table; Known stayed ' + known;
 });
 
+step('the answer card marks irregular forms and highlights the letters that break the pattern', function () {
+  var cards = topicCards(topicById('presente'));
+  var faco = cards.filter(function (c) { return c.id === 'fazer|0'; })[0];
+  var fazemos = cards.filter(function (c) { return c.id === 'fazer|2'; })[0];
+  var falo = cards.filter(function (c) { return c.id === 'falar|0'; })[0];
+  if (!faco || !fazemos || !falo) throw new Error('fazer/falar cards missing');
+  if (faco.flag !== 'irregular') throw new Error('faço not flagged: ' + faco.flag);
+  if (fazemos.flag || falo.flag) throw new Error('regular forms flagged: ' + fazemos.flag + ' / ' + falo.flag);
+  if (!/fa<mark class="irr">ç<\/mark>o/.test(faco.reveal)) throw new Error('ç not highlighted: ' + faco.reveal);
+  if (!/<mark class="irr drop"/.test(faco.reveal)) throw new Error('dropped ending of "faz" not marked');
+  if (!/would give <i>fazo<\/i>/.test(faco.reveal)) throw new Error('note missing the regular expectation');
+  if (!/This form is regular; the highlighted forms of fazer/.test(fazemos.reveal))
+    throw new Error('fazemos note: ' + fazemos.reveal);
+  if (/mark class="irr"|conj-note/.test(falo.reveal)) throw new Error('falar shows irregularity markup');
+  var subj = topicCards(topicById('subjuntivo')).filter(function (c) { return c.id === 'fazer|2'; })[0];
+  if (!subj || !/f<mark class="irr">izé<\/mark>ssemos/.test(subj.reveal))
+    throw new Error('fizéssemos: ' + (subj && subj.reveal));
+  return 'faço flagged, "ç" + the dropped ending of "faz" marked; fazemos regular with a note; falar silent; fizéssemos → "izé"';
+});
+
 step('Skip advances the deck without granting mastery', function () {
   goTo('#adverbs');
   var before = Store.masteredCount('adverbs');

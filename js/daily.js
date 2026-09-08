@@ -244,6 +244,7 @@ const Daily = (function () {
       feedback.className = 'feedback ok';
       feedback.innerHTML = '✓ ' + praiseWord() + ' <strong>' + escapeHtml(card.answer) + '</strong>' +
         (card.pron ? '<span class="pron-tag">' + escapeHtml(card.pron) + '</span>' : '') +
+      (card.flag ? '<span class="pron-tag flag-tag">' + escapeHtml(card.flag) + '</span>' : '') +
         (card.speak ? speakButton(card.speak, card.answer) : '');
       document.getElementById('revealArea').innerHTML = card.reveal || '';
       Store.markMastered(card.topic, card.id);
@@ -296,6 +297,7 @@ const Daily = (function () {
     feedback.className = 'feedback err';
     feedback.innerHTML = '✗ The answer is <strong>' + escapeHtml(card.answer) + '</strong>' +
       (card.pron ? '<span class="pron-tag">' + escapeHtml(card.pron) + '</span>' : '') +
+      (card.flag ? '<span class="pron-tag flag-tag">' + escapeHtml(card.flag) + '</span>' : '') +
       (card.speak ? speakButton(card.speak, card.answer) : '');
     document.getElementById('revealArea').innerHTML = card.reveal || '';
     save();
