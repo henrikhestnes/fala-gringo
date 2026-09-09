@@ -225,6 +225,20 @@ const Daily = (function () {
     return set;
   }
 
+  /* The answer line: the synonym the learner typed (or typed towards) leads,
+     the card's other synonyms follow — same as the drills. */
+  function answerHtml(card, typed) {
+    const face = cardFace(card, typed);
+    const others = otherFaces(card, face);
+    return '<strong>' + escapeHtml(face.answer) + '</strong>' +
+      (face.pron ? '<span class="pron-tag">' + escapeHtml(face.pron) + '</span>' : '') +
+      (face.flag ? '<span class="pron-tag flag-tag">' + escapeHtml(face.flag) + '</span>' : '') +
+      (face.speak ? speakButton(face.speak, face.answer) : '') +
+      (others.length ? '<span class="also-tag">also ' +
+        others.map(a => '<b>' + escapeHtml(a) + '</b>').join(' · ') + '</span>' : '');
+  }
+  function revealHtml(card, typed) { return cardFace(card, typed).reveal || ''; }
+
   function check() {
     const entry = cards[current];
     const card = entry.card;
@@ -242,11 +256,8 @@ const Daily = (function () {
       input.classList.add('correct');
       document.getElementById('actionBtn').classList.add('go-green');
       feedback.className = 'feedback ok';
-      feedback.innerHTML = '✓ ' + praiseWord() + ' <strong>' + escapeHtml(card.answer) + '</strong>' +
-        (card.pron ? '<span class="pron-tag">' + escapeHtml(card.pron) + '</span>' : '') +
-      (card.flag ? '<span class="pron-tag flag-tag">' + escapeHtml(card.flag) + '</span>' : '') +
-        (card.speak ? speakButton(card.speak, card.answer) : '');
-      document.getElementById('revealArea').innerHTML = card.reveal || '';
+      feedback.innerHTML = '✓ ' + praiseWord() + ' ' + answerHtml(card, input.value);
+      document.getElementById('revealArea').innerHTML = revealHtml(card, input.value);
       Store.markMastered(card.topic, card.id);
       Store.recordAnswer(card.topic, card.id, true);
       if (window.App && App.updateTabPct) App.updateTabPct(card.topic);   // that topic's tab % follows
@@ -295,11 +306,9 @@ const Daily = (function () {
     if (input) { input.disabled = true; input.classList.add('wrong'); }
     document.getElementById('actionBtn').classList.add('go-red');
     feedback.className = 'feedback err';
-    feedback.innerHTML = '✗ The answer is <strong>' + escapeHtml(card.answer) + '</strong>' +
-      (card.pron ? '<span class="pron-tag">' + escapeHtml(card.pron) + '</span>' : '') +
-      (card.flag ? '<span class="pron-tag flag-tag">' + escapeHtml(card.flag) + '</span>' : '') +
-      (card.speak ? speakButton(card.speak, card.answer) : '');
-    document.getElementById('revealArea').innerHTML = card.reveal || '';
+    const typed = input ? input.value : null;
+    feedback.innerHTML = '✗ The answer is ' + answerHtml(card, typed);
+    document.getElementById('revealArea').innerHTML = revealHtml(card, typed);
     save();
     renderDots();
     requestAnimationFrame(() => {

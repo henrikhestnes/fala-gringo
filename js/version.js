@@ -76,7 +76,11 @@
 //        redirected response to a navigation and Chrome failed the load; the link is ./ (index.html from disk),
 //        the worker caches the pages under ./ only and strips the redirected flag from anything it serves
 
-const APP_VERSION = '1.23.3';
+// 1.23.4 a synonym typed for a verb card (coloco or boto for "I put") is answered AS that verb — its own form,
+//        pronunciation and conjugation table — instead of the card's canonical pôr; on a miss the verb the
+//        typed text starts like leads ("colocamos" → colocar); the other synonyms follow in an "also" line
+
+const APP_VERSION = '1.23.4';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

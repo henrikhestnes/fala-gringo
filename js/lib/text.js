@@ -141,6 +141,39 @@ function matchAnswer(card, value, rivals, spoken) {
   return { grade: spoken ? 'exact' : 'near', hit: best, phonetic: !!spoken };
 }
 
+/* The face a card shows once answered — its answer, pron, flag, speak and
+   reveal — or, when the typed text belongs to one of the card's `variants` (a
+   genuine synonym drilled as the same card: coloco or boto for ponho), that
+   variant's. The learner sees the verb they reached for, with its own
+   pronunciation and conjugation table, not the one the card is filed under.
+   `typed` is matchAnswer()'s hit on a hit, the raw typed text on a miss: when
+   no accepted string matches, the face whose form the typed text starts like
+   wins ("colocamos" for "I put" is colocar's, however wrong the ending); ties,
+   and nothing in common, keep the card. */
+function cardFace(card, typed) {
+  if (!card.variants || typed == null) return card;
+  const key = normalize(typed);
+  let pick = card.variants.find(v => v.accepted.some(a => normalize(a) === key));
+  if (!pick && !card.accepted.some(a => normalize(a) === key)) {
+    const word = key.split(' ').pop();
+    let best = 0;
+    [card].concat(card.variants).forEach(f => {
+      const form = normalize(f.answer).split(' ').pop();
+      let n = 0;
+      while (n < word.length && n < form.length && word[n] === form[n]) n++;
+      if (n > best) { best = n; pick = f; }
+    });
+  }
+  return !pick || pick === card ? card : Object.assign({}, card, pick);
+}
+
+/* The answers of the faces NOT shown — the card's other synonyms — for the
+   "also: eu ponho · eu boto" line under the answer. Empty without variants. */
+function otherFaces(card, face) {
+  if (!card.variants) return [];
+  return [card].concat(card.variants).filter(f => f.answer !== face.answer).map(f => f.answer);
+}
+
 /* Uniform Fisher-Yates. (The source repo used sort(() => Math.random() - 0.5),
    which is biased.) */
 function shuffle(arr) {

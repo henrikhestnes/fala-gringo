@@ -48,6 +48,7 @@ const QUIZ_STRINGS = Object.assign({
   hardCards: 'Hard Mode cards',
   startOver: 'Start over ↻',
   answerIs: 'The answer is',
+  also: 'also',                       // the card's other synonyms, after the answer
   todayStill: 'Still today:',
   todayCaughtUp: 'Tudo em dia por hoje! Nothing left in your tabs.',
   todayGoalHit: 'Daily goal done! {n} reviews still wait — keep going if you like.',
@@ -607,6 +608,14 @@ const Quiz = (function () {
     if (counts) counts.due += ids.length;
   }
 
+  /* "also eu ponho · eu boto": the synonyms the card would equally have taken. */
+  function alsoLine(card, face) {
+    const others = otherFaces(card, face);
+    if (!others.length) return '';
+    return '<span class="also-tag">' + escapeHtml(QUIZ_STRINGS.also) + ' ' +
+           others.map(a => '<b>' + escapeHtml(a) + '</b>').join(' · ') + '</span>';
+  }
+
   function handleAction() {
     if (answered) { advance(); return; }
     checkAnswer();
@@ -627,12 +636,15 @@ const Quiz = (function () {
     input.disabled = true;
     Store.markDrilled(topic.id);   // this tab is one of the learner's own (today's goal, js/app.js)
 
-    const pron = (card.pron ? '<span class="pron-tag">' + escapeHtml(card.pron) + '</span>' : '') +
-                 (card.flag ? '<span class="pron-tag flag-tag">' + escapeHtml(card.flag) + '</span>' : '');
-    const say = card.speak ? speakButton(card.speak, card.answer) : '';
-
     const res = gradeTyped(card, input.value);
     const ok = !!res;
+    // the synonym the learner reached for (coloco for ponho) shows its own answer,
+    // pronunciation and table — on a miss too, judged by how the typed text starts;
+    // the other synonyms follow in an "also" line
+    const face = cardFace(card, ok ? res.hit : input.value);
+    const pron = (face.pron ? '<span class="pron-tag">' + escapeHtml(face.pron) + '</span>' : '') +
+                 (face.flag ? '<span class="pron-tag flag-tag">' + escapeHtml(face.flag) + '</span>' : '');
+    const say = (face.speak ? speakButton(face.speak, face.answer) : '') + alsoLine(card, face);
     if (ok) {
       // a near-miss (one slip, unambiguous) clears the card but earns no review
       // level: it comes back on its current interval instead of a longer one
@@ -643,9 +655,9 @@ const Quiz = (function () {
       feedback.className = 'feedback ok' + (near ? ' near' : '');
       feedback.innerHTML = near
         ? '≈ ' + tfill(QUIZ_STRINGS.nearIs, { typed: escapeHtml(input.value.trim()) }) +
-          ' <strong>' + escapeHtml(card.answer) + '</strong>' + pron + say
-        : '✓ ' + praiseWord() + ' <strong>' + escapeHtml(card.answer) + '</strong>' + pron + say;
-      revealArea.innerHTML = card.reveal || '';
+          ' <strong>' + escapeHtml(face.answer) + '</strong>' + pron + say
+        : '✓ ' + praiseWord() + ' <strong>' + escapeHtml(face.answer) + '</strong>' + pron + say;
+      revealArea.innerHTML = face.reveal || '';
       known.add(current);
       Store.markMastered(topic.id, card.id);
       // a confirmed inferred-known form skips the first rung of the review ladder
@@ -667,8 +679,8 @@ const Quiz = (function () {
       btn.classList.add('go-red');
       feedback.className = 'feedback err';
       feedback.innerHTML = '✗ ' + missWord() + ' ' + QUIZ_STRINGS.answerIs +
-        ' <strong>' + escapeHtml(card.answer) + '</strong>' + pron + say;
-      revealArea.innerHTML = card.reveal || '';
+        ' <strong>' + escapeHtml(face.answer) + '</strong>' + pron + say;
+      revealArea.innerHTML = face.reveal || '';
       updateStats();   // the chip now shows this card as shaky
     }
 
@@ -682,7 +694,7 @@ const Quiz = (function () {
       setMicStatus('');
       // hands-free: read the answer out, then move on by itself
       const gen = micGen;
-      speak(card.speak || card.answer, null, () => {
+      speak(face.speak || face.answer, null, () => {
         if (gen !== micGen) return;
         micTimer = setTimeout(() => { if (gen === micGen) advance(); },
                               ok ? MIC_NEXT_OK : MIC_NEXT_MISS);

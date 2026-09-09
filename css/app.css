@@ -735,6 +735,8 @@ main { max-width: 880px; width: 100%; margin: 0 auto; padding: 1.1rem 1rem 4rem;
 .conj-table mark.irr.drop, .conj-line mark.irr.drop { display: inline-block; width: .45em; height: .9em; vertical-align: -.1em; padding: 0; margin-left: .08em; border: 1px dashed var(--yellow-ink); background: transparent; box-shadow: none; }
 .conj-note { font-size: .78rem; color: var(--text-2); margin-top: .45rem; line-height: 1.4; }
 .conj-note i { font-family: var(--mono); font-style: normal; }
+.also-tag { font-size: .78rem; font-weight: 500; color: var(--text-2); }   /* the card's other synonyms */
+.also-tag b { font-family: var(--mono); font-weight: 600; }
 .pron-tag.flag-tag { background: var(--yellow-soft); color: var(--yellow-ink); border-color: color-mix(in srgb, var(--yellow) 45%, transparent); }
 
 /* ---------- controls ---------- */

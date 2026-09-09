@@ -5,11 +5,14 @@
 // into ONE card shape, and a single engine (quiz.js) drives all of them:
 //
 //   { id, topic, group, meta, hint, prompt, sub, accepted[], answer,
-//     pron, speak, reveal, allowEmpty }
+//     pron, speak, reveal, allowEmpty, variants? }
 //
 //   hint      shown only in Easy Mode (the answer-revealing crutch)
 //   accepted  every string counted as correct, compared via normalize()
 //   reveal    HTML shown after answering (example / tip / note / conj table)
+//   variants  optional: [{ accepted, answer, pron, flag, speak, reveal }] — the
+//             face shown when one of THOSE accepted strings is the one typed
+//             (synonym verbs: coloco for ponho), see cardFace() in lib/text.js
 
 const V = window.DATA_VERBS;
 
@@ -180,13 +183,27 @@ function buildVerbCards(tense, tenseLabel) {
       // the imperfect subjunctive is usually cited with its trigger word
       if (tense === 'subjuntivo') accepted.push('se ' + full, 'que ' + full);
 
-      // genuine BR synonyms (pôr/botar/colocar, caminhar/andar) accept each other
+      // genuine BR synonyms (pôr/botar/colocar, caminhar/andar) accept each other;
+      // each also brings its own face (answer, pron, table) for when it is the
+      // one typed — cardFace() in text.js swaps it in after the match
+      const variants = [];
       (SYNONYMS[verb.pt] || []).forEach(other => {
         if (other === verb.pt) return;
         const o = byPt[other];
         if (!o || !o.tenses[tense]) return;
-        const f = o.tenses[tense][i].form;
-        accepted.push(f, person + ' ' + f);
+        const orow = o.tenses[tense][i];
+        const f = orow.form, ofull = person + ' ' + f;
+        const own = [f, ofull];
+        if (tense === 'subjuntivo') own.push('se ' + ofull, 'que ' + ofull);
+        accepted.push(...own);
+        variants.push({
+          accepted: own,
+          answer: ofull,
+          pron: orow.pron,
+          flag: verbFlag(o, tense, i, f),
+          speak: ofull,
+          reveal: exampleBlock(orow.example) + verbConjTable(o, tense, tenseLabel, i)
+        });
       });
 
       cards.push({
@@ -203,6 +220,7 @@ function buildVerbCards(tense, tenseLabel) {
         speak: full,
         reveal: exampleBlock(row.example) +
                 verbConjTable(verb, tense, tenseLabel, i),
+        variants: variants.length ? variants : undefined,
         infer: infer
       });
     });

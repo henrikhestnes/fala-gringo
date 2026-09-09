@@ -123,6 +123,8 @@ step('a wrong answer reveals the answer and does not count as known', function (
     throw new Error('no reveal: ' + registry.feedback.innerHTML);
   if (!/conj-table/.test(registry.revealArea.innerHTML))
     throw new Error('no conjugation table on a miss');
+  if (/also-tag/.test(registry.feedback.innerHTML) !== !!shownCard('presente').variants)
+    throw new Error('the "also" line does not follow the card having synonyms');
   var known = String(registry.statKnown.textContent);
   if (known !== '0') throw new Error('counted as known: ' + known);
   return 'answer revealed with conjugation table; Known stayed ' + known;
@@ -541,6 +543,46 @@ step('inference: a known word + a known pattern makes an unseen regular form a "
   goTo('#browse'); goTo('#presente');
   if (Quiz._counts().verify !== 0) throw new Error('…was still inferred from a shaky pattern: ' + JSON.stringify(Quiz._counts()));
   return '"' + target.id + '" verified from "' + targetEu + '" + ' + Infer.PATTERN_MIN + ' -ar vocês; hit -> level 2; stranger, irregular and shaky pattern excluded';
+});
+
+step('a synonym typed for a verb card shows its own verb (coloco for ponho)', function () {
+  var cards = topicCards(topicById('presente'));
+  var ponho = cards.filter(function (c) { return c.id === 'pôr|0'; })[0];
+  if (!ponho || !ponho.variants || ponho.variants.length !== 2) throw new Error('pôr|0 lacks its two variants');
+  function rivals(card) {
+    var own = {}; card.accepted.forEach(function (a) { own[normalize(a)] = 1; });
+    return cards.filter(function (c) { return c !== card; }).reduce(function (acc, c) {
+      return acc.concat(c.accepted.filter(function (a) { return !own[normalize(a)]; }));
+    }, []);
+  }
+  var m = matchAnswer(ponho, 'coloco', rivals(ponho), false);
+  if (!m || m.grade !== 'exact') throw new Error('"coloco" not accepted for ponho: ' + JSON.stringify(m));
+  var face = cardFace(ponho, m.hit);
+  if (face.answer !== 'eu coloco') throw new Error('face answer ' + face.answer);
+  if (face.pron !== 'koh-LOH-koo') throw new Error('face pron ' + face.pron);
+  if (face.flag) throw new Error('coloco flagged "' + face.flag + '" — it is regular');
+  if (!/colocar — Presente/.test(face.reveal) || !/Eu coloco o livro/.test(face.reveal)) throw new Error('reveal is not colocar\'s');
+  if (face.id !== ponho.id || face.prompt !== ponho.prompt) throw new Error('face lost the card identity');
+  // a slip on the synonym still lands on the synonym's face
+  m = matchAnswer(ponho, 'eu colooco', rivals(ponho), false);
+  if (!m || m.grade !== 'near' || cardFace(ponho, m.hit).answer !== 'eu coloco') throw new Error('slip: ' + JSON.stringify(m));
+  // the canonical answer and a miss keep pôr
+  m = matchAnswer(ponho, 'EU PONHO', rivals(ponho), false);
+  var own = cardFace(ponho, m.hit);
+  if (own.answer !== 'eu ponho' || own.flag !== 'irregular' || !/pôr — Presente/.test(own.reveal)) throw new Error('canonical face changed');
+  if (cardFace(ponho, 'zzz') !== ponho || cardFace(ponho, null) !== ponho) throw new Error('a non-variant did not return the card');
+  // a MISS that starts like a synonym shows that synonym (wrong person, wrong tense, a fragment)
+  if (cardFace(ponho, 'colocamos').answer !== 'eu coloco') throw new Error('"colocamos" did not show colocar');
+  if (cardFace(ponho, 'eu botei').answer !== 'eu boto') throw new Error('"eu botei" did not show botar');
+  if (cardFace(ponho, 'col').answer !== 'eu coloco') throw new Error('"col" did not show colocar');
+  if (cardFace(ponho, 'ponha') !== ponho || cardFace(ponho, 'eu puis') !== ponho) throw new Error('a pôr-shaped miss left pôr');
+  // the other synonyms are listed alongside whichever face leads
+  var others = otherFaces(ponho, face);
+  if (others.join(',') !== 'eu ponho,eu boto') throw new Error('others for coloco: ' + others.join(','));
+  if (otherFaces(ponho, ponho).join(',') !== 'eu boto,eu coloco') throw new Error('others for ponho: ' + otherFaces(ponho, ponho).join(','));
+  var falo = cards.filter(function (c) { return c.id === 'falar|0'; })[0];
+  if (otherFaces(falo, falo).length) throw new Error('falar has no synonyms');
+  return '"coloco" → eu coloco · koh-LOH-koo · colocar table (also eu ponho · eu boto); "colocamos"/"col" miss → colocar; "eu ponho" → pôr, irregular';
 });
 
 step('typed near-misses: one unambiguous slip is accepted, an ambiguous one is a miss', function () {

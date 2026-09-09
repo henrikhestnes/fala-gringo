@@ -230,6 +230,24 @@ function runChecks() {
     return bad.length ? bad.slice(0, 8).join(', ') : true;
   });
 
+  check('every synonym variant answers with a string the card accepts', () => {
+    const bad = [];
+    let n = 0;
+    quizTopics.forEach(t => topicCards(t).forEach(c => (c.variants || []).forEach(v => {
+      n++;
+      const acc = c.accepted.map(normalize);
+      if (!v.answer || !v.pron || !v.reveal || !v.accepted || !v.accepted.length)
+        bad.push(t.id + ':' + c.id + ' (incomplete variant)');
+      else if (!v.accepted.some(a => normalize(a) === normalize(v.answer)))
+        bad.push(t.id + ':' + c.id + ' (' + v.answer + ' not in its own accepted)');
+      else if (!v.accepted.every(a => acc.includes(normalize(a))))
+        bad.push(t.id + ':' + c.id + ' (' + v.answer + ' not accepted by the card)');
+      else if (cardFace(c, v.answer).answer !== v.answer)
+        bad.push(t.id + ':' + c.id + ' (cardFace does not pick ' + v.answer + ')');
+    })));
+    return bad.length ? bad.slice(0, 8).join(', ') : { ok: true, detail: n + ' variants' };
+  });
+
   check('no duplicate card ids within a topic', () => {
     const bad = [];
     quizTopics.forEach(t => {
