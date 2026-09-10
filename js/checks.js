@@ -96,7 +96,7 @@ function runChecks() {
     return bad.length ? bad.slice(0, 8).join('\n') : true;
   });
 
-  check('40 verbs carry a complete subjuntivo block', () => {
+  check('58 verbs carry a complete subjuntivo block', () => {
     const bad = [];
     let n = 0;
     V.verbs.forEach(v => {
@@ -105,11 +105,12 @@ function runChecks() {
       n++;
       if (rows.length !== 4) { bad.push(v.pt + ' (rows)'); return; }
       rows.forEach((r, i) => {
+        if (r.quiz === false) return;        // Browse-only row (acontecer, existir)
         if (!r.form || !r.meaning || !r.pron || !r.example) bad.push(v.pt + '/' + i);
       });
     });
     if (bad.length) return bad.slice(0, 8).join(', ');
-    return n === 40 ? true : 'got ' + n + ' verbs with subjuntivo';
+    return n === 58 ? true : 'got ' + n + ' verbs with subjuntivo';
   });
 
   check('every subjuntivo form derives from the perfeito 3pl', () => {
@@ -131,6 +132,7 @@ function runChecks() {
     V.verbs.forEach(v => {
       if (!v.tenses.subjuntivo) return;
       v.tenses.subjuntivo.forEach((r, i) => {
+        if (r.quiz === false) return;        // Browse-only row, no example
         if (r.example.indexOf(r.form) === -1) bad.push(v.pt + '/' + i + ' (form missing)');
         else if (!TRIGGER.test(r.example)) bad.push(v.pt + '/' + i + ' (no trigger)');
       });

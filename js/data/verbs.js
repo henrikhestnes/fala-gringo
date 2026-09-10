@@ -26,7 +26,7 @@ window.DATA_VERBS = {
     { key: "presente",   label: "Presente" },
     { key: "perfeito",   label: "Pretérito Perfeito" },
     { key: "imperfeito", label: "Pretérito Imperfeito" },
-    // Optional per verb: a curated 40-verb subset carries the imperfect subjunctive.
+    // Optional per verb: a curated 58-verb subset carries the imperfect subjunctive.
     { key: "subjuntivo", label: "Imperfeito do Subjuntivo" },
   ],
   synonyms: [
@@ -342,6 +342,12 @@ window.DATA_VERBS = {
           { form: "acontecíamos", meaning: "we used to happen (never used)", pron: "ah-kon-teh-SEE-ah-moosh", example: "", quiz: false },
           { form: "aconteciam", meaning: "things used to happen", pron: "ah-kon-teh-SEE-ahng", example: "Antigamente as coisas aconteciam mais devagar.", person: "as coisas" },
         ],
+        subjuntivo: [
+          { form: "acontecesse", meaning: "if I happened (never used)", pron: "ah-kon-teh-SEH-see", example: "", quiz: false },
+          { form: "acontecesse", meaning: "if it happened", pron: "ah-kon-teh-SEH-see", example: "Se acontecesse alguma coisa, você me avisava, né?", person: "isso" },
+          { form: "acontecêssemos", meaning: "if we happened (never used)", pron: "ah-kon-teh-SEH-seh-moosh", example: "", quiz: false },
+          { form: "acontecessem", meaning: "if things happened", pron: "ah-kon-teh-SEH-seng", example: "Queria que as coisas acontecessem mais rápido.", person: "as coisas" },
+        ],
       },
     },
     {
@@ -365,6 +371,12 @@ window.DATA_VERBS = {
           { form: "existia", meaning: "it used to exist", pron: "eh-zeesh-CHEE-ah", example: "Isso não existia na minha época.", person: "isso" },
           { form: "existíamos", meaning: "we used to exist (rare)", pron: "eh-zeesh-CHEE-ah-moosh", example: "", quiz: false },
           { form: "existiam", meaning: "they used to exist", pron: "eh-zeesh-CHEE-ahng", example: "Naquela época eles nem existiam.", person: "eles" },
+        ],
+        subjuntivo: [
+          { form: "existisse", meaning: "if I existed (rare)", pron: "eh-zeesh-CHEE-see", example: "", quiz: false },
+          { form: "existisse", meaning: "if it existed", pron: "eh-zeesh-CHEE-see", example: "Se existisse um remédio pra ressaca, eu tomava todo dia.", person: "isso" },
+          { form: "existíssemos", meaning: "if we existed (rare)", pron: "eh-zeesh-CHEE-seh-moosh", example: "", quiz: false },
+          { form: "existissem", meaning: "if they existed", pron: "eh-zeesh-CHEE-seng", example: "Ele falava dos dinossauros como se eles ainda existissem.", person: "eles" },
         ],
       },
     },
@@ -933,6 +945,12 @@ window.DATA_VERBS = {
           { form: "pegávamos", meaning: "we used to grab / pick up / were grabbing", pron: "peh-GAH-vah-moosh", example: "Nós pegávamos o metrô juntos." },
           { form: "pegavam", meaning: "you all used to grab / pick up", pron: "peh-GAH-vahng", example: "Vocês pegavam o mesmo caminho?" },
         ],
+        subjuntivo: [
+          { form: "pegasse", meaning: "if I grabbed / picked up", pron: "peh-GAH-see", example: "Se eu pegasse o metrô, chegava em vinte minutos." },
+          { form: "pegasse", meaning: "if you grabbed / picked up", pron: "peh-GAH-see", example: "Queria que você pegasse as crianças na escola hoje." },
+          { form: "pegássemos", meaning: "if we grabbed / picked up", pron: "peh-GAH-seh-moosh", example: "Era melhor que nós pegássemos um táxi na volta." },
+          { form: "pegassem", meaning: "if you all grabbed / picked up", pron: "peh-GAH-seng", example: "Se vocês pegassem o ônibus das sete, chegavam a tempo." },
+        ],
       },
     },
     {
@@ -1082,6 +1100,12 @@ window.DATA_VERBS = {
           { form: "ligava", meaning: "you used to call / turn on / were calling (phone)", pron: "lee-GAH-vah", example: "Você ligava pro trabalho com frequência?" },
           { form: "ligávamos", meaning: "we used to call / turn on / were calling (phone)", pron: "lee-GAH-vah-moosh", example: "Nós ligávamos o rádio de manhã." },
           { form: "ligavam", meaning: "you all used to call / turn on (phone)", pron: "lee-GAH-vahng", example: "Vocês ligavam pra família às vezes?" },
+        ],
+        subjuntivo: [
+          { form: "ligasse", meaning: "if I called / turned on (phone)", pron: "lee-GAH-see", example: "Se eu ligasse pra ela agora, ela nem atendia." },
+          { form: "ligasse", meaning: "if you called / turned on (phone)", pron: "lee-GAH-see", example: "Queria que você ligasse pra sua mãe mais vezes." },
+          { form: "ligássemos", meaning: "if we called / turned on (phone)", pron: "lee-GAH-seh-moosh", example: "Ela pediu que nós ligássemos antes de aparecer." },
+          { form: "ligassem", meaning: "if you all called / turned on (phone)", pron: "lee-GAH-seng", example: "Se vocês ligassem o ar, a sala esfriava rapidinho." },
         ],
       },
     },
@@ -1354,6 +1378,12 @@ window.DATA_VERBS = {
           { form: "entendíamos", meaning: "we used to understand", pron: "en-ten-DJEE-ah-moosh", example: "Nós entendíamos uns aos outros sem falar." },
           { form: "entendiam", meaning: "you all used to understand", pron: "en-ten-DJEE-ahng", example: "Vocês entendiam a lição?" },
         ],
+        subjuntivo: [
+          { form: "entendesse", meaning: "if I understood", pron: "en-ten-DEH-see", example: "Se eu entendesse de carro, consertava sozinho." },
+          { form: "entendesse", meaning: "if you understood", pron: "en-ten-DEH-see", example: "Queria que você entendesse o meu lado." },
+          { form: "entendêssemos", meaning: "if we understood", pron: "en-ten-DEH-seh-moosh", example: "Ele explicou devagar pra que nós entendêssemos tudo." },
+          { form: "entendessem", meaning: "if you all understood", pron: "en-ten-DEH-seng", example: "Ela falou como se vocês entendessem de futebol." },
+        ],
       },
     },
     {
@@ -1376,6 +1406,12 @@ window.DATA_VERBS = {
           { form: "aprendia", meaning: "you used to learn / were learning", pron: "ah-pren-DJEE-ah", example: "Você aprendia piano quando era pequeno?" },
           { form: "aprendíamos", meaning: "we used to learn / were learning", pron: "ah-pren-DJEE-ah-moosh", example: "Nós aprendíamos coisas novas todo dia." },
           { form: "aprendiam", meaning: "you all used to learn / were learning", pron: "ah-pren-DJEE-ahng", example: "Vocês aprendiam rápido na aula?" },
+        ],
+        subjuntivo: [
+          { form: "aprendesse", meaning: "if I learned", pron: "ah-pren-DEH-see", example: "Se eu aprendesse inglês, viajava mais tranquilo." },
+          { form: "aprendesse", meaning: "if you learned", pron: "ah-pren-DEH-see", example: "Sua mãe queria que você aprendesse a cozinhar." },
+          { form: "aprendêssemos", meaning: "if we learned", pron: "ah-pren-DEH-seh-moosh", example: "O professor repetiu pra que nós aprendêssemos direito." },
+          { form: "aprendessem", meaning: "if you all learned", pron: "ah-pren-DEH-seng", example: "Seria bom que vocês aprendessem a dirigir logo." },
         ],
       },
     },
@@ -1786,6 +1822,12 @@ window.DATA_VERBS = {
           { form: "comíamos", meaning: "we used to eat / were eating", pron: "koh-MEE-ah-moosh", example: "Nós comíamos na casa da vó aos domingos." },
           { form: "comiam", meaning: "you all used to eat / were eating", pron: "koh-MEE-ahng", example: "Vocês comiam juntos no intervalo?" },
         ],
+        subjuntivo: [
+          { form: "comesse", meaning: "if I ate", pron: "koh-MEH-see", example: "Se eu comesse menos açúcar, dormia melhor." },
+          { form: "comesse", meaning: "if you ate", pron: "koh-MEH-see", example: "Queria que você comesse alguma coisa antes de sair." },
+          { form: "comêssemos", meaning: "if we ate", pron: "koh-MEH-seh-moosh", example: "Minha vó fazia questão que nós comêssemos tudo." },
+          { form: "comessem", meaning: "if you all ate", pron: "koh-MEH-seng", example: "Se vocês comessem aqui, economizavam uma grana." },
+        ],
       },
     },
     {
@@ -1831,6 +1873,12 @@ window.DATA_VERBS = {
           { form: "tomava", meaning: "you used to take (a shower, a coffee)", pron: "toh-MAH-vah", example: "Você tomava café quando era criança?" },
           { form: "tomávamos", meaning: "we used to take (a shower, a coffee)", pron: "toh-MAH-vah-moosh", example: "Nós tomávamos suco de laranja toda manhã." },
           { form: "tomavam", meaning: "you all used to take (a shower, a coffee)", pron: "toh-MAH-vahng", example: "Vocês tomavam ônibus pra escola?" },
+        ],
+        subjuntivo: [
+          { form: "tomasse", meaning: "if I took (a shower, a coffee)", pron: "toh-MAH-see", example: "Se eu tomasse um café agora, não dormia mais." },
+          { form: "tomasse", meaning: "if you took (a shower, a coffee)", pron: "toh-MAH-see", example: "Queria que você tomasse o remédio direito." },
+          { form: "tomássemos", meaning: "if we took (a shower, a coffee)", pron: "toh-MAH-seh-moosh", example: "O médico pediu que nós tomássemos mais água." },
+          { form: "tomassem", meaning: "if you all took (a shower, a coffee)", pron: "toh-MAH-seng", example: "Se vocês tomassem um suco, o calor passava." },
         ],
       },
     },
@@ -2298,6 +2346,12 @@ window.DATA_VERBS = {
           { form: "líamos", meaning: "we used to read / were reading", pron: "LEE-ah-moosh", example: "Nós líamos o jornal de manhã." },
           { form: "liam", meaning: "you all used to read / were reading", pron: "LEE-ahng", example: "Vocês liam revistas em casa?" },
         ],
+        subjuntivo: [
+          { form: "lesse", meaning: "if I read", pron: "LEH-see", example: "Se eu lesse mais, escrevia melhor." },
+          { form: "lesse", meaning: "if you read", pron: "LEH-see", example: "Queria que você lesse esse livro." },
+          { form: "lêssemos", meaning: "if we read", pron: "LEH-seh-moosh", example: "A professora pediu que nós lêssemos o texto em casa." },
+          { form: "lessem", meaning: "if you all read", pron: "LEH-seng", example: "Se vocês lessem o manual, montavam o móvel rapidinho." },
+        ],
       },
     },
     {
@@ -2366,6 +2420,12 @@ window.DATA_VERBS = {
           { form: "começava", meaning: "you used to start / begin / were starting", pron: "koh-meh-SAH-vah", example: "Você começava o dia cedo?" },
           { form: "começávamos", meaning: "we used to start / begin / were starting", pron: "koh-meh-SAH-vah-moosh", example: "Nós começávamos a aula com música." },
           { form: "começavam", meaning: "you all used to start / begin / were starting", pron: "koh-meh-SAH-vahng", example: "Vocês começavam o trabalho às oito?" },
+        ],
+        subjuntivo: [
+          { form: "começasse", meaning: "if I started / began", pron: "koh-meh-SAH-see", example: "Se eu começasse a correr, emagrecia rápido." },
+          { form: "começasse", meaning: "if you started / began", pron: "koh-meh-SAH-see", example: "Queria que você começasse a estudar hoje mesmo." },
+          { form: "começássemos", meaning: "if we started / began", pron: "koh-meh-SAH-seh-moosh", example: "Ele pediu que nós começássemos a reunião sem ele." },
+          { form: "começassem", meaning: "if you all started / began", pron: "koh-meh-SAH-seng", example: "Se vocês começassem cedo, terminavam antes do almoço." },
         ],
       },
     },
@@ -2436,6 +2496,12 @@ window.DATA_VERBS = {
           { form: "tentávamos", meaning: "we used to try / were trying", pron: "ten-TAH-vah-moosh", example: "Nós tentávamos chegar no horário." },
           { form: "tentavam", meaning: "you all used to try", pron: "ten-TAH-vahng", example: "Vocês tentavam falar português?" },
         ],
+        subjuntivo: [
+          { form: "tentasse", meaning: "if I tried", pron: "ten-TAH-see", example: "Se eu tentasse de novo, acho que conseguia." },
+          { form: "tentasse", meaning: "if you tried", pron: "ten-TAH-see", example: "Queria que você tentasse pelo menos uma vez." },
+          { form: "tentássemos", meaning: "if we tried", pron: "ten-TAH-seh-moosh", example: "Ela insistiu que nós tentássemos outro caminho." },
+          { form: "tentassem", meaning: "if you all tried", pron: "ten-TAH-seng", example: "Se vocês tentassem falar português, iam aprender mais rápido." },
+        ],
       },
     },
     {
@@ -2458,6 +2524,12 @@ window.DATA_VERBS = {
           { form: "conseguia", meaning: "you used to manage / achieve / were managing", pron: "kon-seh-GHEE-ah", example: "Você conseguia resolver isso sozinha?" },
           { form: "conseguíamos", meaning: "we used to manage / achieve / were managing", pron: "kon-seh-GHEE-ah-moosh", example: "Nós conseguíamos trabalhar bem juntos." },
           { form: "conseguiam", meaning: "you all used to manage / achieve", pron: "kon-seh-GHEE-ahng", example: "Vocês conseguiam se comunicar em inglês?" },
+        ],
+        subjuntivo: [
+          { form: "conseguisse", meaning: "if I managed (to)", pron: "kon-seh-GHEE-see", example: "Se eu conseguisse uma folga, ia pra praia com você." },
+          { form: "conseguisse", meaning: "if you managed (to)", pron: "kon-seh-GHEE-see", example: "Queria que você conseguisse esse emprego." },
+          { form: "conseguíssemos", meaning: "if we managed (to)", pron: "kon-seh-GHEE-seh-moosh", example: "Se nós conseguíssemos ingresso, a gente ia no show." },
+          { form: "conseguissem", meaning: "if you all managed (to)", pron: "kon-seh-GHEE-seng", example: "Ela duvidava que vocês conseguissem terminar hoje." },
         ],
       },
     },
@@ -2684,6 +2756,12 @@ window.DATA_VERBS = {
           { form: "parávamos", meaning: "we used to stop / were stopping", pron: "pah-RAH-vah-moosh", example: "Nós parávamos de trabalhar mais cedo." },
           { form: "paravam", meaning: "you all used to stop / were stopping", pron: "pah-RAH-vahng", example: "Vocês paravam nesse posto?" },
         ],
+        subjuntivo: [
+          { form: "parasse", meaning: "if I stopped", pron: "pah-RAH-see", example: "Se eu parasse de comer pão, emagrecia." },
+          { form: "parasse", meaning: "if you stopped", pron: "pah-RAH-see", example: "Queria que você parasse de reclamar." },
+          { form: "parássemos", meaning: "if we stopped", pron: "pah-RAH-seh-moosh", example: "O guarda mandou que nós parássemos o carro." },
+          { form: "parassem", meaning: "if you all stopped", pron: "pah-RAH-seng", example: "Se vocês parassem de falar, a aula terminava mais cedo." },
+        ],
       },
     },
     {
@@ -2729,6 +2807,12 @@ window.DATA_VERBS = {
           { form: "mudava", meaning: "you used to change / move / were changing", pron: "moo-DAH-vah", example: "Você mudava de assunto na hora errada?" },
           { form: "mudávamos", meaning: "we used to change / move / were changing", pron: "moo-DAH-vah-moosh", example: "Nós mudávamos os planos de última hora." },
           { form: "mudavam", meaning: "you all used to change / move", pron: "moo-DAH-vahng", example: "Vocês mudavam muito durante esse período?" },
+        ],
+        subjuntivo: [
+          { form: "mudasse", meaning: "if I changed / moved", pron: "moo-DAH-see", example: "Se eu mudasse de emprego, ganhava melhor." },
+          { form: "mudasse", meaning: "if you changed / moved", pron: "moo-DAH-see", example: "Queria que você mudasse de ideia." },
+          { form: "mudássemos", meaning: "if we changed / moved", pron: "moo-DAH-seh-moosh", example: "Se nós mudássemos pra Niterói, o aluguel era mais barato." },
+          { form: "mudassem", meaning: "if you all changed / moved", pron: "moo-DAH-seng", example: "Ninguém esperava que vocês mudassem tanto assim." },
         ],
       },
     },
@@ -2960,6 +3044,12 @@ window.DATA_VERBS = {
           { form: "sentíamos", meaning: "we used to feel / were feeling", pron: "sen-CHEE-ah-moosh", example: "Nós sentíamos falta da comida de casa." },
           { form: "sentiam", meaning: "you all used to feel", pron: "sen-CHEE-ahng", example: "Vocês sentiam dificuldade no começo?" },
         ],
+        subjuntivo: [
+          { form: "sentisse", meaning: "if I felt", pron: "sen-CHEE-see", example: "Se eu sentisse frio, colocava um casaco." },
+          { form: "sentisse", meaning: "if you felt", pron: "sen-CHEE-see", example: "Queria que você sentisse o cheiro desse bolo." },
+          { form: "sentíssemos", meaning: "if we felt", pron: "sen-CHEE-seh-moosh", example: "Ele agia como se nós sentíssemos a mesma coisa." },
+          { form: "sentissem", meaning: "if you all felt", pron: "sen-CHEE-seng", example: "Se vocês sentissem qualquer dor, era pra me avisar." },
+        ],
       },
     },
     {
@@ -3052,6 +3142,12 @@ window.DATA_VERBS = {
           { form: "ganhávamos", meaning: "we used to win / earn", pron: "gah-NYAH-vah-moosh", example: "Nós ganhávamos medalha na escola." },
           { form: "ganhavam", meaning: "you all used to win / earn", pron: "gah-NYAH-vahng", example: "Vocês ganhavam presentes no Natal?" },
         ],
+        subjuntivo: [
+          { form: "ganhasse", meaning: "if I won / earned", pron: "gah-NYAH-see", example: "Se eu ganhasse na loteria, comprava uma casa na Barra." },
+          { form: "ganhasse", meaning: "if you won / earned", pron: "gah-NYAH-see", example: "Queria que você ganhasse esse prêmio." },
+          { form: "ganhássemos", meaning: "if we won / earned", pron: "gah-NYAH-seh-moosh", example: "Se nós ganhássemos o jogo, a festa ia até de manhã." },
+          { form: "ganhassem", meaning: "if you all won / earned", pron: "gah-NYAH-seng", example: "Era como se vocês ganhassem todo jogo de virada." },
+        ],
       },
     },
     {
@@ -3074,6 +3170,12 @@ window.DATA_VERBS = {
           { form: "perdia", meaning: "you used to lose / were losing", pron: "per-DJEE-ah", example: "Você perdia a chave com frequência?" },
           { form: "perdíamos", meaning: "we used to lose / were losing", pron: "per-DJEE-ah-moosh", example: "Nós perdíamos as partidas no começo." },
           { form: "perdiam", meaning: "you all used to lose / were losing", pron: "per-DJEE-ahng", example: "Vocês perdiam o treino quando chovia?" },
+        ],
+        subjuntivo: [
+          { form: "perdesse", meaning: "if I lost", pron: "per-DEH-see", example: "Se eu perdesse esse ônibus, só tinha outro em uma hora." },
+          { form: "perdesse", meaning: "if you lost", pron: "per-DEH-see", example: "Se você perdesse a chave, o porteiro tinha outra." },
+          { form: "perdêssemos", meaning: "if we lost", pron: "per-DEH-seh-moosh", example: "O técnico ficava louco se nós perdêssemos em casa." },
+          { form: "perdessem", meaning: "if you all lost", pron: "per-DEH-seng", example: "Ele falou como se vocês perdessem toda partida." },
         ],
       },
     },
@@ -3189,6 +3291,12 @@ window.DATA_VERBS = {
           { form: "vivia", meaning: "you used to live / were living (be alive)", pron: "vee-VEE-ah", example: "Você vivia bem lá?" },
           { form: "vivíamos", meaning: "we used to live / were living (be alive)", pron: "vee-VEE-ah-moosh", example: "Nós vivíamos com muito pouco." },
           { form: "viviam", meaning: "you all used to live / were living (be alive)", pron: "vee-VEE-ahng", example: "Vocês viviam juntos antes?" },
+        ],
+        subjuntivo: [
+          { form: "vivesse", meaning: "if I lived (be alive)", pron: "vee-VEH-see", example: "Se eu vivesse até os cem, ia ver muita coisa." },
+          { form: "vivesse", meaning: "if you lived (be alive)", pron: "vee-VEH-see", example: "Ela queria que você vivesse a vida com mais calma." },
+          { form: "vivêssemos", meaning: "if we lived (be alive)", pron: "vee-VEH-seh-moosh", example: "Se nós vivêssemos sem celular, conversávamos mais." },
+          { form: "vivessem", meaning: "if you all lived (be alive)", pron: "vee-VEH-seng", example: "Vocês falam como se vivessem no paraíso." },
         ],
       },
     },
@@ -3641,3 +3749,4 @@ window.DATA_VERBS = {
     },
   ],
 };
+
