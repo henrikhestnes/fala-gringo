@@ -79,8 +79,10 @@
 // 1.23.4 a synonym typed for a verb card (coloco or boto for "I put") is answered AS that verb — its own form,
 //        pronunciation and conjugation table — instead of the card's canonical pôr; on a miss the verb the
 //        typed text starts like leads ("colocamos" → colocar); the other synonyms follow in an "also" line
+// 1.23.5 the Daily remembers what was typed per card (`typed`, synced) so its done-screen rows name the synonym
+//        the learner reached for (eu caminho, not eu ando)
 
-const APP_VERSION = '1.23.4';
+const APP_VERSION = '1.23.5';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

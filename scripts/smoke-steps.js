@@ -1177,6 +1177,43 @@ step('a backlog of misses is capped at GOAL_MAX a day and the rest waits; dragge
 
 /* ------------------------------------------------ the Daily's own streak (1.20) */
 
+step('the Daily remembers what was typed and its done screen names the synonym reached for', function () {
+  Store.resetAll();
+  goTo('#daily');
+  var m = registry.view.innerHTML.match(/<div class="card-prompt">([\s\S]*?)<\/div>/);
+  if (!m) throw new Error('no daily prompt');
+  var card = allQuizCards().filter(function (c) { return c.prompt === m[1]; })[0];
+  if (!card) throw new Error('could not identify the daily card');
+  registry.answerInput.value = card.answer.toUpperCase();
+  registry.actionBtn.fire('click');
+  var key = (function (d) { return '' + d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0'); })(new Date());
+  var rec = Store.getDaily(key);
+  if (!rec || !Array.isArray(rec.typed) || rec.typed[0] !== card.answer.toUpperCase()) throw new Error('typed not saved: ' + JSON.stringify(rec));
+  // finish the day, then rewrite the record as if a synonym had been typed for each card that has one
+  var guard = 0;
+  while (registry.giveUpBtn && guard++ < 20) { registry.giveUpBtn.fire('click'); flushTimers(); if (registry.actionBtn) registry.actionBtn.fire('click'); }
+  if (!/done-screen/.test(registry.view.innerHTML)) throw new Error('daily not finished');
+  var verbs = registry.view.innerHTML.match(/daily-result-verb">([^<]*)</g).map(function (s) { return s.replace(/.*">/, '').replace(/<$/, ''); });
+  var withSyn = [];
+  rec = Store.getDaily(key);
+  verbs.forEach(function (ans, i) {
+    var c = allQuizCards().filter(function (x) { return x.answer === ans && x.variants; })[0];
+    if (c) { rec.typed[i] = c.variants[0].answer; withSyn.push(c.variants[0].answer); }
+  });
+  Store.setDaily(key, rec);
+  Daily.mount();
+  withSyn.forEach(function (a) {
+    if (registry.view.innerHTML.indexOf('daily-result-verb">' + a + '<') === -1) throw new Error('row does not name ' + a);
+  });
+  // a pre-1.23.4 record (no typed) still mounts; the merge keeps whichever side saw the answer
+  delete rec.typed; Store.setDaily(key, rec); Daily.mount();
+  if (!/done-screen/.test(registry.view.innerHTML)) throw new Error('legacy record did not mount');
+  var mg = Sync._merge({ mastered: {}, strength: {}, daily: { 20260901: { attempts: [1, 0], failed: [false, false], solved: [true, false], current: 1, typed: ['eu caminho', ''] } }, dailyDone: {} },
+                       { mastered: {}, strength: {}, daily: { 20260901: { attempts: [0, 1], failed: [false, false], solved: [false, true], current: 1, typed: ['', 'boto'] } }, dailyDone: {} });
+  if (mg.daily[20260901].typed.join('|') !== 'eu caminho|boto') throw new Error('merge typed: ' + JSON.stringify(mg.daily[20260901]));
+  return 'typed saved per card; done rows name ' + (withSyn.length ? withSyn.join(', ') : 'no synonym today (none drawn)') + '; legacy record ok; merge keeps both sides';
+});
+
 step('the Daily keeps a permanent log: strict streak in the header and the share string, first-try distribution', function () {
   Store.resetAll();
   function keyOf(d) { return '' + d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0'); }

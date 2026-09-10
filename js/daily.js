@@ -15,6 +15,7 @@ const Daily = (function () {
   let attempts = [];
   let failed = [];
   let solved = [];
+  let typed = [];      // the last text typed per card — the done screen names the synonym it reached for
   let current = 0;
   let answered = false;
   let key = '';
@@ -105,7 +106,7 @@ const Daily = (function () {
 
   function save() {
     Store.setDaily(key, {
-      attempts: attempts, failed: failed, solved: solved, current: current
+      attempts: attempts, failed: failed, solved: solved, current: current, typed: typed
     });
   }
 
@@ -120,11 +121,13 @@ const Daily = (function () {
       attempts = saved.attempts.slice();
       failed = saved.failed.slice();
       solved = saved.solved.slice();
+      typed = cards.map((c, i) => (Array.isArray(saved.typed) && saved.typed[i]) || '');   // pre-1.23.4 records have none
       current = Math.min(Math.max(0, saved.current || 0), n - 1);
     } else {
       attempts = new Array(n).fill(0);
       failed = new Array(n).fill(false);
       solved = new Array(n).fill(false);
+      typed = new Array(n).fill('');
       current = 0;
     }
     // resume on the first unsettled card
@@ -247,6 +250,7 @@ const Daily = (function () {
     if (!input.value.trim() && !card.allowEmpty) return;
 
     attempts[current]++;
+    typed[current] = input.value.trim();
     const ok = accepted(card).has(normalize(input.value));
 
     if (ok) {
@@ -343,7 +347,7 @@ const Daily = (function () {
     const rows = cards.map((entry, i) =>
       '<div class="daily-result-row">' +
         '<span class="daily-result-idx">' + (i + 1) + '</span>' +
-        '<span class="daily-result-verb">' + escapeHtml(entry.card.answer) + '</span>' +
+        '<span class="daily-result-verb">' + escapeHtml(cardFace(entry.card, typed[i]).answer) + '</span>' +
         '<span>' + resultDots(i) + '</span>' +
       '</div>').join('');
 
