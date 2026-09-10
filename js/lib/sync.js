@@ -163,12 +163,13 @@ const Sync = (function () {
     eachKey(x.daily, y.daily, (day, a, b) => {
       if (!a || !b) { out.daily[day] = a || b; return; }
       const n = Math.max((a.attempts || []).length, (b.attempts || []).length);
-      const m = { attempts: [], failed: [], solved: [],
+      const m = { attempts: [], failed: [], solved: [], typed: [],
                   current: Math.max(a.current || 0, b.current || 0) };
       for (let i = 0; i < n; i++) {
         m.attempts[i] = Math.max((a.attempts || [])[i] || 0, (b.attempts || [])[i] || 0);
         m.failed[i] = !!((a.failed || [])[i] || (b.failed || [])[i]);
         m.solved[i] = !!((a.solved || [])[i] || (b.solved || [])[i]);
+        m.typed[i] = (a.typed || [])[i] || (b.typed || [])[i] || '';   // whichever device saw the answer
       }
       out.daily[day] = m;
     });
