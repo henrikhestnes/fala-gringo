@@ -292,8 +292,8 @@ step('browse renders all tenses per verb with glosses', function () {
   var panels = (html.match(/conjugation-panel/g) || []).length;
   if (panels !== 146) throw new Error('expected 146 panels, got ' + panels);
   var subj = (html.match(/Imperfeito do Subjuntivo/g) || []).length;
-  if (subj !== 40) throw new Error('expected 40 subjunctive blocks, got ' + subj);
-  return '146 conjugation panels; 40 carry the subjunctive';
+  if (subj !== 58) throw new Error('expected 58 subjunctive blocks, got ' + subj);
+  return '146 conjugation panels; 58 carry the subjunctive';
 });
 
 step('subjuntivo drill accepts the trigger-prefixed answer', function () {

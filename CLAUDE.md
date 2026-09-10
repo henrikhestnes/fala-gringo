@@ -78,7 +78,7 @@ verbs/              GENERATED static per-verb pages (SEO) — never edit by hand
 
 The key design decision: instead of one drill engine per topic (each topic's raw data has a different schema), `js/topics.js` normalises everything into one card shape — `{ id, topic, group, meta, hint, prompt, sub, accepted[], answer, pron, speak, reveal, allowEmpty, exact }` — and `js/quiz.js` drives all of them. (`exact: true` opts a card out of the typed-slip forgiveness; only `/noruegues/`'s noun cards set it.)
 
-`js/data/verbs.js` is the **source of truth for verb forms** — 146 verbs, forms stored explicitly rather than generated at runtime, so a pronunciation hint hangs off each form. A curated 40-verb core additionally carries the imperfect subjunctive. `js/conjugate.js` independently verifies the regular verbs in the checks; the app loads it too, only so `topics.js` can tag each verb form as regular or not for the Foco inference — it never conjugates for display.
+`js/data/verbs.js` is the **source of truth for verb forms** — 146 verbs, forms stored explicitly rather than generated at runtime, so a pronunciation hint hangs off each form. A curated 58-verb core additionally carries the imperfect subjunctive (the 40 original verbs plus 18 high-frequency ones added in 1.23.6 — conseguir, acontecer, existir, ganhar, entender, aprender, pegar, ligar, comer, tomar, começar, tentar, sentir, perder, viver, mudar, parar, ler). `js/conjugate.js` independently verifies the regular verbs in the checks; the app loads it too, only so `topics.js` can tag each verb form as regular or not for the Foco inference — it never conjugates for display.
 
 ## /ingles/ — Fala Como Gringo, English for Brazilians (subpage)
 

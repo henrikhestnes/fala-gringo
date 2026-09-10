@@ -81,8 +81,11 @@
 //        typed text starts like leads ("colocamos" → colocar); the other synonyms follow in an "also" line
 // 1.23.5 the Daily remembers what was typed per card (`typed`, synced) so its done-screen rows name the synonym
 //        the learner reached for (eu caminho, not eu ando)
+// 1.23.6 the imperfect subjunctive reaches 18 more verbs (58 in all, 228 cards): conseguir, acontecer, existir, ganhar,
+//        entender, aprender, pegar, ligar, comer, tomar, começar, tentar, sentir, perder, viver, mudar, parar, ler —
+//        the verbs a carioca actually puts in "se eu…" that the 40-verb core had left out
 
-const APP_VERSION = '1.23.5';
+const APP_VERSION = '1.23.6';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

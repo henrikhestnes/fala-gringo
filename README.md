@@ -7,7 +7,7 @@ you actually hear in Rio, not textbook European Portuguese. It is aimed at an
 English speaker: you are shown English and type the Portuguese.
 
 Browse 146 verbs with their conjugations across three indicative tenses — plus the
-imperfect subjunctive on a 40-verb core — or drill any of eleven topics by typing
+imperfect subjunctive on a 58-verb core — or drill any of eleven topics by typing
 the answer.
 
 **Static site, no build step, no dependencies, no network requests.** Open
@@ -21,7 +21,7 @@ the answer.
 | **Presente** | Verb drill, present tense | 574 |
 | **Passado** | Verb drill, pretérito perfeito | 576 |
 | **Imperfeito** | Verb drill, pretérito imperfeito | 573 |
-| **Subjuntivo** | Verb drill, imperfeito do subjuntivo — 40 core verbs | 160 |
+| **Subjuntivo** | Verb drill, imperfeito do subjuntivo — 58 core verbs | 228 |
 | **Nouns** | With gender and article | 83 |
 | **Adjectives** | With agreement | 53 |
 | **Adverbs** | Frequency, manner, place, time | 28 |
@@ -41,7 +41,7 @@ learner.*
 The forms are the easy half: for **every** Portuguese verb, regular or irregular, the
 imperfect subjunctive derives from the pretérito perfeito 3pl — drop `-ram`, add
 `-sse / -sse / -ssemos / -ssem` (falaram → falasse, fizeram → fizesse, foram → fosse).
-The data checks verify all 160 stored forms against that rule.
+The data checks verify all 232 stored forms against that rule.
 
 The hard half is knowing **when** to use it, so every gloss and example embeds a
 trigger: `se…` hypotheticals, `queria/gostaria que…` past wishes, `como se…` (as if),
@@ -49,7 +49,7 @@ trigger: `se…` hypotheticals, `queria/gostaria que…` past wishes, `como se�
 the trigger-prefixed `se/que eu falasse`. The Sentences tab's *Hypotheticals & wishes*
 group practices producing whole trigger sentences.
 
-It covers a curated 40-verb core (the verbs you actually reach for in hypotheticals)
+It covers a curated 58-verb core (the verbs you actually reach for in hypotheticals)
 rather than all 146 — and `haver` stays out for the same reason it is not drilled
 elsewhere: only 3sg `houvesse` is live usage.
 
@@ -107,7 +107,7 @@ same data checks in the browser — just open it.
 146 verbs; 1752 forms with all three indicative tenses; every drilled form has a
 form, meaning, pronunciation and example; every regular verb matches an independent
 conjugation oracle (`js/conjugate.js`); every verb flagged irregular really is;
-40 complete subjunctive blocks whose forms all derive from the perfeito 3pl (a rule
+58 complete subjunctive blocks whose forms all derive from the perfeito 3pl (a rule
 with no exceptions, so it verifies irregulars too) and whose examples all contain
 their form inside a trigger context; every card's answer is among its own accepted
 answers; and **no ambiguous prompts** — identical, distinguished only by word
