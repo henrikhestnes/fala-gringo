@@ -1,5 +1,5 @@
 /* Shared regression coverage for the review fixes. Runs in all three app stubs. */
-step('newer answers win sync conflicts; reset markers reject older snapshots', function () {
+step('a miss on one device stays shaky after a merge; reset markers reject older snapshots', function () {
   Store.resetAll();
   const topic = TOPICS.find(t => t.kind === 'quiz');
   const card = topicCards(topic)[0];
@@ -8,28 +8,29 @@ step('newer answers win sync conflicts; reset markers reject older snapshots', f
   Store.markMastered(topic.id, card.id);
   Store.recordAnswer(topic.id, card.id, true);
   const recovered = Store.snapshot();
-  const merged = ProgressState.merge(missed, recovered);
-  if (merged.strength[topic.id][card.id].s !== 1 || merged.strength[topic.id][card.id].l !== 1) throw new Error('stale miss won');
+  const merged = ProgressState.merge(missed, recovered).strength[topic.id][card.id];
+  if (merged.s !== 0 || merged.l !== 0 || merged.m !== 1) throw new Error('merge graduated a card one device had missed: ' + JSON.stringify(merged));
   Store.resetTopic(topic.id);
   Store.applySynced(ProgressState.merge(Store.snapshot(), recovered));
   if (Store.masteredCount(topic.id)) throw new Error('reset resurrected');
   Store.markMastered(topic.id, card.id);
   const afterReset = Store.snapshot();
   if (!ProgressState.merge(recovered, afterReset).mastered[topic.id][card.id]) throw new Error('new progress after reset lost');
-  return 'later retry survives; reset stays reset; new work after reset survives';
+  return 'the miss keeps the card shaky; reset stays reset; new work after reset survives';
 });
 
-step('concurrent offline misses remain shaky regardless of device clock skew', function () {
-  const common = { s: 1, m: 0, l: 1, t: Store.today() - 8, u: 1, v: { shared: 1 } };
-  const hit = Object.assign({}, common, { s: 2, l: 2, u: 90000, v: { shared: 1, fastDevice: 90000 } });
-  const miss = Object.assign({}, common, { s: 0, m: 1, l: 0, u: 2, v: { shared: 1, slowDevice: 2 } });
+step('the strength merge is conservative: a miss on either device keeps the card shaky, in either order', function () {
+  const d = Store.today();
+  const hit = { s: 2, m: 0, l: 2, t: d - 1 };
+  const miss = { s: 0, m: 1, l: 0, t: d - 8 };
   const a = { strength: { topic: { card: hit } } }, b = { strength: { topic: { card: miss } } };
-  const merged = ProgressState.merge(a, b).strength.topic.card;
-  if (merged.s !== 0 || merged.l !== 0) throw new Error('clock skew hid a concurrent miss');
-  const retry = Object.assign({}, merged, { s: 1, l: 1, u: 90001, v: Object.assign({}, merged.v, { fastDevice: 90001 }) });
-  const recovered = ProgressState.merge({ strength: { topic: { card: merged } } }, { strength: { topic: { card: retry } } }).strength.topic.card;
-  if (recovered.s !== 1 || recovered.l !== 1) throw new Error('observed miss could not be recovered');
-  return 'concurrent miss wins; causally later retry recovers it';
+  const ab = ProgressState.merge(a, b).strength.topic.card;
+  const ba = ProgressState.merge(b, a).strength.topic.card;
+  [ab, ba].forEach(m => {
+    if (m.s !== 0 || m.m !== 1 || m.l !== 0) throw new Error('a miss was merged away: ' + JSON.stringify(m));
+  });
+  if (JSON.stringify(ab) !== JSON.stringify(ba)) throw new Error('merge order matters: ' + JSON.stringify(ab) + ' vs ' + JSON.stringify(ba));
+  return 'miss wins both ways: s 0, m 1, l 0';
 });
 
 step('local writes reconcile other tabs and retain independent writer journals', function () {
@@ -172,17 +173,15 @@ step('settings validate goals and dialogs move and restore focus', function () {
   return 'goal controls saved; focus enters dialog, returns to its opener (body-activeElement too), lands on the tab after a sheet link';
 });
 
-step('a short session limits actual cards and supplies answer labels and live feedback', function () {
+step('a mounted drill supplies answer labels and live feedback', function () {
   Store.resetAll();
   Store.setPref('foco', true);
   Store.setPref('mic', false);
   const topic = TOPICS.find(t => t.kind === 'quiz');
   registry.view.dataset.topic = '';
-  Quiz.mount(topic, 5);
-  if (+registry.statTotal.textContent !== 5) throw new Error('not five cards');
-  if (Store.introducedToday(topic.id) !== 5) throw new Error('introduced unseen cards outside short session');
+  Quiz.mount(topic);
   if (!/for="answerInput"/.test(registry.cardArea.innerHTML) || !/aria-live="polite"/.test(registry.cardArea.innerHTML)) throw new Error('answer accessibility markup missing');
-  return 'five cards introduced; labeled input and announced feedback';
+  return 'labeled input and announced feedback';
 });
 
 step('new local events advance beyond imported reset and Daily clocks', function () {
@@ -190,11 +189,11 @@ step('new local events advance beyond imported reset and Daily clocks', function
   const future = Date.now() + 1000000;
   const seed = Store.snapshot();
   seed.resets.all = future;
-  seed.daily.clockTest = { version: 2, u: future + 100, cards: [{ topic: 'test', id: 'old' }], attempts: [0], solved: [false], current: 0 };
+  seed.daily.clockTest = { version: 2, cards: [{ topic: 'test', id: 'old' }], attempts: [0], solved: [false], current: 0 };
   Store.applySynced(seed);
   Store.setDaily('clockTest', { version: 2, cards: [{ topic: 'test', id: 'new' }], attempts: [0], solved: [false], current: 0 });
-  if (Store.getDaily('clockTest').cards[0].id !== 'new' || Store.getDaily('clockTest').u <= future + 100) throw new Error('imported clock prevented Daily replacement');
+  if (Store.getDaily('clockTest').cards[0].id !== 'new') throw new Error('imported Daily prevented its local replacement');
   Store.resetAll();
-  if (Store.snapshot().resets.all <= future + 100) throw new Error('reset failed to advance clock');
-  return 'replacement and reset remain newer after clock skew';
+  if (Store.snapshot().resets.all <= future) throw new Error('reset failed to advance past the imported clock');
+  return 'local Daily replaces the imported one; a reset stamps past an imported future clock';
 });

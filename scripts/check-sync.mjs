@@ -1,65 +1,49 @@
-// Optional integration tests using Node's built-in test runner and Web APIs.
-// No dependencies. Run: node --test scripts/check-sync.mjs
+// Integration tests for the sync worker + the real sync client, using Node's
+// built-in test runner and Web APIs. No dependencies. Run:
+//   node --test scripts/check-sync.mjs
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
-import worker, { SyncState } from '../sync-worker/worker.js';
+import worker from '../sync-worker/worker.js';
 const base = new URL('../', import.meta.url);
 const source = p => readFileSync(new URL(p, base), 'utf8');
 const code = 'abcdefghijklmnop';
 const url = 'https://sync.example/' + code;
 const empty = () => ({ mastered: {}, strength: {}, daily: {} });
 
-function backend(legacy = null, ref = null) {   // ref: { value } lets a test change what KV answers
-  let record, imports = 0, gate = Promise.resolve();
-  const serial = fn => {
-    const next = gate.then(fn);
-    gate = next.catch(() => {});
-    return next;
-  };
-  const storage = {
-    get: async () => structuredClone(record),
-    put: async (_, value) => { record = structuredClone(value); },
-    transaction: fn => serial(() => fn(storage))
-  };
-  const env = { SYNC: { get: async () => { imports++; const v = ref ? ref.value : legacy; return v && JSON.stringify(v); } } };
-  const object = new SyncState({ storage, blockConcurrencyWhile: serial }, env);
-  env.SYNC_STATE = { idFromName: id => id, get: () => object };
-  return { env, imports: () => imports, fetch: request => worker.fetch(request, env) };
+/* An in-memory KV namespace behind the worker. */
+function backend(initial = null) {
+  const store = new Map();
+  if (initial) store.set(code, JSON.stringify(initial));
+  const env = { SYNC: { get: async k => store.get(k) ?? null, put: async (k, v) => { store.set(k, v); } } };
+  return { store, fetch: request => worker.fetch(request, env) };
 }
+const put = (api, body, headers = {}) => api.fetch(new Request(url, { method: 'PUT', headers, body }));
 
-test('atomic revisions reject a concurrent stale write and preserve the winner', async () => {
+test('GET of an unknown code is null; a PUT stores the blob; GET returns it', async () => {
   const api = backend();
-  const get = await api.fetch(new Request(url));
-  assert.equal(get.headers.get('ETag'), '"0"');
-  const a = empty(), b = empty(); a.mastered.nouns = { mesa: 1 }; b.mastered.nouns = { cadeira: 1 };
-  const put = data => api.fetch(new Request(url, { method: 'PUT', headers: { 'If-Match': '"0"' }, body: JSON.stringify(data) }));
-  const results = await Promise.all([put(a), put(b)]);
-  assert.deepEqual(results.map(r => r.status).sort(), [200, 412]);
-  const stored = await api.fetch(new Request(url));
-  assert.equal(stored.headers.get('ETag'), '"1"');
-  assert.equal(Object.keys((await stored.json()).mastered.nouns).length, 1);
+  assert.equal(await (await api.fetch(new Request(url))).json(), null);
+  const data = empty(); data.mastered.nouns = { mesa: 1 };
+  assert.equal((await put(api, JSON.stringify(data))).status, 200);
+  assert.deepEqual(await (await api.fetch(new Request(url))).json(), data);
 });
 
-test('KV migration is once-only; old clients and malformed/oversized uploads are rejected', async () => {
-  const legacy = empty(); legacy.mastered.nouns = { mesa: 1 };
-  const api = backend(legacy);
-  assert.deepEqual(await (await api.fetch(new Request(url))).json(), legacy);
-  await api.fetch(new Request(url));
-  assert.equal(api.imports(), 1);
-  const put = (body, headers = {}) => api.fetch(new Request(url, { method: 'PUT', headers, body }));
-  assert.equal((await put('{}')).status, 428);
-  assert.equal((await put('{', { 'If-Match': '"0"' })).status, 400);
-  assert.equal((await put(JSON.stringify({ mastered: {}, strength: { nouns: { bad: null } } }), { 'If-Match': '"0"' })).status, 400);
-  assert.equal((await put(' '.repeat(1024 * 1024 + 1), { 'If-Match': '"0"' })).status, 413);
-  assert.equal((await api.fetch(new Request(url, { method: 'OPTIONS' }))).headers.get('Access-Control-Expose-Headers'), 'ETag, X-Sync-Version');
+test('bad codes, non-JSON, wrong shapes and oversized bodies are rejected', async () => {
+  const api = backend();
+  assert.equal((await api.fetch(new Request('https://sync.example/short'))).status, 400);
+  assert.equal((await put(api, '{')).status, 400);
+  assert.equal((await put(api, '[1,2]')).status, 400);
+  assert.equal((await put(api, JSON.stringify({ mastered: {} }))).status, 400);
+  assert.equal((await put(api, ' '.repeat(1024 * 1024 + 1))).status, 413);
+  assert.equal((await api.fetch(new Request(url, { method: 'DELETE' }))).status, 405);
+  assert.equal((await api.fetch(new Request(url, { method: 'OPTIONS' }))).status, 204);
 });
 
 function client(fetchImpl) {
   const context = vm.createContext({ console, Promise, Date, JSON, Map, Set, fetch: fetchImpl });
-  // The normal app stub supplies a DOM and local storage but intentionally
-  // replaces fetch; restore the controlled transport after evaluating it.
+  // The app stub supplies a DOM and localStorage but replaces fetch; restore
+  // the controlled transport after evaluating it.
   vm.runInContext(source('scripts/dom-stub.js'), context);
   context.fetch = fetchImpl;
   vm.runInContext(source('js/lib/state.js') + '\n' + source('js/progress.js') + '\n' + source('js/lib/sync.js'), context);
@@ -67,98 +51,55 @@ function client(fetchImpl) {
   return { context, run: text => vm.runInContext(text, context), sync: () => vm.runInContext('Sync._sync(true)', context) };
 }
 
-test('failed GET and old backend cannot trigger a blind PUT', async () => {
-  for (const result of [new Response('offline', { status: 503 }), new Response('null')]) {
-    let puts = 0;
-    const c = client(async (_, options) => { if (options?.method === 'PUT') puts++; return result.clone(); });
-    assert.equal(await c.sync(), false);
-    assert.equal(puts, 0);
-  }
-});
-
-test('client retries revision conflict after remerging both devices', async () => {
-  const api = backend();
-  let inject = true, puts = 0;
-  const c = client(async (_, options = {}) => {
-    if (options.method === 'PUT') {
-      puts++;
-      if (inject) {
-        inject = false;
-        const other = empty(); other.mastered.nouns = { cadeira: 1 };
-        await api.fetch(new Request(url, { method: 'PUT', headers: { 'If-Match': '"0"' }, body: JSON.stringify(other) }));
-      }
-    }
-    return api.fetch(new Request(url, options));
-  });
-  c.run("Store.markMastered('nouns','mesa')");
-  assert.equal(await c.sync(), true);
-  assert.equal(puts, 2);
-  const stored = await (await api.fetch(new Request(url))).json();
-  assert.deepEqual(stored.mastered.nouns, { mesa: 1, cadeira: 1 });
-});
-
-test('disconnect or code change invalidates a pending pull', async () => {
-  let resolve, puts = 0;
-  const c = client(async (_, options = {}) => {
-    if (options.method === 'PUT') puts++;
-    return new Promise(r => { resolve = r; });
-  });
-  const pending = c.sync();
-  c.run("Sync._setCode('')");
-  const remote = empty(); remote.mastered.nouns = { mesa: 1 };
-  resolve(new Response(JSON.stringify(remote), { headers: { ETag: '"0"', 'X-Sync-Version': '2' } }));
-  assert.equal(await pending, false);
-  assert.equal(c.run("Store.masteredCount('nouns')"), 0);
+test('a failed GET never leads to a PUT', async () => {
+  let puts = 0;
+  const c = client(async (_, options = {}) => { if (options.method === 'PUT') puts++; return new Response('offline', { status: 503 }); });
+  assert.equal(await c.sync(), false);
   assert.equal(puts, 0);
 });
 
-test('an empty KV answer is not persisted: a value KV serves later is still imported', async () => {
-  const ref = { value: null };
-  const api = backend(null, ref);
-  assert.equal(await (await api.fetch(new Request(url))).json(), null);
-  ref.value = empty(); ref.value.mastered.nouns = { mesa: 1 };
-  const later = await api.fetch(new Request(url));
-  assert.deepEqual(await later.json(), ref.value);
-  assert.equal(later.headers.get('ETag'), '"0"');
-  // imported for good now: a later KV change is ignored
-  const imported = ref.value; ref.value = null;
-  assert.deepEqual(await (await api.fetch(new Request(url))).json(), imported);
-});
-
-test('a malformed legacy value is cleaned on import instead of failing the code forever', async () => {
-  const legacy = empty();
-  legacy.mastered.nouns = { mesa: 1, cadeira: 'yes' };
-  legacy.strength.nouns = { mesa: { s: 1, m: 0, t: 20700, l: 1, x: 'unknown' }, bad: null };
-  const api = backend(legacy);
-  const got = await (await api.fetch(new Request(url))).json();
-  assert.deepEqual(got.mastered.nouns, { mesa: 1 });
-  assert.deepEqual(got.strength.nouns, { mesa: { s: 1, m: 0, t: 20700, l: 1 } });
-});
-
-test('a PUT on a never-seen code creates revision 1', async () => {
+test('two devices end up with the union of their progress', async () => {
   const api = backend();
-  const data = empty(); data.mastered.nouns = { mesa: 1 };
-  const put = await api.fetch(new Request(url, { method: 'PUT', headers: { 'If-Match': '"0"' }, body: JSON.stringify(data) }));
-  assert.equal(put.status, 200);
-  assert.equal(put.headers.get('ETag'), '"1"');
-  assert.deepEqual(await (await api.fetch(new Request(url))).json(), data);
+  const transport = async (_, options = {}) => api.fetch(new Request(url, options));
+  const a = client(transport), b = client(transport);
+  a.run("Store.markMastered('nouns','mesa'); Store.recordAnswer('nouns','mesa', true)");
+  b.run("Store.markMastered('nouns','cadeira'); Store.recordAnswer('nouns','cadeira', true)");
+  assert.equal(await a.sync(), true);
+  assert.equal(await b.sync(), true);   // pulls a's card, pushes both
+  assert.equal(await a.sync(), true);   // pulls b's
+  assert.equal(a.run("Store.masteredCount('nouns')"), 2);
+  assert.equal(b.run("Store.masteredCount('nouns')"), 2);
+  assert.deepEqual(Object.keys(JSON.parse(api.store.get(code)).mastered.nouns).sort(), ['cadeira', 'mesa']);
 });
 
-test('client: a remote blob from a newer client pauses sync — nothing pulled, nothing pushed', async () => {
+test('a miss on one device keeps the card shaky after the merge', async () => {
+  const api = backend();
+  const transport = async (_, options = {}) => api.fetch(new Request(url, options));
+  const a = client(transport), b = client(transport);
+  a.run("Store.markMastered('nouns','mesa'); Store.recordAnswer('nouns','mesa', true)");
+  assert.equal(await a.sync(), true);
+  assert.equal(await b.sync(), true);
+  b.run("Store.recordAnswer('nouns','mesa', false)");
+  assert.equal(await b.sync(), true);
+  assert.equal(await a.sync(), true);
+  assert.equal(a.run("Store.cardState('nouns','mesa')"), 'shaky');
+});
+
+test('a remote blob from a newer client pauses sync — nothing pulled, nothing pushed', async () => {
   let puts = 0;
   const remote = empty();
   remote.strength.nouns = { mesa: { s: 1, m: 0, t: 20700, l: 1, zz: 5 } };
   remote.mastered.nouns = { mesa: 1 };
   const c = client(async (_, options = {}) => {
     if (options.method === 'PUT') puts++;
-    return new Response(JSON.stringify(remote), { headers: { ETag: '"3"', 'X-Sync-Version': '2' } });
+    return new Response(JSON.stringify(remote));
   });
   assert.equal(await c.sync(), false);
   assert.equal(puts, 0);
   assert.equal(c.run("Store.masteredCount('nouns')"), 0);
 });
 
-test('client: an identical remote state is recognised whatever its key order (no spurious push)', async () => {
+test('an identical remote state is recognised whatever its key order (no spurious push)', async () => {
   const api = backend();
   let puts = 0;
   const transport = async (_, options = {}) => { if (options.method === 'PUT') puts++; return api.fetch(new Request(url, options)); };
@@ -172,4 +113,19 @@ test('client: an identical remote state is recognised whatever its key order (no
   assert.equal(d.run("Store.masteredCount('nouns')"), 1);
   assert.equal(await d.sync(), true);
   assert.equal(puts, 1, 'a re-sync of an identical state pushes nothing');
+});
+
+test('disconnecting mid-pull discards the result', async () => {
+  let resolve, puts = 0;
+  const c = client(async (_, options = {}) => {
+    if (options.method === 'PUT') puts++;
+    return new Promise(r => { resolve = r; });
+  });
+  const pending = c.sync();
+  c.run("Sync._setCode('')");
+  const remote = empty(); remote.mastered.nouns = { mesa: 1 };
+  resolve(new Response(JSON.stringify(remote)));
+  assert.equal(await pending, false);
+  assert.equal(c.run("Store.masteredCount('nouns')"), 0);
+  assert.equal(puts, 0);
 });

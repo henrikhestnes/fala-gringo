@@ -1,11 +1,25 @@
-// Optional cross-device sync: inactive until a learner links a secret code.
-// Protocol v2 pulls, merges and conditionally writes a revision to one Durable
-// Object per code. Failed pulls never permit uploads; stale revisions retry.
-// Answer vectors preserve causally later recoveries and keep concurrent misses
-// conservative. Reset generations prevent deleted progress from returning.
-// The three apps share fg:syncCode, while ingles/noruegues wire prefixes keep
-// their progress separate. Preferences remain per-device and per-app.
-// See sync-worker/README.md for the required backend upgrade before publishing.
+// Optional cross-device sync — OFF until a learner links a secret code.
+//
+// The app stays a static site; sync is a tiny Cloudflare Worker (sync-worker/)
+// that stores the progress blob in KV under a long random secret code, which
+// the learner pastes into each device (the ⇅ button in the top bar). While
+// SYNC_URL below is empty the app makes zero network requests.
+//
+// The model is pull → merge → push, never overwrite: on load (and on every
+// push) the remote state is fetched and MERGED into the local one
+// (ProgressState.merge: union of mastered, misses kept, streak and level the
+// lower of the two, so a shaky card can never graduate out of Foco by syncing;
+// reset generations so a reset on one device is not undone by another's stale
+// snapshot). Pushes send the merged state, throttled to one a minute, with a
+// best-effort attempt when the tab hides. Two devices pushing within the same
+// minute can still overwrite each other on the server — the loser's answers
+// live on locally and heal on its next pull, because every sync merges. A
+// failed GET never leads to a push (an HTTP error is not an empty remote).
+//
+// The three apps share one code (CODE_KEY, same origin); /ingles/ and
+// /noruegues/ prefix it on the wire so the worker keeps three separate blobs.
+// Preferences are per device and per app on purpose. UI wording is overridable
+// through window.APP_STRINGS, same contract as quiz.js/app.js.
 
 const SYNC_URL = 'https://fala-gringo-sync.henrik-hestnes.workers.dev';   // scheme required: without it fetch() treats this as a relative path
 
@@ -14,7 +28,6 @@ const Sync = (function () {
     syncTitleOff: 'Sync is off — tap to link your devices',
     syncTitleError: 'Last sync failed — will retry',
     syncTitleBusy: 'Syncing…',
-    syncUpgrade: 'Sync is paused until the server is updated. Your progress is still saved on this device.',
     syncUpdateApp: 'Sync is paused — another device runs a newer version. Reload to update this one.',
     syncTitleNow: 'Synced just now',
     syncTitleAgo: 'Synced {min} min ago',
@@ -31,21 +44,22 @@ const Sync = (function () {
     syncPulled: 'Progress synced ⇅',
     syncNudge: '⇅ can sync your progress between devices — tap it to set up'
   }, window.APP_STRINGS || {});
-  // key prefix on the worker: '' for the main app, 'ingles' for the subpage —
-  // it must satisfy the worker's [a-z0-9]{16,64} code regex together with the code
+  // key prefix on the worker: '' for the main app, 'ingles'/'noruegues' for the
+  // subpages — it must satisfy the worker's [a-z0-9]{16,64} code regex together
+  // with the code
   const APP = String(window.APP_SYNC_APP || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-  // the code is shared with the other app, so it must fit behind the LONGEST prefix
+  // the code is shared by the apps, so it must fit behind the LONGEST prefix
   // any app uses ('noruegues', 9 chars) — generated codes are 32 anyway
   const MAX_CODE = 64 - 9;
 
-  const PUSH_INTERVAL = 60 * 1000;   // at most one regular upload a minute while drilling
-  const PAUSED_INTERVAL = 10 * 60 * 1000;   // while paused (server or app out of date) poll rarely
+  const PUSH_INTERVAL = 60 * 1000;          // at most one upload a minute while drilling
+  const PAUSED_INTERVAL = 10 * 60 * 1000;   // while paused (a newer client wrote the blob) poll rarely
   let pushTimer = 0;
   let lastPushAt = 0;
   let lastPushed = '';   // stable JSON of the state known to be on the server; skips no-op pushes
   let status = 'ok';     // 'ok' | 'error' — meaningful only while sync is on
   let lastSyncAt = 0;
-  let paused = '';       // '' | 'server' (old worker) | 'app' (newer client wrote the remote blob)
+  let paused = false;    // the remote blob carries fields this build does not know
   let generation = 0;
   let inFlight = null;
   let dirty = false;
@@ -53,7 +67,7 @@ const Sync = (function () {
 
   const canFetch = typeof fetch === 'function';   // the smoke stub has one that never reaches a network
 
-  /* The code is shared by both apps on this origin through one plain
+  /* The code is shared by the apps on this origin through one plain
      localStorage key (each app's Store blob is private to it, so a pref would
      not do). Pre-1.11 devices kept it in the per-app 'syncCode' pref: the first
      read adopts that into the shared key and clears the pref, so a later "off"
@@ -66,7 +80,7 @@ const Sync = (function () {
   function setCode(c) {
     generation++;
     lastPushed = '';
-    paused = '';
+    paused = false;
     memCode = c || '';
     try { if (c) localStorage.setItem(CODE_KEY, c); else localStorage.removeItem(CODE_KEY); } catch (e) { /* memory only */ }
     if (Store.getPref('syncCode', '')) Store.setPref('syncCode', '');   // retire the legacy pref
@@ -95,7 +109,7 @@ const Sync = (function () {
     btn.className = 'icon-btn sync-' + st;
     let title;
     if (st === 'off') title = STR.syncTitleOff;
-    else if (st === 'error') title = paused === 'server' ? STR.syncUpgrade : paused === 'app' ? STR.syncUpdateApp : STR.syncTitleError;
+    else if (st === 'error') title = paused ? STR.syncUpdateApp : STR.syncTitleError;
     else if (!lastSyncAt) title = STR.syncTitleBusy;
     else {
       const min = Math.round((Date.now() - lastSyncAt) / 60000);
@@ -128,47 +142,41 @@ const Sync = (function () {
 
   /* ------------------------------------------------------------- transport */
 
-  // Every upload follows a successful GET and carries its revision. The server
-  // atomically rejects a stale revision; we merge and retry instead of overwriting.
+  /* One round: GET, merge, apply locally if that changed anything, and — when
+     asked to upload and the server is behind — PUT the merged state. */
   function synchronize(upload) {
     if (!enabled()) return Promise.resolve(false);
     if (inFlight) { if (upload) dirty = true; return inFlight; }
     const gen = generation, url = endpoint();
     const current = () => gen === generation && enabled() && endpoint() === url;
-    let retries = 0;
     async function attempt() {
       const res = await fetch(url, { cache: 'no-store' });
-      if (!res.ok) throw new Error('http ' + res.status);
-      const revision = res.headers && res.headers.get('ETag');
-      const protocol = res.headers && res.headers.get('X-Sync-Version');
+      if (!res.ok) throw new Error('http ' + res.status);   // an HTTP error is NOT an empty remote
       const remote = await res.json();
       if (!current()) return false;
       // A remote blob this build cannot fully understand was written by a newer
       // client: merging would strip what it does not know and push that back.
       // Pull nothing, push nothing, say so — the learner's local work is safe.
-      if (remote !== null && !ProgressState.validate(remote)) { paused = 'app'; throw new Error('newer remote state'); }
+      if (remote !== null && !ProgressState.validate(remote)) { paused = true; throw new Error('newer remote state'); }
+      paused = false;
       const local = Store.snapshot();
       const merged = mergeStates(local, remote || {});
-      // Preferences belong to this device, never to the sync payload.
-      delete merged.prefs; delete merged.prefTimes;
+      delete merged.prefs; delete merged.prefTimes;   // preferences belong to this device
       const body = stable(merged);
       if (body !== stable(local)) {
         Store.applySynced(merged);
         if (window.App && App.refreshProgress) App.refreshProgress();
         toast(STR.syncPulled);
       }
-      if (!revision || protocol !== '2') { paused = 'server'; throw new Error('backend upgrade required'); }
-      paused = '';
       if (remote !== null && body === stable(remote)) { lastPushed = body; markOk(); return true; }
       if (!upload) { dirty = true; markOk(); return true; }
       if (!current()) return false;
       lastPushAt = Date.now();
       const put = await fetch(url, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json', 'If-Match': revision },
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(merged), cache: 'no-store'
       });
       if (!current()) return false;
-      if (put.status === 412 && retries++ < 3) return attempt();
       if (!put.ok) throw new Error('http ' + put.status);
       lastPushed = body; markOk(); return true;
     }
@@ -184,8 +192,8 @@ const Sync = (function () {
   function push() { if (pushTimer) clearTimeout(pushTimer); pushTimer = 0; dirty = false; return synchronize(true); }
   /* Throttle, don't debounce: the first change after a quiet spell uploads in
      2.5 s; further changes ride along until PUSH_INTERVAL has passed. After a
-     failure wait a full interval; while paused (see above) poll rarely — the
-     answer will not change until a deploy or a reload. */
+     failure wait a full interval; while paused poll rarely — the answer will
+     not change until this device reloads. */
   function schedulePush() {
     dirty = true;
     if (!enabled() || pushTimer || inFlight) return;
@@ -193,17 +201,18 @@ const Sync = (function () {
     const wait = Math.max(base, lastPushAt + PUSH_INTERVAL - Date.now());
     pushTimer = setTimeout(push, wait);
   }
-  // Local persistence is authoritative on close. A GET + conditional PUT is
-  // not guaranteed to finish while the page hides, but it is safe to try (a
-  // truncated attempt changes nothing), and it usually lands — so the other
-  // device sees this session's last answers without waiting for the next visit.
+  // Local storage is authoritative on close. A GET + PUT is not guaranteed to
+  // finish while the page hides, but it is safe to try (a truncated attempt
+  // changes nothing) and it usually lands; the next visit reconciles anyway.
+  // No `keepalive`: the fetch spec caps keepalive bodies at 64 KiB and a
+  // learner's blob outgrows that (1.23.x silently lost every push past it).
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') { Store.refreshStorage(); push(); }
     else if (document.visibilityState === 'hidden' && enabled() && (dirty || pushTimer || stable(Store.snapshot()) !== lastPushed)) push();
   });
   window.addEventListener('online', () => push());
   window.addEventListener('storage', e => {
-    if (e.key === CODE_KEY) { generation++; lastPushed = ''; lastSyncAt = 0; paused = ''; updateButton(); pull(); }
+    if (e.key === CODE_KEY) { generation++; lastPushed = ''; lastSyncAt = 0; paused = false; updateButton(); pull(); }
   });
 
   /* ------------------------------------------------------------------- ui */

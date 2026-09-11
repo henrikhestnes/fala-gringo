@@ -28,7 +28,7 @@ const QUIZ_STRINGS = Object.assign({
   easyTag: ' · Easy Mode',
   reset: 'reset',
   statTotal: 'Total',
-  statKnown: 'Cleared',
+  statKnown: 'Known',
   statLeft: 'Left',
   emptyFocoTitle: 'Tudo em dia! 🎯',
   emptyFocoBody: 'Every card here is mastered and fresh. Reviews come due on an expanding ' +
@@ -60,11 +60,6 @@ const QUIZ_STRINGS = Object.assign({
   graduatedToast: '🎓 {label} graduated! Next: {next}',
   graduatedToastLast: '🎓 {label} graduated — every tab is!',
   nearIs: 'Close! You typed “{typed}” — the answer is',
-  // the first-session starter (subpages; the root app's lives in browse.js) and the short session
-  introText: 'Read the English and type the Portuguese. Modo Raiz hides the hints; Modo Nutella shows one.',
-  introStart: 'Start with five cards →',
-  sessionNote: 'Short practice: up to five cards. Then you choose whether to continue.',
-  continueFull: 'Continue with the full deck →',
   dailyRollover: 'A new day has started — here is today’s Daily.',
   listening: 'Ouvindo… fala aí',
   listeningEmpty: ' — diga “nada” se nada falta na lacuna',
@@ -86,7 +81,6 @@ const UI_LANG = window.APP_LANG ? 'pt-BR' : 'en';
 
 const Quiz = (function () {
   let topic = null;
-  let sessionLimit = 0;
   let deck = [];
   let current = 0;
   let known = new Set();
@@ -236,13 +230,6 @@ const Quiz = (function () {
     // stamp every never-seen card that made it into today's deck (new, or dragged
     // in by a shaky sibling) as introduced today; verify cards are re-inferred on
     // every rebuild and must not eat into the intake
-    if (sessionLimit && out.length > sessionLimit) {
-      out.length = sessionLimit;
-      ['due', 'shaky', 'verify', 'new'].forEach(tier => { counts[tier] = out.filter(c => tierOf.get(c.id) === tier).length; });
-      let impliedCount = 0;
-      impliedBy.forEach((ids, lead) => { if (out.some(c => c.id === lead)) impliedCount += ids.length; else impliedBy.delete(lead); });
-      counts.implied = impliedCount;
-    }
     Store.markIntroduced(topic.id, out.filter(c =>
       tierOf.get(c.id) !== 'verify' && Store.cardState(topic.id, c.id) === 'new').map(c => c.id));
     return out;
@@ -256,8 +243,7 @@ const Quiz = (function () {
     counts = null;
     tierOf = new Map();
     impliedBy = new Map();
-    const shuffled = shuffle(cards);
-    return sessionLimit ? shuffled.slice(0, sessionLimit) : shuffled;
+    return shuffle(cards);
   }
 
   /* Today's goal, the number on the ring in the top bar, across the tabs the
@@ -357,10 +343,9 @@ const Quiz = (function () {
     render();
   }
 
-  function mount(t, limit) {
+  function mount(t) {
     topic = t;
     document.getElementById('view').dataset.topic = '';
-    sessionLimit = limit || 0;
     rivalCache.clear();
     const groups = topicGroups(topic);
     activeGroups = groups.length ? new Set(groups) : null;
@@ -380,14 +365,6 @@ const Quiz = (function () {
     tierOf = new Map();
     impliedBy = new Map();
     rivalCache.clear();
-  }
-
-  /* A learner who has never answered anything, anywhere: the first-session
-     starter shows for them alone (Browse in the root app, the drill chrome on
-     the subpages). Cheap — no snapshot copy — so it can run on every render. */
-  function newcomer() {
-    if (Store.streak().n > 0 || Store.answeredOn(Store.today()) > 0) return false;
-    return !TOPICS.some(t => t.kind === 'quiz' && Store.masteredCount(t.id) > 0);
   }
 
   /* ---------------------------------------------------------------- chrome */
@@ -443,12 +420,7 @@ const Quiz = (function () {
         '" aria-pressed="' + (micOn() ? 'true' : 'false') + '" data-mic="1" title="' + escapeHtml(QUIZ_STRINGS.micTitle) + '">' +
         QUIZ_STRINGS.micChip + '</button>'
       : '';
-    // the subpages have no Browse tab, so their first-session starter sits here
-    const intro = window.APP_LANG && !sessionLimit && newcomer()
-      ? '<section class="welcome"><p>' + escapeHtml(QUIZ_STRINGS.introText) + '</p>' +
-        '<button class="btn primary" type="button" data-start-practice="1">' + escapeHtml(QUIZ_STRINGS.introStart) + '</button></section>' : '';
-    return intro + (sessionLimit ? '<p class="session-note" role="status">' + escapeHtml(QUIZ_STRINGS.sessionNote) + '</p>' : '') +
-      '<div class="view-head">' +
+    return '<div class="view-head">' +
         '<h1>' + escapeHtml(topic.label) + '</h1>' +
         '<p id="masteredLine">' + masteredHtml() + '</p>' +
       '</div>' +
@@ -575,23 +547,10 @@ const Quiz = (function () {
         '<div class="controls">' +
           '<button class="btn primary" id="againBtn" type="button">' +
             escapeHtml(QUIZ_STRINGS.startOver) + '</button>' +
-          // a short session promised a choice at the end: here it is
-          (sessionLimit ? '<button class="btn" id="continueBtn" type="button">' +
-            escapeHtml(QUIZ_STRINGS.continueFull) + '</button>' : '') +
         '</div>' +
       '</div>';
     document.getElementById('againBtn').addEventListener('click', buildDeck);
-    const cont = document.getElementById('continueBtn');
-    if (cont) cont.addEventListener('click', continueFull);
     if (perfect) launchFireworks();
-  }
-
-  /* From a short session's done screen into the whole deck: the limit goes,
-     the chrome loses its session note, and the deck is rebuilt. */
-  function continueFull() {
-    sessionLimit = 0;
-    document.getElementById('view').dataset.topic = '';
-    buildDeck();
   }
 
   /* -------------------------------------------------------------- mic mode */
@@ -829,7 +788,6 @@ const Quiz = (function () {
   return {
     mount: mount,
     unmount: unmount,
-    newcomer: newcomer,
     rerender: function () {
       if (!topic) return;
       document.getElementById('view').dataset.topic = '';

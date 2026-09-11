@@ -199,8 +199,8 @@ step('the shell\'s inline config: the digit table keeps spaces and sentence dots
   var m = html.match(/window\.APP_STRINGS = (\{[\s\S]*?\n\});/);
   if (!m) throw new Error('APP_STRINGS block not found in the shell');
   var S = (0, eval)('(' + m[1] + ')');
-  var keys = ['praise', 'miss', 'introText', 'introStart', 'sessionNote', 'continueFull', 'dailyRollover', 'voiceMissing',
-              'practicing', 'practicingShort', 'settingsTitle', 'settingsHelp', 'settingGoalMax', 'settingGoalNew', 'settingNewPerDay',
+  var keys = ['praise', 'miss', 'dailyRollover', 'voiceMissing',
+              'settingsTitle', 'settingsHelp', 'settingGoalMax', 'settingGoalNew', 'settingNewPerDay',
               'settingsSave', 'settingsSaved', 'settingsInvalid', 'backupTitle', 'backupHelp', 'backupExport', 'backupImport',
               'backupRestore', 'backupImported', 'backupRestored', 'backupBad', 'modeHint', 'themeAuto', 'themeLight', 'themeDark',
               'updateReady', 'syncUpdateApp'];
@@ -256,8 +256,7 @@ step('every drill tab carries a tier, and the title by the flame reads the highe
   var best = 0;
   TOPICS.forEach(function (t) { if (t.kind === 'quiz' && Store.isActiveTopic(t.id) && t.tier > best) best = t.tier; });
   var name = ['Iniciante', 'Intermediário', 'Avançado'][best - 1];
-  // the smoke config leaves `practicing` in English; the shell's PT wording is checked by the config step below
-  if (!name || !new RegExp('goal-title-long">[^<]*: ' + name + '<').test(registry.goalBtn.innerHTML))
+  if (!name || registry.goalBtn.innerHTML.indexOf('goal-title">' + name + '<') < 0)
     throw new Error('expected title ' + name + ' in ' + registry.goalBtn.innerHTML);
   return TOPICS.filter(function (t) { return t.kind === 'quiz'; }).map(function (t) { return t.id + '=' + t.tier; }).join(' ') + '; title ' + name;
 });

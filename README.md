@@ -154,12 +154,10 @@ verbs only this repo had needed pronunciations and examples written for them
 content and worth spot-checking**, especially stress placement.
 
 
-## v1.24: practice, settings and safe progress
+## v1.24: settings, backups and safe progress
 
-Use **Start a short practice** for five cards, or search Browse in Portuguese or English. Expand a verb to load its conjugations. The gear button opens daily workload settings and per-language JSON backup export/import. Raiz hides hints; Nutella shows them.
+Search Browse in Portuguese or English; expand a verb to load its conjugations. The gear button opens the daily workload settings and per-language JSON backup export/import (backups never contain the sync code). Storage failures are visible instead of silent.
 
-Review levels now advance only when due. Extra practice does not postpone the next review. Inferred sibling reviews update their clocks without adding invented answers to activity statistics. The level shown beside the goal is explicitly the level being practiced, not a fluency assessment.
+Review levels now advance only when a review is due; extra practice neither climbs nor postpones the next review. Inferred sibling reviews update their clocks without counting as answers. A reset on one device is not undone by another device's stale snapshot.
 
-Sync v2 requires the [backend upgrade](sync-worker/README.md) before publishing this client. It uses conditional writes, conflict retries and reset generations. Local tabs reconcile through independent journals. Storage failures are visible, and backup exports contain no sync code.
-
-The [review implementation notes](docs/review-improvements.md) cover compatibility and validation. The [pronunciation audit](docs/pronunciation-audit.md) records 64 corrected rows and its limits. The six JXA suites remain dependency-free; optional backend tests use `node --test scripts/check-sync.mjs` with no packages.
+The [review notes](docs/review-improvements.md) list every change with its reason, including what was rolled back in 1.24.1. The [pronunciation audit](docs/pronunciation-audit.md) records the corrected hints. The six JXA suites remain dependency-free; `node --test scripts/check-sync.mjs` runs the sync worker and client together with no packages.

@@ -2,13 +2,12 @@
    the app's top-level const bindings (Mode, Store, Quiz, Browse, Daily, TOPICS)
    are in scope. Uses step()/registry/flushTimers from the JXA host script. */
 
-step('app boots and renders the Browse view, with the first-session starter for a newcomer', function () {
+step('app boots and renders the Browse view', function () {
   var html = registry.view.innerHTML + registry.browseRows.innerHTML;
-  if (!/<h2 lang="pt-BR">Verbos<\/h2>/.test(html)) throw new Error('browse view did not render');
-  if (!/class="welcome"/.test(html) || !/data-start-practice/.test(html)) throw new Error('no starter on a fresh profile');
+  if (!/<h1 lang="pt-BR">Verbos<\/h1>/.test(html)) throw new Error('browse view did not render');
   var rows = (html.match(/class="verb-row"/g) || []).length;
   if (rows !== 146) throw new Error('expected 146 verb rows, got ' + rows);
-  return rows + ' verb rows, ' + html.length + ' bytes of HTML; starter shown';
+  return rows + ' verb rows, ' + html.length + ' bytes of HTML';
 });
 
 step('Browse defers conjugations until a row is expanded, then preserves irregularity marks', function () {
@@ -322,11 +321,10 @@ step('pronominal drill accepts every declared answer variant', function () {
   return '"' + card.accepted[card.accepted.length - 1] + '" accepted for "' + card.answer + '"';
 });
 
-step('an unknown hash falls back to Browse — now without the starter, "Verbos" the page heading', function () {
+step('an unknown hash falls back to Browse, "Verbos" the page heading', function () {
   goTo('#nonsense');
   if (!/<h1 lang="pt-BR">Verbos<\/h1>/.test(registry.view.innerHTML)) throw new Error('did not fall back: ' + registry.view.innerHTML.slice(0, 200));
-  if (/class="welcome"/.test(registry.view.innerHTML)) throw new Error('starter still shown after the answers above');
-  return 'Browse without the starter; h1 = Verbos';
+  return 'Browse; h1 = Verbos';
 });
 
 /* The schedule is day-based, so steps move the clock: Date.now() is offset
@@ -1055,8 +1053,7 @@ step('a tab graduates at 80% of its cards on review level 3, wears 🎓, and nam
   goTo('#adverbs');
   if (Quiz.graduation(t).qualifies) throw new Error('qualified one card short of the bar');
   if (!/data-tab="adverbs"[^>]*>Adverbs<span class="pct">\d+%</) throw new Error('tab should still show its %: ' + registry.tabs.innerHTML);
-  if (!/goal-title-long">Practicing: Intermediário</.test(registry.goalBtn.innerHTML)) throw new Error('title should be Intermediário (adverbs is tier 2): ' + registry.goalBtn.innerHTML);
-  if (!/goal-title-short">Practicing Intermediário</.test(registry.goalBtn.innerHTML)) throw new Error('no short form for phones: ' + registry.goalBtn.innerHTML);
+  if (!/goal-title">Intermediário</.test(registry.goalBtn.innerHTML)) throw new Error('title should be Intermediário (adverbs is tier 2): ' + registry.goalBtn.innerHTML);
   // the 23rd card: mastered at level 3 too — the bar is met, but no answer has stamped it yet
   var last = cards[need - 1];
   snap = Store.snapshot();
@@ -1096,7 +1093,7 @@ step('with tier-3 progress the title reads Avançado; graduation stamps merge to
   snap.drilled = { subjuntivo: Store.today() };
   seedState(snap);
   App.refreshGoal();
-  if (!/goal-title-long">Practicing: Avançado</.test(registry.goalBtn.innerHTML)) throw new Error(registry.goalBtn.innerHTML);
+  if (!/goal-title">Avançado</.test(registry.goalBtn.innerHTML)) throw new Error(registry.goalBtn.innerHTML);
   var m = Sync._merge({ mastered: {}, strength: {}, daily: {}, graduated: { presente: 20700 } },
                       { mastered: {}, strength: {}, daily: {}, graduated: { presente: 20690, nouns: 20701 } });
   if (m.graduated.presente !== 20690 || m.graduated.nouns !== 20701) throw new Error(JSON.stringify(m.graduated));
@@ -1501,35 +1498,6 @@ step('reclaimed implied reviews come up right after the lead, and the due count 
   if (seen.slice().sort().join('|') !== siblings.slice().sort().join('|'))
     throw new Error('the next three cards were ' + seen.join(', ') + ', not the reclaimed ' + siblings.join(', '));
   return 'missed ' + lead.id + ' → ' + siblings.join(', ') + ' asked next; due +3, deck +3';
-});
-
-step('a short session ends with a choice: "continue with the full deck" drops the limit', function () {
-  Store.resetAll();
-  Store.setPref('foco', true); Store.setPref('mic', false);
-  registry.view.dataset.topic = '';
-  Quiz.mount(topicById('adverbs'), 5);
-  if (!/session-note/.test(registry.view.innerHTML) || !/Short practice/.test(registry.view.innerHTML)) throw new Error('no session note');
-  if (parseInt(registry.statTotal.textContent, 10) !== 5) throw new Error('not five cards');
-  var guard = 0;
-  while (registry.answerInput && guard++ < 20) {
-    var c = shownCard('adverbs');
-    registry.answerInput.value = c.answer; registry.actionBtn.fire('click'); registry.actionBtn.fire('click');
-  }
-  if (!/done-screen/.test(registry.cardArea.innerHTML)) throw new Error('short session not finished');
-  if (!registry.continueBtn || !/Continue with the full deck/.test(registry.cardArea.innerHTML)) throw new Error('no continue button on the done screen');
-  registry.continueBtn.fire('click');
-  var total = parseInt(registry.statTotal.textContent, 10);
-  if (total !== Store.newPerDay() - 5) throw new Error('full deck is ' + total + ', expected the rest of today\'s intake (' + (Store.newPerDay() - 5) + ')');
-  if (/session-note/.test(registry.view.innerHTML)) throw new Error('session note still shown');
-  // clear the full deck too: its done screen offers no Continue
-  guard = 0;
-  while (registry.answerInput && guard++ < 40) {
-    var c2 = shownCard('adverbs');
-    registry.answerInput.value = c2.answer; registry.actionBtn.fire('click'); registry.actionBtn.fire('click');
-  }
-  if (!/done-screen/.test(registry.cardArea.innerHTML) || /continueBtn/.test(registry.cardArea.innerHTML))
-    throw new Error('continue button outside a short session, or the full deck did not finish');
-  return '5 cards → done screen with Continue → ' + total + '-card full deck, no note, no Continue at its end';
 });
 
 step('the goal celebration runs once a day, not after every miss→fix once the goal is done', function () {
