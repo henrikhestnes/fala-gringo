@@ -95,7 +95,8 @@
 //         starter/short session and the "Practicing:" wording go too
 // 1.24.2: a compact Browse search toolbar, refined verb cards and roomier conjugation panels
 // 1.24.3: keep reveal hints inside short word buttons and refine the topic navigation
-const APP_VERSION = '1.24.3';
+// 1.24.4: restore solid white surfaces to inactive topic tabs
+const APP_VERSION = '1.24.4';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name
