@@ -54,7 +54,7 @@ const Browse = (function () {
       '<span class="verb-num">' + num + '.</span>' + speakButton(verb.pt, verb.pt) +
       '<div class="verb-text">' +
         '<button type="button" class="verb-pt" lang="pt-BR" data-lang="pt" aria-pressed="false" title="Hide or reveal Portuguese">' + escapeHtml(verb.pt) +
-          (verb.irregular ? ' <span class="tag">(irregular)</span>' : '') + '</button>' +
+          (verb.irregular ? ' <span class="tag">irregular</span>' : '') + '</button>' +
         '<button type="button" class="verb-en" lang="en" data-lang="en" aria-pressed="false" title="Hide or reveal English">' + escapeHtml(verb.en) + '</button>' +
       '</div>' +
       '<button class="conj-btn" type="button" aria-label="Show conjugations for ' + escapeHtml(verb.pt) + '" aria-expanded="false" aria-controls="' + id + '" data-conj="1">' + CHEVRON_SVG + '</button>' +
@@ -90,7 +90,7 @@ const Browse = (function () {
         list.forEach((v, i) => { body += rowHtml(v, i + 1, cat.color); count++; });
       });
     }
-    document.getElementById('browseRows').innerHTML = body || '<p>No verbs match your search.</p>';
+    document.getElementById('browseRows').innerHTML = body || '<div class="browse-empty"><strong>No verbs found</strong><p>Try another word in Portuguese or English.</p></div>';
     document.getElementById('browseCount').textContent = count + ' of ' + V.verbs.length + ' verbs';
   }
 
@@ -100,16 +100,21 @@ const Browse = (function () {
     view.className = shuffled ? 'shuffled' : '';
     view.innerHTML =
       '<div class="view-head"><h1 lang="pt-BR">Verbos</h1><p>Browse ' + window.DATA_VERBS.verbs.length + ' verbs — tap a word to hide or reveal it.</p></div>' +
-      '<label class="search-label" for="browseSearch">Find a verb in Portuguese or English</label>' +
-      '<input class="browse-search" id="browseSearch" type="search" autocomplete="off" placeholder="falar, speak…" value="' + escapeHtml(query) + '">' +
-      '<p id="browseCount" role="status" aria-live="polite"></p>' +
-      '<div class="controls" style="margin-bottom:1rem">' +
+      '<div class="browse-toolbar">' +
+      '<label class="sr-only" for="browseSearch">Find a verb in Portuguese or English</label>' +
+      '<div class="browse-search-field">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="m16 16 4 4"></path></svg>' +
+        '<input class="browse-search" id="browseSearch" type="search" autocomplete="off" aria-describedby="browseSearchHint" placeholder="Find a verb…" value="' + escapeHtml(query) + '">' +
+      '</div>' +
+      '<div class="browse-search-meta"><span id="browseSearchHint">Portuguese or English · falar, speak</span>' +
+        '<span id="browseCount" role="status" aria-live="polite" aria-atomic="true"></span></div>' +
+      '<div class="controls browse-controls">' +
         '<button class="btn" data-browse="hide-pt">Hide Português</button>' +
         '<button class="btn" data-browse="hide-en">Hide English</button>' +
         '<button class="btn" data-browse="show">Show all</button>' +
         '<button class="btn' + (shuffled ? ' active' : '') + '" data-browse="shuffle">Shuffle</button>' +
         (shuffled ? '<button class="btn" data-browse="reset">Original order</button>' : '') +
-      '</div><div id="browseRows"></div>';
+      '</div></div><div id="browseRows"></div>';
     document.getElementById('browseSearch').addEventListener('input', e => { query = e.target.value; renderRows(); });
     renderRows();
   }
