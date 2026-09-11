@@ -93,7 +93,8 @@
 //         the revision-checked Durable Object protocol and the per-record causal vectors that
 //         shipped with 1.24.0 were more machinery than the problem deserved; the onboarding
 //         starter/short session and the "Practicing:" wording go too
-const APP_VERSION = '1.24.1';
+// 1.24.2: a compact Browse search toolbar, refined verb cards and roomier conjugation panels
+const APP_VERSION = '1.24.2';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name
