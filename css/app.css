@@ -329,7 +329,7 @@ button { cursor: pointer; touch-action: manipulation; }
    and consistent inset badges so progress stays easy to scan. */
 .tab {
   border: 1px solid transparent;
-  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  background: var(--surface);
   color: var(--text-2);
   border-radius: 10px;
   min-height: 40px;
