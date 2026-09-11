@@ -304,11 +304,13 @@ button { cursor: pointer; touch-action: manipulation; }
 .tabs {
   max-width: 880px;
   margin: 0 auto;
-  padding: 0 1rem .5rem;
+  padding: .55rem 1rem .85rem;
   display: flex;
-  gap: .3rem;
+  align-items: center;
+  gap: .4rem;
   overflow-x: auto;
   scrollbar-width: none;
+  scroll-padding-inline: 1rem;
 }
 .tabs::-webkit-scrollbar { display: none; }
 /* On phones the 13 tabs scroll horizontally. On wider screens show them all:
@@ -323,42 +325,48 @@ button { cursor: pointer; touch-action: manipulation; }
   }
 }
 
-/* Idle chips: quiet off-white pills (a touch of the page cream mixed in).
-   The active tab wears the flag: green field, yellow lettering, and the
-   counter as a blue-on-yellow pill — the flag's own layering. The field is
-   the flag's green deepened to #04702e: yellow on it reads at 4.7:1, where
-   the pure #009c3b managed 2.7:1. */
+/* Compact navigation tiles: quiet idle surfaces, a raised green selection,
+   and consistent inset badges so progress stays easy to scan. */
 .tab {
-  border: 1px solid var(--border);
-  background: color-mix(in srgb, var(--surface) 82%, var(--bg));
+  border: 1px solid transparent;
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
   color: var(--text-2);
-  border-radius: 999px;
-  padding: .3rem .58rem;
+  border-radius: 10px;
+  min-height: 40px;
+  padding: .45rem .65rem;
   font-size: .78rem;
   font-weight: 600;
   white-space: nowrap;
   display: flex;
   align-items: center;
-  gap: .38rem;
-  transition: all .15s;
+  gap: .5rem;
+  flex: none;
+  transition: background .15s, border-color .15s, color .15s, box-shadow .15s, transform .15s;
 }
-.tab:hover { border-color: var(--border-strong); color: var(--text); }
+.tab:hover { background: var(--surface); border-color: var(--border-strong); color: var(--text); }
+.tab:active { transform: translateY(1px); }
 .tab[aria-selected="true"] {
   background: #04702e;
   border-color: #04702e;
-  color: #ffdf00;
+  color: #fff;
+  box-shadow: 0 3px 8px rgba(0, 60, 24, .18), inset 0 1px 0 rgba(255, 255, 255, .15);
 }
 .tab[aria-selected="true"] .pct {
   background: #ffdf00;
   color: #002776;
-  padding: 0 .34em;
-  border-radius: 999px;
 }
 .tab .pct {
-  font-size: .68rem;
+  display: inline-grid;
+  place-items: center;
+  min-width: 2.4em;
+  padding: .15rem .3rem;
+  border-radius: 5px;
+  background: var(--surface-3);
+  color: var(--text-2);
+  font-size: .65rem;
   font-variant-numeric: tabular-nums;
-  opacity: .7;
-  font-weight: 500;
+  line-height: 1.25;
+  font-weight: 600;
 }
 /* Tier captions inside the strip: a quiet uppercase word with a rule before it,
    inked in the level's colour (green / yellow / blue — the flag's own three). */
@@ -371,9 +379,9 @@ button { cursor: pointer; touch-action: manipulation; }
   text-transform: uppercase;
   white-space: nowrap;
   color: var(--text-3);
-  padding: 0 .15rem 0 .6rem;
-  margin-left: .2rem;
-  border-left: 1.5px solid var(--border-strong);
+  padding: .35rem .25rem .35rem .85rem;
+  margin-left: .35rem;
+  border-left: 1px solid var(--border-strong);
   line-height: 1.6;
 }
 .tier-label[data-tier="1"] { color: var(--green-ink); }
@@ -381,7 +389,7 @@ button { cursor: pointer; touch-action: manipulation; }
 .tier-label[data-tier="3"] { color: var(--blue-ink); }
 
 .tab.daily {
-  border-color: var(--yellow);
+  border-color: color-mix(in srgb, var(--yellow-ink) 25%, transparent);
   color: var(--yellow-ink);
   background: var(--yellow-soft);
 }
@@ -389,6 +397,13 @@ button { cursor: pointer; touch-action: manipulation; }
   background: var(--yellow);
   border-color: var(--yellow);
   color: #4a3800;
+  box-shadow: 0 3px 8px rgba(122, 92, 0, .12);
+}
+
+@media (max-width: 639px) {
+  .tabs { gap: .35rem; }
+  .tab { min-height: 44px; }
+  .tier-label { font-size: .56rem; }
 }
 
 /* ---------- layout ---------- */
@@ -1082,6 +1097,8 @@ html.sheet-open { overflow: hidden; }
 .verb-pt.hidden .tag { visibility: hidden; }
 
 .verb-pt.hidden, .verb-en.hidden {
+  min-width: 6rem;
+  min-height: 1.4rem;
   color: transparent;
   background: var(--surface-3);
   border: 1px dashed var(--border-strong);
@@ -1089,6 +1106,7 @@ html.sheet-open { overflow: hidden; }
 }
 .verb-pt.hidden::after, .verb-en.hidden::after {
   content: "tap to reveal";
+  white-space: nowrap;
   position: absolute;
   inset: 0;
   display: grid;
