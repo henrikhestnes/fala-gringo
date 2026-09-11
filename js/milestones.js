@@ -19,7 +19,7 @@ window.Milestones = (function () {
     s7:       ['7-day streak', 'Practised seven days running.'],
     s30:      ['30-day streak', 'A month of showing up.'],
     s100:     ['100-day streak', 'A hundred days. Carioca de coração.'],
-    top:      ['Top of the ladder', 'A card confirmed on five distinct days — the 120-day review.'],
+    top:      ['Top of the ladder', 'A card confirmed on five spaced reviews — the 120-day review.'],
     grad1:    ['First graduation', 'A whole tab at review level 3 or higher.'],
     tier1:    ['{tier} complete', 'Every {tier} tab graduated.'],
     tier2:    ['{tier} complete', 'Every {tier} tab graduated.'],
@@ -35,6 +35,12 @@ window.Milestones = (function () {
 
   function quizTopics() { return TOPICS.filter(t => t.kind === 'quiz'); }
   function hasTier(n) { return quizTopics().some(t => t.tier === n); }
+  let total = -1;
+  function cardTotal() {
+    if (total < 0) total = typeof allQuizCards === 'function' ? allQuizCards().length
+                                                              : quizTopics().reduce((n, t) => n + topicCards(t).length, 0);
+    return total;
+  }
   function tierDone(n) {
     const tabs = quizTopics().filter(t => t.tier === n);
     return tabs.length > 0 && tabs.every(t => Quiz.graduation(t).qualifies);
@@ -66,8 +72,9 @@ window.Milestones = (function () {
   const DEFS = [
     { id: 'first',  icon: '🌱', when: c => c.mastered >= 1 },
     { id: 'm100',   icon: '💯', when: c => c.mastered >= 100 },
-    { id: 'm500',   icon: '🏛️', when: c => c.mastered >= 500 },
-    { id: 'm1000',  icon: '🗿', when: c => c.mastered >= 1000 },
+    // only where the app has that many cards to master (the subpages have a few hundred)
+    { id: 'm500',   icon: '🏛️', applies: () => cardTotal() >= 500,  when: c => c.mastered >= 500 },
+    { id: 'm1000',  icon: '🗿', applies: () => cardTotal() >= 1000, when: c => c.mastered >= 1000 },
     { id: 's7',     icon: '🔥', when: c => c.streak >= 7 },
     { id: 's30',    icon: '🔥', when: c => c.streak >= 30 },
     { id: 's100',   icon: '🔥', when: c => c.streak >= 100 },

@@ -63,6 +63,37 @@ if (!loadFailed) {
   }
 }
 
+/* The service worker's CORE list is hand-maintained and cache.addAll() is
+   all-or-nothing: one missing path and no installed user ever gets the new
+   version. Check every CORE entry exists and every <script src> in the three
+   shells is in it. */
+if (results) {
+  const name = 'sw.js CORE lists every shell script and every entry exists';
+  try {
+    const fm = $.NSFileManager.defaultManager;
+    const exists = p => fm.fileExistsAtPath($(ROOT + '/' + p));
+    const sw = read(ROOT + '/sw.js');
+    const list = (sw.match(/const CORE = \[([\s\S]*?)\];/) || [, ''])[1];
+    const core = (list.match(/'[^']+'/g) || []).map(s => s.slice(1, -1));
+    const missing = core.filter(p => !exists(p.endsWith('/') ? p + 'index.html' : p));
+    const shells = [['', 'index.html'], ['ingles/', 'ingles/index.html'], ['noruegues/', 'noruegues/index.html']];
+    const uncached = [];
+    shells.forEach(([dir, file]) => {
+      const html = read(ROOT + '/' + file);
+      (html.match(/<script src="([^"]+)"/g) || []).forEach(tag => {
+        const src = tag.match(/"([^"]+)"/)[1];
+        const path = src.startsWith('../') ? src.slice(3) : dir + src;
+        if (!core.includes(path)) uncached.push(file + ' → ' + path);
+      });
+      if (!core.includes(dir || './')) uncached.push(file + ' (the page itself)');
+    });
+    const bad = missing.map(p => 'missing file: ' + p).concat(uncached.map(p => 'not in CORE: ' + p));
+    results.push({ ok: !bad.length && core.length > 10, name: name, detail: bad.length ? bad.join('\n') : core.length + ' cached paths' });
+  } catch (e) {
+    results.push({ ok: false, name: name, detail: String((e && e.message) || e) });
+  }
+}
+
 if (loadFailed || !results) {
   console.log('\nAborting: one or more files failed to parse or execute.');
 } else {
@@ -78,3 +109,6 @@ if (loadFailed || !results) {
     ? 'FAILED: ' + failed.length + ' of ' + results.length + ' checks'
     : 'PASSED: all ' + results.length + ' checks');
 }
+
+// A printed failure must also fail shell/CI callers.
+if (!results || results.some(r => !r.ok) || loadFailed) throw new Error('Check suite failed');

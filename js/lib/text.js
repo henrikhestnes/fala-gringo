@@ -13,6 +13,7 @@ function normalize(str) {
     .toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u0309\u030b-\u036f]/g, '')
     .replace(/[?!.,;:¿¡"']+/g, '')
+    .replace(/[-‐-―]+/g, ' ')   // a hyphen or dash is a space: "terca feira" is terça-feira
     .replace(/\s+/g, ' ')
     .trim()
     .normalize('NFC');   // å back to one code point: one key to the slip matcher
@@ -208,11 +209,17 @@ function formatCount(n, singular, plural) {
 }
 
 /* The app's voice: rotating carioca exclamations for hits and misses.
-   Plain strings, safe to inline into feedback HTML without escaping. */
+   Plain strings, safe to inline into feedback HTML without escaping. A page
+   teaching Brazilians (the /ingles/ and /noruegues/ subpages) swaps them through
+   window.APP_STRINGS.praise / .miss — "Tá virando carioca!" is for the gringo. */
 const PRAISE_WORDS = ['Boa, gringo!', 'Aí sim!', 'Mandou bem!', 'É isso aí!', 'Tá virando carioca!', 'Show de bola!'];
 const MISS_WORDS = ['Quase!', 'Não foi dessa vez…', 'Relaxa, acontece.', 'Eita…'];
-function praiseWord() { return PRAISE_WORDS[Math.floor(Math.random() * PRAISE_WORDS.length)]; }
-function missWord() { return MISS_WORDS[Math.floor(Math.random() * MISS_WORDS.length)]; }
+function wordList(key, fallback) {
+  const s = window.APP_STRINGS && window.APP_STRINGS[key];
+  return Array.isArray(s) && s.length ? s : fallback;
+}
+function praiseWord() { const w = wordList('praise', PRAISE_WORDS); return w[Math.floor(Math.random() * w.length)]; }
+function missWord() { const w = wordList('miss', MISS_WORDS); return w[Math.floor(Math.random() * w.length)]; }
 
 /* mulberry32 — deterministic PRNG for the daily challenge. */
 function seededRandom(seed) {

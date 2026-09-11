@@ -1,40 +1,44 @@
-# Sync backend
+# Sync backend, protocol v2
 
-A single Cloudflare Worker + KV namespace that stores the app's `pvs:v1`
-progress blob under a random secret sync code. Free tier is far more than
-enough (the blob is a few KB and syncs a handful of times per study session).
+The static site uses a secret code shared across the three apps. Progress is separate: the root uses the bare code, English prefixes `ingles`, and Norwegian prefixes `noruegues`. The code is a bearer secret sent only to the configured HTTPS endpoint. Backups never include it.
 
-## Deploy (one time, ~5 minutes, via the dashboard)
+## Upgrade before publishing the v1.24 client
 
-1. Sign in at <https://dash.cloudflare.com> (create a free account if needed).
-2. **Storage & Databases → KV → Create namespace** — name it `fala-gringo-sync`.
-3. **Workers & Pages → Create → Worker** — name it `fala-gringo-sync`, deploy the
-   hello-world, then **Edit code**, replace everything with `worker.js` from this
-   folder, and deploy.
-4. On the worker: **Settings → Bindings → Add → KV namespace** — variable name
-   `SYNC` (exactly), select the namespace from step 2. Deploy again.
-5. Copy the worker URL (`https://fala-gringo-sync.<your-subdomain>.workers.dev`)
-   into `SYNC_URL` at the top of `js/lib/sync.js`, commit, push.
+Version 2 replaces blind KV writes with **revision-checked writes to a Durable Object**. KV has no atomic compare-and-set and cannot safely arbitrate concurrent device updates. Each secret code has its own object. The first request that finds a **value** in KV imports it (once); an empty KV answer is served as a virtual revision 0 and is *not* stored, so a value KV only serves a little later (it is eventually consistent, up to ~60 s) is still picked up on a following request, and a PUT on a never-seen code creates revision 1 directly. A malformed legacy value is cleaned (`ProgressState.clean`) rather than failing every request for that code. The original KV value is left untouched for recovery.
 
-Or with wrangler, if installed: `wrangler kv namespace create SYNC`, put the
-returned id in a `wrangler.toml` binding named `SYNC`, then `wrangler deploy worker.js`.
+1. The checked-in config targets the existing `fala-gringo-sync` Worker and its production account.
+2. Its `SYNC` namespace (`9014f52e474248a5bfb344afdc2021b7`) was verified against active version `f8d906f2-fe2b-40fa-9dcb-57c81bfb2370` on 2026-09-10. Recheck the live binding if deploying later; preserve it rather than creating an empty replacement namespace.
+3. From the repository root, deploy the backend using `npx --yes wrangler deploy --config sync-worker/wrangler.jsonc`. Wrangler bundles `worker.js` and the shared `js/lib/state.js` validation code. The `v2` migration creates the SQLite-backed `SyncState` Durable Object class.
+4. Verify with a separate test code: GET returns `X-Sync-Version: 2` and `ETag: "0"`; PUT with `If-Match: "0"` advances the revision; reusing the old revision returns 412. Verify that an existing account imports correctly before publishing the client.
+5. Publish the static site. Existing browser clients must reload to v1.24: blind PUTs from older versions receive 428 and cannot overwrite upgraded progress (their pulls keep working, so nothing is lost meanwhile).
 
-## Using it
+Either order degrades safely — a v1.24 client against the old KV worker pauses itself ("server needs updating", pull-only), an old client against the new worker pulls but cannot push — but deploy the worker **first**, at a quiet hour: the import takes whatever KV serves, and KV can lag a push made seconds earlier by up to a minute.
 
-The /ingles/ subpage uses the very same worker: it prefixes the code with
-`ingles` on the wire (`/ingles<code>`), so its blob lives under a different KV
-key and never merges with the main app's. The code is stored once per device
-(a shared localStorage key), so linking either app links both.
+The config contains verified account and namespace identifiers, which are not credentials. Both `SYNC` and `SYNC_STATE` bindings are required. No deployment is part of the local test suites. There is no rate limit in the Worker itself — every GET on a well-formed code touches a Durable Object (nothing is stored until a value exists) — so add a Cloudflare rate-limiting rule on the route if abuse ever shows up.
 
-On any device (either app): tap the ⇅ button in the top bar. First device: leave the box
-empty to generate a sync code. Other devices: paste that code. The code is the
-key to the progress — anyone who has it can read and write that progress, so
-treat it like a password (it never appears in URLs, only in the request path
-over HTTPS).
+The deployment dry run passed on 2026-09-10 with Wrangler 4.129.0 and both expected bindings. It did not publish the Worker or create the Durable Object namespace.
 
-The app pulls-and-merges on every load and pushes at most once a minute while
-drilling, with a final flush when the tab is hidden or closed — that keeps a
-heavy session at a handful of KV writes, well inside the free tier's 1,000
-writes/day. Merging is conservative: mastered cards are unioned, misses are kept,
-and a card's correct-streak only counts if it happened since the last miss on
-every device — so syncing can never falsely graduate a shaky card out of Foco.
+For a local bundle/configuration check without publishing, run `npx --yes wrangler deploy --dry-run --config sync-worker/wrangler.jsonc --outdir /private/tmp/fala-gringo-sync-bundle`.
+
+For a new installation, create a KV namespace, place its ID in the same config, then deploy. It serves as the empty migration source for new accounts.
+
+## Protocol
+
+- `GET /<code>` returns the progress object (or `null`) and its quoted integer `ETag`.
+- `PUT /<code>` requires `If-Match` with that exact ETag and a validated progress object. A transaction checks the revision and writes the next one atomically.
+- A stale revision returns 412; a missing precondition returns 428. The client fetches, merges and retries a conflict up to three times, then backs off.
+- The body is capped at 1 MiB while streaming. CORS exposes ETag and the protocol version. Responses are not cacheable.
+
+A failed GET or an old backend never permits an upload. A remote blob carrying a record field the client does not know (written by a newer client) pauses that client — it neither pulls nor pushes, and its button says to reload. Clients keep progress locally and retry when online, when visible, or after the retry delay (10 minutes while paused). Changes are normally uploaded after 2.5 seconds idle and at most once a minute during sustained practice; a tab going hidden attempts one last GET + conditional PUT (harmless if cut short), and the next visit reconciles first anyway. States are compared with sorted-key JSON, so key order never counts as a change.
+
+## Conflict semantics
+
+`js/lib/state.js` is the pure merge/validation implementation used by the browser and backend validation. New answer records carry a monotonic `u` timestamp and a causal `v` vector with **one entry per device** (`fg:device` in localStorage, stable across sessions; capped at 8 actors as a safety net — dropping an actor only makes a merge more conservative). A retry that observed a miss supersedes it; concurrent offline answers and legacy records use conservative minimum streak/level. A device with a fast clock cannot hide a concurrent miss. Clock advancement observes merged event clocks, including after local clock rollback. Reset markers start a new global or topic generation: a side on an older generation drops the records it wrote *before* the reset and keeps those written after it (offline work on another device survives). Preferences and sync codes stay local.
+
+Daily result slots merge by `{topic, id}`, never by position across different manifests. A challenge revision determines the selected manifest; overlapping identities retain their results. Device answer counts retain their existing max-merge semantics, rather than pretending that replicated counts are additive.
+
+## Tests and rollout limits
+
+Run `node --test scripts/check-sync.mjs` for transport integration tests using Node's built-in APIs (no packages). They cover simultaneous writes, migration (including a KV value that appears late, and a malformed one), stale/legacy requests, malformed/oversized bodies, failed pulls, retry merging, code changes in flight, a newer client's blob pausing an older one, and key-order-insensitive comparison. The six JXA suites cover app and state behavior without Node (`scripts/store-steps.js` holds the store's persistence regressions).
+
+The integration tests model serialized Durable Object storage; they do not provision Cloudflare or replace a staging migration check. Consult the official [Durable Object storage documentation](https://developers.cloudflare.com/durable-objects/api/sqlite-storage-api/) for the transaction guarantees.

@@ -29,11 +29,13 @@ const CONFIG =
 const FILES = [
   'scripts/dom-stub.js',
   null,  // CONFIG slots in here, after the stub creates `window`
-  'js/lib/text.js', 'js/lib/tts.js', 'js/lib/stt.js', 'js/lib/fx.js', 'js/progress.js',
+  'js/lib/text.js', 'js/lib/tts.js', 'js/lib/stt.js', 'js/lib/fx.js', 'js/lib/state.js', 'js/progress.js',
   'noruegues/js/data/verbos.js', 'noruegues/js/data/substantivos.js', 'noruegues/js/data/frases.js',
   'noruegues/js/data/numeros.js', 'noruegues/js/data/palavrinhas.js', 'noruegues/js/topics.js',
   'js/quiz.js', 'js/milestones.js', 'js/app.js', 'js/lib/sync.js', 'js/version.js',
-  'scripts/smoke-noruegues-steps.js'
+  'scripts/smoke-noruegues-steps.js',
+  'scripts/review-regressions.js',
+  'scripts/store-steps.js'
 ];
 
 var results = [];
@@ -61,3 +63,6 @@ const failed = results.filter(r => !r.ok).length;
 console.log('');
 console.log(failed ? ('FAILED: ' + failed + ' of ' + results.length)
                    : ('PASSED: all ' + results.length + ' smoke steps'));
+
+// A printed failure must also fail shell/CI callers.
+if (!results || results.some(r => !r.ok)) throw new Error('Check suite failed');

@@ -7,7 +7,7 @@ you actually hear in Rio, not textbook European Portuguese. It is aimed at an
 English speaker: you are shown English and type the Portuguese.
 
 Browse 146 verbs with their conjugations across three indicative tenses — plus the
-imperfect subjunctive on a 58-verb core — or drill any of eleven topics by typing
+imperfect subjunctive on a 58-verb core — or drill any of twelve topics by typing
 the answer.
 
 **Static site, no build step, no dependencies, no network requests.** Open
@@ -64,7 +64,7 @@ elsewhere: only 3sg `houvesse` is live usage.
   sentence and the full conjugation table.
 - **Every verb has both a written pronunciation and a listen button**, using the
   browser's Brazilian-Portuguese voice.
-- No batching or gating: a deck is always the whole topic, minus any category
+- With Foco off, a deck is the whole topic, minus any category
   chips you switch off.
 - Each tab shows how much of it you have mastered; a card counts as mastered once
   you have answered it correctly. A **reset** link next to the count clears that
@@ -121,8 +121,8 @@ verify.html         data checks in the browser
 css/app.css         design tokens + components (light + dark)
 js/lib/             text.js (normalize/shuffle), tts.js, fx.js
 js/data/*.js        one file per topic
-js/topics.js        registry — normalises all 8 schemas into one card shape
-js/quiz.js          the single drill engine, shared by all ten topics
+js/topics.js        registry — normalises all 9 schemas into one card shape
+js/quiz.js          the single drill engine, shared by all twelve drill topics
 js/browse.js        the verb list
 js/daily.js         daily challenge
 js/progress.js      localStorage: mastery, prefs, daily results
@@ -152,3 +152,14 @@ from theirs, 76 in common. Every shared verb agreed on all three tenses. The 29
 verbs only this repo had needed pronunciations and examples written for them
 (348 forms), following their Rio-register conventions — **those are generated
 content and worth spot-checking**, especially stress placement.
+
+
+## v1.24: practice, settings and safe progress
+
+Use **Start a short practice** for five cards, or search Browse in Portuguese or English. Expand a verb to load its conjugations. The gear button opens daily workload settings and per-language JSON backup export/import. Raiz hides hints; Nutella shows them.
+
+Review levels now advance only when due. Extra practice does not postpone the next review. Inferred sibling reviews update their clocks without adding invented answers to activity statistics. The level shown beside the goal is explicitly the level being practiced, not a fluency assessment.
+
+Sync v2 requires the [backend upgrade](sync-worker/README.md) before publishing this client. It uses conditional writes, conflict retries and reset generations. Local tabs reconcile through independent journals. Storage failures are visible, and backup exports contain no sync code.
+
+The [review implementation notes](docs/review-improvements.md) cover compatibility and validation. The [pronunciation audit](docs/pronunciation-audit.md) records 64 corrected rows and its limits. The six JXA suites remain dependency-free; optional backend tests use `node --test scripts/check-sync.mjs` with no packages.

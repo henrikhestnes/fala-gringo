@@ -1,27 +1,11 @@
-// Optional cross-device sync — OFF by default.
-//
-// The app stays a static site; sync is a tiny Cloudflare Worker (sync-worker/)
-// that stores the progress blob in KV under a long random secret code, which
-// the learner pastes into each device (the ⇅ button in the top bar). While
-// SYNC_URL below is empty the app makes zero network requests, exactly as before.
-//
-// The model is pull-merge-push, never overwrite: on load the remote state is
-// fetched and MERGED into the local one (union of mastered; per-card strength
-// keeps max misses + min streak, so a shaky card can never graduate out of Foco
-// by syncing; the daily log merges element-wise; the day log and drilled-tab
-// stamps take the higher value). Pushes send the whole state,
-// throttled to one per minute (KV free tier allows 1,000 writes/day) with a
-// final flush when the tab is hidden or closed. Because every sync merges, a
-// push lost to a dead connection or a killed tab heals on the next load.
-//
-// The /ingles/ subpage shares this file. Its progress must never merge with the
-// main app's, so it sets window.APP_SYNC_APP = 'ingles' before loading it and
-// that prefix goes in front of the code on the wire (`/ingles<code>`): the same
-// unchanged worker then stores its blob under a separate KV key. The code itself
-// is ONE per device, not per app: it lives under a shared localStorage key
-// (CODE_KEY, same origin), so switching sync on in either app switches it on in
-// both — one "account", two separate blobs. The UI wording is overridable
-// through window.APP_STRINGS, same contract as quiz.js/app.js.
+// Optional cross-device sync: inactive until a learner links a secret code.
+// Protocol v2 pulls, merges and conditionally writes a revision to one Durable
+// Object per code. Failed pulls never permit uploads; stale revisions retry.
+// Answer vectors preserve causally later recoveries and keep concurrent misses
+// conservative. Reset generations prevent deleted progress from returning.
+// The three apps share fg:syncCode, while ingles/noruegues wire prefixes keep
+// their progress separate. Preferences remain per-device and per-app.
+// See sync-worker/README.md for the required backend upgrade before publishing.
 
 const SYNC_URL = 'https://fala-gringo-sync.henrik-hestnes.workers.dev';   // scheme required: without it fetch() treats this as a relative path
 
@@ -30,6 +14,8 @@ const Sync = (function () {
     syncTitleOff: 'Sync is off — tap to link your devices',
     syncTitleError: 'Last sync failed — will retry',
     syncTitleBusy: 'Syncing…',
+    syncUpgrade: 'Sync is paused until the server is updated. Your progress is still saved on this device.',
+    syncUpdateApp: 'Sync is paused — another device runs a newer version. Reload to update this one.',
     syncTitleNow: 'Synced just now',
     syncTitleAgo: 'Synced {min} min ago',
     syncNoBackend: 'Sync needs a backend — see sync-worker/README.md',
@@ -37,8 +23,7 @@ const Sync = (function () {
              'or leave the box empty to create a new one.',
     syncBadCode: 'That code does not look right',
     syncShowNew: 'Sync is ON. This code is the key to your progress — copy it, keep it ' +
-                 'private, and paste it on your other devices. It covers both Fala Gringo ' +
-                 'and Fala Como Gringo:',
+                 'private, and paste it on your other devices. It covers all three language apps:',
     syncShowOn: 'Sync is ON. Your code is below — copy it to link another device.\n\n' +
                 'Type "off" instead to disconnect this device.',
     syncOffWord: 'off',
@@ -50,15 +35,21 @@ const Sync = (function () {
   // it must satisfy the worker's [a-z0-9]{16,64} code regex together with the code
   const APP = String(window.APP_SYNC_APP || '').toLowerCase().replace(/[^a-z0-9]/g, '');
   // the code is shared with the other app, so it must fit behind the LONGEST prefix
-  // either app uses ('ingles', 6 chars) — generated codes are 32 anyway
-  const MAX_CODE = 64 - 6;
+  // any app uses ('noruegues', 9 chars) — generated codes are 32 anyway
+  const MAX_CODE = 64 - 9;
 
-  const PUSH_INTERVAL = 60 * 1000;   // at most one KV write a minute while drilling
+  const PUSH_INTERVAL = 60 * 1000;   // at most one regular upload a minute while drilling
+  const PAUSED_INTERVAL = 10 * 60 * 1000;   // while paused (server or app out of date) poll rarely
   let pushTimer = 0;
   let lastPushAt = 0;
-  let lastPushed = '';   // last JSON known to be on the server; skips no-op pushes
+  let lastPushed = '';   // stable JSON of the state known to be on the server; skips no-op pushes
   let status = 'ok';     // 'ok' | 'error' — meaningful only while sync is on
   let lastSyncAt = 0;
+  let paused = '';       // '' | 'server' (old worker) | 'app' (newer client wrote the remote blob)
+  let generation = 0;
+  let inFlight = null;
+  let dirty = false;
+  const stable = ProgressState.stable;
 
   const canFetch = typeof fetch === 'function';   // the smoke stub has one that never reaches a network
 
@@ -73,6 +64,9 @@ const Sync = (function () {
     try { return localStorage.getItem(CODE_KEY) || ''; } catch (e) { return memCode; }
   }
   function setCode(c) {
+    generation++;
+    lastPushed = '';
+    paused = '';
     memCode = c || '';
     try { if (c) localStorage.setItem(CODE_KEY, c); else localStorage.removeItem(CODE_KEY); } catch (e) { /* memory only */ }
     if (Store.getPref('syncCode', '')) Store.setPref('syncCode', '');   // retire the legacy pref
@@ -101,13 +95,14 @@ const Sync = (function () {
     btn.className = 'icon-btn sync-' + st;
     let title;
     if (st === 'off') title = STR.syncTitleOff;
-    else if (st === 'error') title = STR.syncTitleError;
+    else if (st === 'error') title = paused === 'server' ? STR.syncUpgrade : paused === 'app' ? STR.syncUpdateApp : STR.syncTitleError;
     else if (!lastSyncAt) title = STR.syncTitleBusy;
     else {
       const min = Math.round((Date.now() - lastSyncAt) / 60000);
       title = min < 1 ? STR.syncTitleNow : STR.syncTitleAgo.replace('{min}', min);
     }
     btn.setAttribute('title', title);
+    btn.setAttribute('aria-label', title);
   }
 
   function markOk() { status = 'ok'; lastSyncAt = Date.now(); updateButton(); }
@@ -129,128 +124,87 @@ const Sync = (function () {
 
   /* ----------------------------------------------------------------- merge */
 
-  function eachKey(a, b, fn) {
-    const seen = {};
-    [a, b].forEach(o => Object.keys(o || {}).forEach(k => {
-      if (!seen[k]) { seen[k] = 1; fn(k, (a || {})[k], (b || {})[k]); }
-    }));
-  }
-
-  function mergeStates(x, y) {
-    const out = { mastered: {}, strength: {}, daily: {}, dailyDone: {}, days: {}, drilled: {}, graduated: {}, milestones: {} };
-
-    eachKey(x.mastered, y.mastered, (topic, a, b) => {
-      out.mastered[topic] = Object.assign({}, a || {}, b || {});
-    });
-
-    eachKey(x.strength, y.strength, (topic, a, b) => {
-      const t = out.strength[topic] = {};
-      eachKey(a || {}, b || {}, (card, sa, sb) => {
-        // one-sided: take it verbatim; both: pessimistic view — misses never
-        // shrink, a streak only counts if it postdates the miss everywhere,
-        // the review clock runs from the newest correct answer anywhere, the
-        // review level is the lower rung (a card is never pushed further out
-        // than either device believes), and "introduced" is the earliest day
-        if (!sa || !sb) { t[card] = sa || sb; return; }
-        const lvl = e => (e.l != null ? e.l : (e.t ? 1 : 0));   // pre-1.12 records carry no `l`
-        const merged = { s: Math.min(sa.s || 0, sb.s || 0), m: Math.max(sa.m || 0, sb.m || 0),
-                         t: Math.max(sa.t || 0, sb.t || 0), l: Math.min(lvl(sa), lvl(sb)) };
-        if (sa.i || sb.i) merged.i = Math.min(sa.i || Infinity, sb.i || Infinity);
-        t[card] = merged;
-      });
-    });
-
-    eachKey(x.daily, y.daily, (day, a, b) => {
-      if (!a || !b) { out.daily[day] = a || b; return; }
-      const n = Math.max((a.attempts || []).length, (b.attempts || []).length);
-      const m = { attempts: [], failed: [], solved: [], typed: [],
-                  current: Math.max(a.current || 0, b.current || 0) };
-      for (let i = 0; i < n; i++) {
-        m.attempts[i] = Math.max((a.attempts || [])[i] || 0, (b.attempts || [])[i] || 0);
-        m.failed[i] = !!((a.failed || [])[i] || (b.failed || [])[i]);
-        m.solved[i] = !!((a.solved || [])[i] || (b.solved || [])[i]);
-        m.typed[i] = (a.typed || [])[i] || (b.typed || [])[i] || '';   // whichever device saw the answer
-      }
-      out.daily[day] = m;
-    });
-
-    // the day log and the drilled-tab stamps: a day practised anywhere counts
-    // (answers = the higher count), a tab drilled anywhere is active (newest day)
-    eachKey(x.days || {}, y.days || {}, (day, a, b) => { out.days[day] = Math.max(a || 0, b || 0); });
-    eachKey(x.drilled || {}, y.drilled || {}, (topic, a, b) => { out.drilled[topic] = Math.max(a || 0, b || 0); });
-    // a finished Daily counts wherever it was finished; the better first-try count stands
-    eachKey(x.dailyDone || {}, y.dailyDone || {}, (day, a, b) => { out.dailyDone[day] = Math.max(a || 0, b || 0); });
-    // a graduation happened once: the earliest day either device saw it
-    eachKey(x.graduated || {}, y.graduated || {}, (topic, a, b) => { out.graduated[topic] = Math.min(a || Infinity, b || Infinity); });
-    eachKey(x.milestones || {}, y.milestones || {}, (id, a, b) => { out.milestones[id] = Math.min(a || Infinity, b || Infinity); });
-
-    return out;
-  }
+  const mergeStates = ProgressState.merge;
 
   /* ------------------------------------------------------------- transport */
 
-  function pull() {
-    if (!enabled()) return Promise.resolve();
-    return fetch(endpoint(), { cache: 'no-store' })
-      .then(res => {
-        // an HTTP error is NOT an empty remote: merging with {} and pushing
-        // could overwrite progress the server actually holds — bail instead
-        if (!res.ok) throw new Error('http ' + res.status);
-        return res.json();
-      })
-      .then(remote => {
-        const local = Store.snapshot();
-        const merged = mergeStates(local, remote || { mastered: {}, strength: {}, daily: {}, dailyDone: {}, days: {}, drilled: {}, graduated: {}, milestones: {} });
-        const mergedJson = JSON.stringify(merged);
-        markOk();
-        if (mergedJson !== JSON.stringify(local)) {
-          Store.applySynced(merged);          // save() schedules the push back up
-          if (window.App) App.refresh();
-          toast(STR.syncPulled);
-        } else if (mergedJson !== JSON.stringify(remote)) {
-          schedulePush();                     // remote is behind
-        } else {
-          lastPushed = mergedJson;
-        }
-      })
-      .catch(() => { markError(); /* offline — the next load heals */ });
+  // Every upload follows a successful GET and carries its revision. The server
+  // atomically rejects a stale revision; we merge and retry instead of overwriting.
+  function synchronize(upload) {
+    if (!enabled()) return Promise.resolve(false);
+    if (inFlight) { if (upload) dirty = true; return inFlight; }
+    const gen = generation, url = endpoint();
+    const current = () => gen === generation && enabled() && endpoint() === url;
+    let retries = 0;
+    async function attempt() {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) throw new Error('http ' + res.status);
+      const revision = res.headers && res.headers.get('ETag');
+      const protocol = res.headers && res.headers.get('X-Sync-Version');
+      const remote = await res.json();
+      if (!current()) return false;
+      // A remote blob this build cannot fully understand was written by a newer
+      // client: merging would strip what it does not know and push that back.
+      // Pull nothing, push nothing, say so — the learner's local work is safe.
+      if (remote !== null && !ProgressState.validate(remote)) { paused = 'app'; throw new Error('newer remote state'); }
+      const local = Store.snapshot();
+      const merged = mergeStates(local, remote || {});
+      // Preferences belong to this device, never to the sync payload.
+      delete merged.prefs; delete merged.prefTimes;
+      const body = stable(merged);
+      if (body !== stable(local)) {
+        Store.applySynced(merged);
+        if (window.App && App.refreshProgress) App.refreshProgress();
+        toast(STR.syncPulled);
+      }
+      if (!revision || protocol !== '2') { paused = 'server'; throw new Error('backend upgrade required'); }
+      paused = '';
+      if (remote !== null && body === stable(remote)) { lastPushed = body; markOk(); return true; }
+      if (!upload) { dirty = true; markOk(); return true; }
+      if (!current()) return false;
+      lastPushAt = Date.now();
+      const put = await fetch(url, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json', 'If-Match': revision },
+        body: JSON.stringify(merged), cache: 'no-store'
+      });
+      if (!current()) return false;
+      if (put.status === 412 && retries++ < 3) return attempt();
+      if (!put.ok) throw new Error('http ' + put.status);
+      lastPushed = body; markOk(); return true;
+    }
+    inFlight = attempt().catch(() => { if (current()) { dirty = true; markError(); } return false; })
+      .then(ok => {
+        inFlight = null;
+        if (enabled() && (dirty || stable(Store.snapshot()) !== lastPushed)) schedulePush();
+        return ok;
+      });
+    return inFlight;
   }
-
-  function push() {
-    pushTimer = 0;
-    if (!enabled()) return;
-    const body = JSON.stringify(Store.snapshot());
-    if (body === lastPushed) return;
-    lastPushAt = Date.now();
-    fetch(endpoint(), {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: body,
-      cache: 'no-store',
-      keepalive: true          // lets the flush-on-close request outlive the page
-    }).then(res => {
-      if (res.ok) { lastPushed = body; markOk(); } else { markError(); }
-    }).catch(() => { markError(); /* offline — the next answer reschedules */ });
-  }
-
-  /* Throttle, don't debounce: the first change after a quiet spell pushes in
-     2.5s; further changes ride along until PUSH_INTERVAL has passed. */
+  function pull() { return synchronize(false); }
+  function push() { if (pushTimer) clearTimeout(pushTimer); pushTimer = 0; dirty = false; return synchronize(true); }
+  /* Throttle, don't debounce: the first change after a quiet spell uploads in
+     2.5 s; further changes ride along until PUSH_INTERVAL has passed. After a
+     failure wait a full interval; while paused (see above) poll rarely — the
+     answer will not change until a deploy or a reload. */
   function schedulePush() {
-    if (!enabled() || pushTimer) return;
-    const wait = Math.max(2500, lastPushAt + PUSH_INTERVAL - Date.now());
+    dirty = true;
+    if (!enabled() || pushTimer || inFlight) return;
+    const base = paused ? PAUSED_INTERVAL : status === 'error' ? PUSH_INTERVAL : 2500;
+    const wait = Math.max(base, lastPushAt + PUSH_INTERVAL - Date.now());
     pushTimer = setTimeout(push, wait);
   }
-
-  /* The tab going away is the last chance to sync this session's answers. */
-  function flushPush() {
-    if (!pushTimer) return;    // nothing pending
-    clearTimeout(pushTimer);
-    push();
-  }
+  // Local persistence is authoritative on close. A GET + conditional PUT is
+  // not guaranteed to finish while the page hides, but it is safe to try (a
+  // truncated attempt changes nothing), and it usually lands — so the other
+  // device sees this session's last answers without waiting for the next visit.
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') flushPush();
+    if (document.visibilityState === 'visible') { Store.refreshStorage(); push(); }
+    else if (document.visibilityState === 'hidden' && enabled() && (dirty || pushTimer || stable(Store.snapshot()) !== lastPushed)) push();
   });
-  window.addEventListener('pagehide', flushPush);
+  window.addEventListener('online', () => push());
+  window.addEventListener('storage', e => {
+    if (e.key === CODE_KEY) { generation++; lastPushed = ''; lastSyncAt = 0; paused = ''; updateButton(); pull(); }
+  });
 
   /* ------------------------------------------------------------------- ui */
 
@@ -269,7 +223,7 @@ const Sync = (function () {
       lastPushed = '';
       lastSyncAt = 0;
       updateButton();
-      pull().then(schedulePush);
+      pull();
       window.prompt(STR.syncShowNew, c);
     } else {
       const ans = window.prompt(STR.syncShowOn, code());
@@ -306,6 +260,7 @@ const Sync = (function () {
     manage: manage,
     _merge: mergeStates,           // exposed for the checks
     _endpoint: endpoint,           // likewise — proves the /ingles/ key prefix
+    _sync: synchronize,
     _setCode: setCode              // likewise — drives the shared-code + migration checks
   };
 })();

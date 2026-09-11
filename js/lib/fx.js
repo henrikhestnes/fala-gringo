@@ -81,11 +81,24 @@ function launchFireworks() {
    because every page loads fx.js — the /ingles/ and /noruegues/ shells have no
    Daily tab, and until 1.18 their sync toasts silently went nowhere. */
 let _toastTimer = 0;
-function showToast(msg) {
+/* With `onTap` the toast is a button for a while (the "new version — tap to
+   reload" notice): it stays up longer and the handler runs once, on a tap. */
+function showToast(msg, onTap) {
   const el = document.getElementById('toast');
   if (!el) return;
   el.textContent = msg;
   el.classList.add('show');
+  if (onTap) {
+    el.classList.add('tappable');
+    el.setAttribute('role', 'button');
+    el.setAttribute('tabindex', '0');
+    el.onclick = () => { el.classList.remove('show', 'tappable'); el.onclick = null; onTap(); };
+  } else {
+    el.classList.remove('tappable');
+    el.setAttribute('role', 'status');
+    el.removeAttribute('tabindex');
+    el.onclick = null;
+  }
   clearTimeout(_toastTimer);
-  _toastTimer = setTimeout(() => el.classList.remove('show'), 1800);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), onTap ? 8000 : 1800);
 }

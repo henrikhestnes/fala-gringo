@@ -12,7 +12,7 @@ function goTo(hash) {
 function shownCard(topicId) {
   // unlike the main app, a prompt alone is not unique here — the same pt gloss
   // fronts both the passado and the particípio card — so match prompt + meta
-  var m = registry.cardArea.innerHTML.match(/<div class="card-prompt">([\s\S]*?)<\/div>/);
+  var m = registry.cardArea.innerHTML.match(/<div class="card-prompt"[^>]*>([\s\S]*?)<\/div>/);
   if (!m) throw new Error('no prompt rendered');
   var mm = registry.cardArea.innerHTML.match(/<div class="card-meta"><span>([\s\S]*?)<\/span>/);
   if (!mm) throw new Error('no meta rendered');
@@ -37,21 +37,30 @@ step('the chrome uses the Portuguese strings from APP_STRINGS', function () {
     throw new Error('masteredLine override missing from the chrome');
   if (!/>Certas</.test(registry.view.innerHTML))
     throw new Error('statKnown override missing from the stats row');
-  return '"cartas dominadas" and "Certas" rendered';
+  // the first-session starter (the subpages have no Browse tab to carry it) shows for a newcomer
+  if (!/class="welcome"/.test(registry.view.innerHTML) || !/data-start-practice/.test(registry.view.innerHTML))
+    throw new Error('the first-session starter is missing on a fresh profile');
+  return '"cartas dominadas" and "Certas" rendered; starter shown for the newcomer';
 });
 
-step('a correct English answer is accepted and marks mastery', function () {
+step('a correct English answer is accepted and marks mastery; the praise words come from APP_STRINGS', function () {
   var before = Store.masteredCount('irregulares');
   var card = shownCard('irregulares');
+  window.APP_STRINGS.praise = ['Mandou bem!'];               // the shell's list (see the config step); the smoke config has none
   registry.answerInput.value = card.answer.toUpperCase();   // case-insensitive too
   registry.actionBtn.fire('click');
+  delete window.APP_STRINGS.praise;
   if (!/✓/.test(registry.feedback.innerHTML))
     throw new Error('rejected: ' + registry.feedback.innerHTML);
   if (Store.masteredCount('irregulares') !== before + 1)
     throw new Error('mastery not recorded');
   if (!/pron-tag/.test(registry.feedback.innerHTML))
     throw new Error('no pronunciation hint shown');
-  return '"' + card.answer.toUpperCase() + '" accepted for "' + card.prompt + '"';
+  if (!/^✓ Mandou bem! <strong lang="en-US">/.test(registry.feedback.innerHTML))
+    throw new Error('praise override / answer lang missing: ' + registry.feedback.innerHTML.slice(0, 80));
+  Quiz.rerender();
+  if (/class="welcome"/.test(registry.view.innerHTML)) throw new Error('starter still shown after an answer');
+  return '"' + card.answer.toUpperCase() + '" accepted for "' + card.prompt + '"; praise from APP_STRINGS; starter gone';
 });
 
 step('a miss reveals the answer with the Portuguese wording and an example', function () {
@@ -120,7 +129,7 @@ step('Modo Raiz hides the English hint; Modo Nutella shows the base verb', funct
   goTo('#irregulares');
   if (/card-hint/.test(registry.cardArea.innerHTML)) throw new Error('hint leaked in Modo Raiz');
   registry.modeBtn.fire('click');
-  var m = registry.cardArea.innerHTML.match(/card-hint">([^<]*)</);
+  var m = registry.cardArea.innerHTML.match(/card-hint"[^>]*>([^<]*)</);
   if (!m) throw new Error('no hint in Modo Nutella');
   var card = shownCard('irregulares');
   if (m[1] !== escapeHtml(card.hint)) throw new Error('hint is "' + m[1] + '"');
@@ -191,7 +200,8 @@ step('every drill tab carries a tier, and the title by the flame reads the highe
   var best = 0;
   TOPICS.forEach(function (t) { if (t.kind === 'quiz' && Store.isActiveTopic(t.id) && t.tier > best) best = t.tier; });
   var name = ['Iniciante', 'Intermediário', 'Avançado'][best - 1];
-  if (!name || registry.goalBtn.innerHTML.indexOf('goal-title">' + name + '<') < 0)
+  // the smoke config leaves `practicing` in English; the shell's PT wording is checked by the config step below
+  if (!name || !new RegExp('goal-title-long">[^<]*: ' + name + '<').test(registry.goalBtn.innerHTML))
     throw new Error('expected title ' + name + ' in ' + registry.goalBtn.innerHTML);
   return TOPICS.filter(function (t) { return t.kind === 'quiz'; }).map(function (t) { return t.id + '=' + t.tier; }).join(' ') + '; title ' + name;
 });
@@ -205,7 +215,8 @@ step('the tab strip captions each tier once, in order', function () {
 
 step('milestones list only what this app can reach; the sheet opens in Portuguese', function () {
   var ids = Milestones.list().map(function (m) { return m.id; });
-  ['verb', 'daily7', 'dstreak7', 'tier1'].forEach(function (id) { if (ids.indexOf(id) >= 0) throw new Error(id + ' should not apply here: ' + ids.join(',')); });
+  if (allQuizCards().length >= 500) throw new Error('this app now has ' + allQuizCards().length + ' cards; revisit the m500 assertion');
+  ['verb', 'daily7', 'dstreak7', 'tier1', 'm500', 'm1000'].forEach(function (id) { if (ids.indexOf(id) >= 0) throw new Error(id + ' should not apply here: ' + ids.join(',')); });
   if (ids.indexOf('first') < 0 || ids.indexOf('s7') < 0) throw new Error('core milestones missing: ' + ids.join(','));
   if (!Store.milestoneOn('first')) throw new Error('the correct answers above did not earn "first"');
   registry.goalBtn.fire('click');
@@ -214,5 +225,26 @@ step('milestones list only what this app can reach; the sheet opens in Portugues
     throw new Error('sheet not in Portuguese: ' + registry.sheet.innerHTML.slice(0, 300));
   registry.goalBtn.fire('click');
   return ids.length + ' milestones: ' + ids.join(' ');
+});
+
+/* The runner's CONFIG is a reduced copy of the shell's inline block; this step
+   reads the real ingles/index.html and checks that every engine string added
+   in 1.24 has a Portuguese override there (the root defaults are English). */
+step('the shell\'s inline APP_STRINGS carries Portuguese overrides for the 1.24 engine strings', function () {
+  var html = read(ROOT + '/ingles/index.html');
+  var m = html.match(/window\.APP_STRINGS = (\{[\s\S]*?\n\});/);
+  if (!m) throw new Error('APP_STRINGS block not found in the shell');
+  var S = (0, eval)('(' + m[1] + ')');
+  var keys = ['praise', 'miss', 'introText', 'introStart', 'sessionNote', 'continueFull', 'dailyRollover', 'voiceMissing',
+              'practicing', 'practicingShort', 'settingsTitle', 'settingsHelp', 'settingGoalMax', 'settingGoalNew', 'settingNewPerDay',
+              'settingsSave', 'settingsSaved', 'settingsInvalid', 'backupTitle', 'backupHelp', 'backupExport', 'backupImport',
+              'backupRestore', 'backupImported', 'backupRestored', 'backupBad', 'modeHint', 'themeAuto', 'themeLight', 'themeDark',
+              'updateReady', 'syncUpdateApp'];
+  var missing = keys.filter(function (k) { return !(k in S); });
+  if (missing.length) throw new Error('shell lacks: ' + missing.join(', '));
+  if (!Array.isArray(S.praise) || S.praise.some(function (w) { return /gringo|carioca/i.test(w); })) throw new Error('praise list is for a gringo: ' + S.praise);
+  if (/[a-z]{2}-[A-Z]{2}/.test(S.voiceMissing) || !/inglês/.test(S.voiceMissing)) throw new Error('voice notice: ' + S.voiceMissing);
+  if (S.practicing.indexOf('{tier}') < 0 || S.practicingShort.indexOf('{tier}') < 0) throw new Error('practicing strings lack {tier}');
+  return keys.length + ' Portuguese overrides present';
 });
 

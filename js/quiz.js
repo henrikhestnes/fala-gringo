@@ -28,7 +28,7 @@ const QUIZ_STRINGS = Object.assign({
   easyTag: ' · Easy Mode',
   reset: 'reset',
   statTotal: 'Total',
-  statKnown: 'Known',
+  statKnown: 'Cleared',
   statLeft: 'Left',
   emptyFocoTitle: 'Tudo em dia! 🎯',
   emptyFocoBody: 'Every card here is mastered and fresh. Reviews come due on an expanding ' +
@@ -38,6 +38,9 @@ const QUIZ_STRINGS = Object.assign({
   emptyTitle: 'No cards',
   emptyBody: 'Every category is switched off — turn one back on above.',
   placeholder: 'fala aí…',
+  answerLabel: 'Your answer in Brazilian Portuguese',
+  checkLabel: 'Check answer',
+  nextLabel: 'Next card',
   skip: 'Skip →',
   restart: 'Restart ↻',
   doneTitlePerfect: 'Perfeito!',
@@ -57,6 +60,12 @@ const QUIZ_STRINGS = Object.assign({
   graduatedToast: '🎓 {label} graduated! Next: {next}',
   graduatedToastLast: '🎓 {label} graduated — every tab is!',
   nearIs: 'Close! You typed “{typed}” — the answer is',
+  // the first-session starter (subpages; the root app's lives in browse.js) and the short session
+  introText: 'Read the English and type the Portuguese. Modo Raiz hides the hints; Modo Nutella shows one.',
+  introStart: 'Start with five cards →',
+  sessionNote: 'Short practice: up to five cards. Then you choose whether to continue.',
+  continueFull: 'Continue with the full deck →',
+  dailyRollover: 'A new day has started — here is today’s Daily.',
   listening: 'Ouvindo… fala aí',
   listeningEmpty: ' — diga “nada” se nada falta na lacuna',
   micResumeSuffix: ' — tap to listen again',
@@ -69,8 +78,15 @@ const QUIZ_STRINGS = Object.assign({
   }
 }, window.APP_STRINGS || {});
 
+/* The language the learner types (pt-BR here, en-US / nb-NO on the subpages)
+   and the one the chrome is written in — lang attributes on the card so a
+   screen reader switches voice between the prompt and the answer. */
+const TARGET_LANG = window.APP_LANG || 'pt-BR';
+const UI_LANG = window.APP_LANG ? 'pt-BR' : 'en';
+
 const Quiz = (function () {
   let topic = null;
+  let sessionLimit = 0;
   let deck = [];
   let current = 0;
   let known = new Set();
@@ -220,6 +236,13 @@ const Quiz = (function () {
     // stamp every never-seen card that made it into today's deck (new, or dragged
     // in by a shaky sibling) as introduced today; verify cards are re-inferred on
     // every rebuild and must not eat into the intake
+    if (sessionLimit && out.length > sessionLimit) {
+      out.length = sessionLimit;
+      ['due', 'shaky', 'verify', 'new'].forEach(tier => { counts[tier] = out.filter(c => tierOf.get(c.id) === tier).length; });
+      let impliedCount = 0;
+      impliedBy.forEach((ids, lead) => { if (out.some(c => c.id === lead)) impliedCount += ids.length; else impliedBy.delete(lead); });
+      counts.implied = impliedCount;
+    }
     Store.markIntroduced(topic.id, out.filter(c =>
       tierOf.get(c.id) !== 'verify' && Store.cardState(topic.id, c.id) === 'new').map(c => c.id));
     return out;
@@ -233,7 +256,8 @@ const Quiz = (function () {
     counts = null;
     tierOf = new Map();
     impliedBy = new Map();
-    return shuffle(cards);
+    const shuffled = shuffle(cards);
+    return sessionLimit ? shuffled.slice(0, sessionLimit) : shuffled;
   }
 
   /* Today's goal, the number on the ring in the top bar, across the tabs the
@@ -333,12 +357,37 @@ const Quiz = (function () {
     render();
   }
 
-  function mount(t) {
+  function mount(t, limit) {
     topic = t;
+    document.getElementById('view').dataset.topic = '';
+    sessionLimit = limit || 0;
     rivalCache.clear();
     const groups = topicGroups(topic);
     activeGroups = groups.length ? new Set(groups) : null;
     buildDeck();
+  }
+
+  /* Leaving a drill tab (Browse, the Daily): forget the deck, so nothing —
+     the mic resuming after the progress sheet closes, say — can act on a
+     card that is no longer on screen. The Daily has its own #answerInput. */
+  function unmount() {
+    stopVoice();
+    topic = null;
+    deck = [];
+    current = 0;
+    answered = false;
+    counts = null;
+    tierOf = new Map();
+    impliedBy = new Map();
+    rivalCache.clear();
+  }
+
+  /* A learner who has never answered anything, anywhere: the first-session
+     starter shows for them alone (Browse in the root app, the drill chrome on
+     the subpages). Cheap — no snapshot copy — so it can run on every render. */
+  function newcomer() {
+    if (Store.streak().n > 0 || Store.answeredOn(Store.today()) > 0) return false;
+    return !TOPICS.some(t => t.kind === 'quiz' && Store.masteredCount(t.id) > 0);
   }
 
   /* ---------------------------------------------------------------- chrome */
@@ -383,18 +432,22 @@ const Quiz = (function () {
   function chromeHtml() {
     const groups = topicGroups(topic);
     const chips = groups.map(g =>
-      '<button class="chip' + (activeGroups && activeGroups.has(g) ? ' active' : '') +
+      '<button type="button" aria-pressed="' + (activeGroups && activeGroups.has(g) ? 'true' : 'false') + '" class="chip' + (activeGroups && activeGroups.has(g) ? ' active' : '') +
       '" data-group="' + escapeHtml(g) + '">' + escapeHtml(g) + '</button>').join('');
     const focusChip = '<button class="chip focus' + (focusOn() ? ' active' : '') +
-      '" id="focoChip" data-focus="1" title="' +
+      '" aria-pressed="' + (focusOn() ? 'true' : 'false') + '" id="focoChip" data-focus="1" title="' +
       escapeHtml(tfill(QUIZ_STRINGS.focoTitle, { streak: FOCUS_STREAK, cap: Store.newPerDay() })) +
       '">' + focoChipHtml() + '</button>';
     const micChip = (typeof Stt !== 'undefined' && Stt.supported())
       ? '<button class="chip mic' + (micOn() ? ' active' : '') +
-        '" data-mic="1" title="' + escapeHtml(QUIZ_STRINGS.micTitle) + '">' +
+        '" aria-pressed="' + (micOn() ? 'true' : 'false') + '" data-mic="1" title="' + escapeHtml(QUIZ_STRINGS.micTitle) + '">' +
         QUIZ_STRINGS.micChip + '</button>'
       : '';
-    return '' +
+    // the subpages have no Browse tab, so their first-session starter sits here
+    const intro = window.APP_LANG && !sessionLimit && newcomer()
+      ? '<section class="welcome"><p>' + escapeHtml(QUIZ_STRINGS.introText) + '</p>' +
+        '<button class="btn primary" type="button" data-start-practice="1">' + escapeHtml(QUIZ_STRINGS.introStart) + '</button></section>' : '';
+    return intro + (sessionLimit ? '<p class="session-note" role="status">' + escapeHtml(QUIZ_STRINGS.sessionNote) + '</p>' : '') +
       '<div class="view-head">' +
         '<h1>' + escapeHtml(topic.label) + '</h1>' +
         '<p id="masteredLine">' + masteredHtml() + '</p>' +
@@ -465,24 +518,25 @@ const Quiz = (function () {
     const card = deck[current];
 
     const hint = (!Mode.hard && card.hint)
-      ? '<span class="card-hint">' + escapeHtml(card.hint) + '</span>' : '';
+      ? '<span class="card-hint" lang="' + TARGET_LANG + '">' + escapeHtml(card.hint) + '</span>' : '';
 
     area.innerHTML = '' +
       '<div class="card">' +
         '<div class="card-meta"><span>' + escapeHtml(card.meta) + '</span>' + hint + '</div>' +
-        '<div class="card-prompt">' + card.prompt + '</div>' +
+        '<div class="card-prompt" id="answerPrompt" lang="' + UI_LANG + '">' + card.prompt + '</div>' +
         (card.target ? '<div class="card-target">' + card.target + '</div>' : '') +
         '<div class="card-sub">' + escapeHtml(card.sub) + '</div>' +
         '<div class="input-row">' +
-          '<input class="answer-input" id="answerInput" type="text" placeholder="' +
+          '<label class="sr-only" for="answerInput">' + escapeHtml(QUIZ_STRINGS.answerLabel) + '</label>' +
+          '<input class="answer-input" id="answerInput" aria-describedby="answerPrompt" lang="' + TARGET_LANG + '" type="text" placeholder="' +
             escapeHtml(QUIZ_STRINGS.placeholder) + '" ' +
             'autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" ' +
             'enterkeyhint="go" />' +
-          '<button class="check-btn" id="actionBtn" type="button" aria-label="Check answer">&rarr;</button>' +
+          '<button class="check-btn" id="actionBtn" type="button" aria-label="' + escapeHtml(QUIZ_STRINGS.checkLabel) + '">&rarr;</button>' +
         '</div>' +
-        (micOn() ? '<div class="mic-status" id="micStatus"></div>' : '') +
-        '<div class="feedback" id="feedback"></div>' +
-        '<div id="revealArea"></div>' +
+        (micOn() ? '<div class="mic-status" id="micStatus" role="status"></div>' : '') +
+        '<div class="feedback" id="feedback" role="status" aria-live="polite" aria-atomic="true"></div>' +
+        '<div id="revealArea" lang="' + UI_LANG + '"></div>' +
       '</div>' +
       '<div class="controls">' +
         '<button class="btn" id="skipBtn" type="button">' + escapeHtml(QUIZ_STRINGS.skip) + '</button>' +
@@ -518,11 +572,26 @@ const Quiz = (function () {
             '</div><div class="result-stat-lbl">' + QUIZ_STRINGS.hardCards + '</div></div>' +
         '</div>' +
         todayLineHtml() +
-        '<button class="btn primary" id="againBtn" type="button">' +
-          escapeHtml(QUIZ_STRINGS.startOver) + '</button>' +
+        '<div class="controls">' +
+          '<button class="btn primary" id="againBtn" type="button">' +
+            escapeHtml(QUIZ_STRINGS.startOver) + '</button>' +
+          // a short session promised a choice at the end: here it is
+          (sessionLimit ? '<button class="btn" id="continueBtn" type="button">' +
+            escapeHtml(QUIZ_STRINGS.continueFull) + '</button>' : '') +
+        '</div>' +
       '</div>';
     document.getElementById('againBtn').addEventListener('click', buildDeck);
+    const cont = document.getElementById('continueBtn');
+    if (cont) cont.addEventListener('click', continueFull);
     if (perfect) launchFireworks();
+  }
+
+  /* From a short session's done screen into the whole deck: the limit goes,
+     the chrome loses its session note, and the deck is rebuilt. */
+  function continueFull() {
+    sessionLimit = 0;
+    document.getElementById('view').dataset.topic = '';
+    buildDeck();
   }
 
   /* -------------------------------------------------------------- mic mode */
@@ -543,6 +612,8 @@ const Quiz = (function () {
 
   function startMic() {
     const card = deck[current];
+    if (!card) return;   // no deck (unmounted, or an empty Foco deck): nothing to listen for
+    if (document.getElementById('sheet') && !document.getElementById('sheet').hidden) return;
     const gen = micGen;
     setMicStatus('<span class="mic-dot"></span>' + escapeHtml(QUIZ_STRINGS.listening) +
       (card.allowEmpty ? escapeHtml(QUIZ_STRINGS.listeningEmpty) : ''));
@@ -572,14 +643,23 @@ const Quiz = (function () {
     });
   }
 
+  /* The chip only changes how the current card is answered: the chrome is
+     rebuilt (chip state, status line) and the card re-rendered, but the deck
+     and the run — cards cleared, errors made — stay as they are. */
   function toggleMic() {
+    if (!topic) return;
     Store.setPref('mic', Store.getPref('mic', false) !== true);
     document.getElementById('view').dataset.topic = '';  // force chrome rebuild
-    buildDeck();
+    render();
   }
 
+  /* Listen again on the card in view — only while a drill is actually mounted
+     and on screen: the Daily has an #answerInput of its own, and the progress
+     sheet closing over it must not start the mic against a stale deck. */
   function resumeMic() {
-    if (!micOn() || answered || !document.getElementById('answerInput')) return;
+    if (!topic || !micOn() || answered) return;
+    const view = document.getElementById('view');
+    if (!view || view.dataset.topic !== topic.id || !document.getElementById('answerInput')) return;
     stopVoice();
     micRetries = 0;
     startMic();
@@ -591,7 +671,7 @@ const Quiz = (function () {
   function confirmImplied(lead) {
     const ids = impliedBy.get(lead.id);
     if (!ids) return;
-    ids.forEach(id => Store.recordAnswer(topic.id, id, true, 0, true));   // near=true: clock reset, no climb
+    ids.forEach(id => Store.recordAnswer(topic.id, id, true, 0, true, true));   // near=true: clock reset, no climb
     impliedBy.delete(lead.id);
   }
   function reclaimImplied(lead) {
@@ -599,13 +679,19 @@ const Quiz = (function () {
     if (!ids) return;
     impliedBy.delete(lead.id);
     const byId = new Map(topicCards(topic).map(c => [c.id, c]));
+    const add = [];
     ids.forEach(id => {
       const c = byId.get(id);
       if (!c || deck.some(d => d.id === id)) return;
       tierOf.set(id, 'due');
-      deck.push(c);                       // asked later this run, after the cards already queued
+      add.push(c);
     });
-    if (counts) counts.due += ids.length;
+    if (!add.length) return;
+    // they are reviews, so they come up next — right after the lead, ahead of
+    // the new cards queued behind it (not at the end of the deck)
+    deck.splice(current + 1, 0, ...add);
+    known = new Set(Array.from(known).map(i => i > current ? i + add.length : i));   // indices past the insert shift
+    if (counts) counts.due += add.length;   // only what was actually added
   }
 
   /* "also eu ponho · eu boto": the synonyms the card would equally have taken. */
@@ -613,7 +699,7 @@ const Quiz = (function () {
     const others = otherFaces(card, face);
     if (!others.length) return '';
     return '<span class="also-tag">' + escapeHtml(QUIZ_STRINGS.also) + ' ' +
-           others.map(a => '<b>' + escapeHtml(a) + '</b>').join(' · ') + '</span>';
+           others.map(a => '<b lang="' + TARGET_LANG + '">' + escapeHtml(a) + '</b>').join(' · ') + '</span>';
   }
 
   function handleAction() {
@@ -633,6 +719,7 @@ const Quiz = (function () {
     if (micOn()) stopVoice();   // a typed answer can land while the mic still listens
 
     answered = true;
+    btn.setAttribute('aria-label', QUIZ_STRINGS.nextLabel);
     input.disabled = true;
     Store.markDrilled(topic.id);   // this tab is one of the learner's own (today's goal, js/app.js)
 
@@ -642,9 +729,13 @@ const Quiz = (function () {
     // pronunciation and table — on a miss too, judged by how the typed text starts;
     // the other synonyms follow in an "also" line
     const face = cardFace(card, ok ? res.hit : input.value);
-    const pron = (face.pron ? '<span class="pron-tag">' + escapeHtml(face.pron) + '</span>' : '') +
+    // the answer is in the language being learnt; the pronunciation hint is
+    // written for the reader's ear (English-based here, aportuguesado on the
+    // subpages), so it keeps the chrome's language
+    const pron = (face.pron ? '<span class="pron-tag" lang="' + UI_LANG + '">' + escapeHtml(face.pron) + '</span>' : '') +
                  (face.flag ? '<span class="pron-tag flag-tag">' + escapeHtml(face.flag) + '</span>' : '');
     const say = (face.speak ? speakButton(face.speak, face.answer) : '') + alsoLine(card, face);
+    const answerHtml = '<strong lang="' + TARGET_LANG + '">' + escapeHtml(face.answer) + '</strong>';
     if (ok) {
       // a near-miss (one slip, unambiguous) clears the card but earns no review
       // level: it comes back on its current interval instead of a longer one
@@ -654,9 +745,8 @@ const Quiz = (function () {
       btn.classList.add('go-green');
       feedback.className = 'feedback ok' + (near ? ' near' : '');
       feedback.innerHTML = near
-        ? '≈ ' + tfill(QUIZ_STRINGS.nearIs, { typed: escapeHtml(input.value.trim()) }) +
-          ' <strong>' + escapeHtml(face.answer) + '</strong>' + pron + say
-        : '✓ ' + praiseWord() + ' <strong>' + escapeHtml(face.answer) + '</strong>' + pron + say;
+        ? '≈ ' + tfill(QUIZ_STRINGS.nearIs, { typed: escapeHtml(input.value.trim()) }) + ' ' + answerHtml + pron + say
+        : '✓ ' + praiseWord() + ' ' + answerHtml + pron + say;
       revealArea.innerHTML = face.reveal || '';
       known.add(current);
       Store.markMastered(topic.id, card.id);
@@ -678,8 +768,7 @@ const Quiz = (function () {
       setTimeout(() => input.classList.remove('shake'), 340);
       btn.classList.add('go-red');
       feedback.className = 'feedback err';
-      feedback.innerHTML = '✗ ' + missWord() + ' ' + QUIZ_STRINGS.answerIs +
-        ' <strong>' + escapeHtml(face.answer) + '</strong>' + pron + say;
+      feedback.innerHTML = '✗ ' + missWord() + ' ' + QUIZ_STRINGS.answerIs + ' ' + answerHtml + pron + say;
       revealArea.innerHTML = face.reveal || '';
       updateStats();   // the chip now shows this card as shaky
     }
@@ -719,7 +808,7 @@ const Quiz = (function () {
   }
 
   function toggleGroup(g) {
-    if (!activeGroups) return;
+    if (!topic || !activeGroups) return;
     if (activeGroups.has(g)) {
       if (activeGroups.size === 1) return; // never leave the deck empty
       activeGroups.delete(g);
@@ -731,6 +820,7 @@ const Quiz = (function () {
   }
 
   function toggleFocus() {
+    if (!topic) return;
     Store.setPref('foco', !focusOn());
     document.getElementById('view').dataset.topic = '';  // force chrome rebuild
     buildDeck();
@@ -738,7 +828,10 @@ const Quiz = (function () {
 
   return {
     mount: mount,
+    unmount: unmount,
+    newcomer: newcomer,
     rerender: function () {
+      if (!topic) return;
       document.getElementById('view').dataset.topic = '';
       render();
     },

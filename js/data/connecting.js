@@ -6,7 +6,7 @@ window.DATA_CONNECTING = {
   // ── Prepositions ──────────────────────────────────────────
   { en: "I am **from** Brazil", pt: "Eu sou {do} Brasil", answer: "do", hint: "from the", tip: "'Do' = de + o. With countries like Brasil, Portuguese often uses the article: do Brasil, do Rio, do sul.", group: "prepositions" },
   { en: "This is **for** you", pt: "Isso é {para} você", answer: "para", alts: ["pra"], hint: "for", tip: "'Para' means 'for' or 'to' (purpose/destination). In casual speech, 'pra' is common.", group: "prepositions" },
-  { en: "I go **to** the gym every day", pt: "Eu vou {para} a academia todo dia", answer: "para", alts: ["pra"], hint: "to", tip: "'Para' indicates direction/destination. 'Ir para' = to go to (a destination).", group: "prepositions" },
+  { en: "I go **to the** gym every day", pt: "Eu vou {para a} academia todo dia", answer: "para a", alts: ["pra", "à"], hint: "to the (fem)", tip: "'Para a' marks the destination; in speech it fuses into 'pra' — 'vou pra academia'. The textbook 'à' (a + a) is correct too, but 'pra' is what you hear in Rio.", group: "prepositions" },
   { en: "I live **with** my family", pt: "Eu moro {com} a minha família", answer: "com", hint: "with", tip: "'Com' means 'with'. With pronouns it contracts: com + mim = comigo, com + você stays 'com você'.", group: "prepositions" },
   { en: "She works **at** a hospital", pt: "Ela trabalha {em} um hospital", answer: "em", hint: "at/in", tip: "'Em' means 'in', 'at', or 'on'. It contracts with articles: em + o = no, em + a = na.", group: "prepositions" },
   { en: "I need to go **by** bus", pt: "Eu preciso ir {de} ônibus", answer: "de", hint: "by", tip: "'De' is used for means of transport: de ônibus (by bus), de carro (by car), de avião (by plane).", group: "prepositions" },
@@ -19,7 +19,7 @@ window.DATA_CONNECTING = {
   { en: "We go **on** foot", pt: "Nós vamos {a} pé", answer: "a", hint: "on", tip: "'A pé' means 'on foot'. The preposition 'a' is used for this expression, not 'de'.", group: "prepositions" },
   { en: "I arrived **at** the airport", pt: "Eu cheguei {ao} aeroporto", answer: "ao", alts: ["no"], hint: "at the", tip: "'Chegar a' = to arrive at. 'Ao' = a + o is the standard form. In spoken Brazilian Portuguese, 'cheguei no aeroporto' is also very common.", group: "prepositions" },
   { en: "He is good **in the** kitchen", pt: "Ele é bom {na} cozinha", answer: "na", hint: "in the (fem)", tip: "'Na' = em + a. 'Bom na cozinha' is a natural way to say someone is good at cooking.", group: "prepositions" },
-  { en: "I need **to** study", pt: "Eu preciso {—} estudar", answer: "—", alts: ["de"], hint: "nothing (or de)", tip: "Before a verb, Brazilian Portuguese drops the preposition: 'preciso estudar'. 'Preciso de estudar' is European/formal usage, accepted here too. Before a noun, 'de' is required: 'preciso de ajuda'.", group: "prepositions" },
+  { en: "I need **to** study", pt: "Eu preciso {—} estudar", answer: "—", hint: "nothing", tip: "Before a verb there is no preposition: 'preciso estudar'. 'Preciso de estudar' is heard in Portugal, not in Rio. Before a noun, 'de' is required: 'preciso de ajuda'.", group: "prepositions" },
 
   // ── Contractions ──────────────────────────────────────────
   { en: "I live **in the** center", pt: "Eu moro {no} centro", answer: "no", hint: "in the (masc)", tip: "'No' = em + o. Used before masculine nouns: no centro, no Brasil, no trabalho.", group: "contractions" },

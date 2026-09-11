@@ -8,13 +8,13 @@ window.DATA_ADJECTIVES = {
   { en: "beautiful", pt: "bonito", alts: ["bonita"], agreement: "fem.: bonita", pronIpa: "[bo'nitu]", pronHint: "boh-NEE-too", example: "Que cidade bonita!", exampleEn: "What a beautiful city!", group: "quality" },
   { en: "cool / nice", pt: "legal", agreement: "same form", pronIpa: "[le'gaw]", pronHint: "leh-GOW", example: "Seu professor é muito legal.", exampleEn: "Your teacher is very nice.", group: "quality" },
   { en: "intelligent", pt: "inteligente", agreement: "same form", pronIpa: "[ĩteli'ʒẽtʃi]", pronHint: "een-teh-lee-ZHEN-chee", example: "Você é muito inteligente.", exampleEn: "You are very intelligent.", group: "quality" },
-  { en: "delicious", pt: "delicioso", alts: ["deliciosa"], agreement: "fem.: deliciosa", pronIpa: "[dʒe.li.si'o.zu]", pronHint: "jee-lee-see-OH-zoo", example: "A sobremesa está deliciosa.", exampleEn: "The dessert is delicious.", group: "quality" },
+  { en: "delicious", pt: "delicioso", alts: ["deliciosa"], agreement: "fem.: deliciosa", pronIpa: "[dʒe.li.si'o.zu]", pronHint: "djee-lee-see-OH-zoo", example: "A sobremesa está deliciosa.", exampleEn: "The dessert is delicious.", group: "quality" },
   { en: "excellent", pt: "excelente", agreement: "same form", pronIpa: "[ese'lẽtʃi]", pronHint: "eh-seh-LEN-chee", example: "A ideia é excelente.", exampleEn: "The idea is excellent.", group: "quality" },
   { en: "interesting", pt: "interessante", agreement: "same form", pronIpa: "[ĩteɾe'sɐ̃tʃi]", pronHint: "een-teh-reh-SAHN-chee", example: "O livro é interessante.", exampleEn: "The book is interesting.", group: "quality" },
   { en: "funny", pt: "engraçado", alts: ["engraçada"], agreement: "fem.: engraçada", pronIpa: "[ẽgɾa'sadu]", pronHint: "eng-grah-SAH-doo", example: "O filme é engraçado.", exampleEn: "The movie is funny.", group: "quality" },
-  { en: "different", pt: "diferente", agreement: "same form", pronIpa: "[dʒife'ɾẽtʃi]", pronHint: "jee-feh-REN-chee", example: "Esse restaurante é diferente.", exampleEn: "That restaurant is different.", group: "quality" },
+  { en: "different", pt: "diferente", agreement: "same form", pronIpa: "[dʒife'ɾẽtʃi]", pronHint: "djee-feh-REN-chee", example: "Esse restaurante é diferente.", exampleEn: "That restaurant is different.", group: "quality" },
 
-  { en: "big", pt: "grande", agreement: "same form", pronIpa: "['gɾɐ̃dʒi]", pronHint: "GRAHN-jee", example: "A cidade é grande.", exampleEn: "The city is big.", group: "size & age" },
+  { en: "big", pt: "grande", agreement: "same form", pronIpa: "['gɾɐ̃dʒi]", pronHint: "GRAHN-djee", example: "A cidade é grande.", exampleEn: "The city is big.", group: "size & age" },
   { en: "small", pt: "pequeno", alts: ["pequena"], agreement: "fem.: pequena", pronIpa: "[pe'kenu]", pronHint: "peh-KEH-noo", example: "A casa é pequena, mas confortável.", exampleEn: "The house is small, but comfortable.", group: "size & age" },
   { en: "new", pt: "novo", alts: ["nova"], agreement: "fem.: nova", pronIpa: "['novu]", pronHint: "NOH-voo", example: "A casa é nova.", exampleEn: "The house is new.", group: "size & age" },
   { en: "old", pt: "velho", alts: ["velha"], agreement: "fem.: velha", pronIpa: "['vɛʎu]", pronHint: "VEH-lyoo", example: "Esse prédio é velho.", exampleEn: "That building is old.", group: "size & age" },
@@ -26,8 +26,8 @@ window.DATA_ADJECTIVES = {
 
   { en: "tired", pt: "cansado", alts: ["cansada"], agreement: "fem.: cansada", pronIpa: "[kɐ̃'sadu]", pronHint: "kahn-SAH-doo", example: "Você está cansado hoje?", exampleEn: "Are you tired today?", group: "state & feeling" },
   { en: "ready", pt: "pronto", alts: ["pronta"], agreement: "fem.: pronta", pronIpa: "['pɾõtu]", pronHint: "PROHN-too", example: "A comida está pronta.", exampleEn: "The food is ready.", group: "state & feeling" },
-  { en: "happy", pt: "feliz", agreement: "same form", pronIpa: "[fe'lis]", pronHint: "feh-LEES", example: "Ela está feliz hoje.", exampleEn: "She is happy today.", group: "state & feeling" },
-  { en: "sad", pt: "triste", agreement: "same form", pronIpa: "['tɾistʃi]", pronHint: "TREES-chee", example: "Ela parece triste hoje.", exampleEn: "She seems sad today.", group: "state & feeling" },
+  { en: "happy", pt: "feliz", agreement: "same form", pronIpa: "[fe'lis]", pronHint: "feh-LEESH", example: "Ela está feliz hoje.", exampleEn: "She is happy today.", group: "state & feeling" },
+  { en: "sad", pt: "triste", agreement: "same form", pronIpa: "['tɾistʃi]", pronHint: "TREESH-chee", example: "Ela parece triste hoje.", exampleEn: "She seems sad today.", group: "state & feeling" },
   { en: "busy", pt: "ocupado", alts: ["ocupada"], agreement: "fem.: ocupada", pronIpa: "[oku'padu]", pronHint: "oh-koo-PAH-doo", example: "Estou ocupado agora.", exampleEn: "I am busy right now.", group: "state & feeling" },
   { en: "worried", pt: "preocupado", alts: ["preocupada"], agreement: "fem.: preocupada", pronIpa: "[pɾe.ow.ku'pa.du]", pronHint: "preh-oh-koo-PAH-doo", example: "Ela está preocupada com a prova.", exampleEn: "She is worried about the test.", group: "state & feeling" },
   { en: "calm", pt: "calmo", alts: ["calma"], agreement: "fem.: calma", pronIpa: "['kawmu]", pronHint: "KOW-moo", example: "Ele parece calmo.", exampleEn: "He seems calm.", group: "state & feeling" },
@@ -35,7 +35,7 @@ window.DATA_ADJECTIVES = {
   { en: "nervous", pt: "nervoso", alts: ["nervosa"], agreement: "fem.: nervosa", pronIpa: "[neʁ'vozu]", pronHint: "nehr-VOH-zoo", example: "Estou nervoso com a entrevista.", exampleEn: "I am nervous about the interview.", group: "state & feeling" },
 
   { en: "easy", pt: "fácil", agreement: "same form", pronIpa: "['fasiw]", pronHint: "FAH-seew", example: "Essa lição é fácil.", exampleEn: "That lesson is easy.", group: "practical" },
-  { en: "difficult", pt: "difícil", agreement: "same form", pronIpa: "[dʒi'fisiw]", pronHint: "jee-FEE-seew", example: "Essa palavra é difícil.", exampleEn: "That word is difficult.", group: "practical" },
+  { en: "difficult", pt: "difícil", agreement: "same form", pronIpa: "[dʒi'fisiw]", pronHint: "djee-FEE-seew", example: "Essa palavra é difícil.", exampleEn: "That word is difficult.", group: "practical" },
   { en: "important", pt: "importante", agreement: "same form", pronIpa: "[ĩpoʁ'tɐ̃tʃi]", pronHint: "eem-por-TAHN-chee", example: "Dormir bem é importante.", exampleEn: "Sleeping well is important.", group: "practical" },
   { en: "hot / warm", pt: "quente", agreement: "same form", pronIpa: "['kẽtʃi]", pronHint: "KEHN-chee", example: "O café está quente.", exampleEn: "The coffee is hot.", group: "practical" },
   { en: "cold", pt: "frio", alts: ["fria"], agreement: "fem.: fria", pronIpa: "['fɾiu]", pronHint: "FREE-oo", example: "A água está fria.", exampleEn: "The water is cold.", group: "practical" },
@@ -52,9 +52,9 @@ window.DATA_ADJECTIVES = {
 
   { en: "strong", pt: "forte", agreement: "same form", pronIpa: "['fɔʁtʃi]", pronHint: "FOR-chee", example: "Ele é muito forte.", exampleEn: "He is very strong.", group: "quality" },
   { en: "weak", pt: "fraco", alts: ["fraca"], agreement: "fem.: fraca", pronIpa: "['fɾaku]", pronHint: "FRAH-koo", example: "Meu sinal de internet está fraco.", exampleEn: "My internet signal is weak.", group: "quality" },
-  { en: "strange / weird", pt: "estranho", alts: ["estranha"], agreement: "fem.: estranha", pronIpa: "[es'tɾaɲu]", pronHint: "es-TRAHN-yoo", example: "Que situação estranha!", exampleEn: "What a strange situation!", group: "quality" },
+  { en: "strange / weird", pt: "estranho", alts: ["estranha"], agreement: "fem.: estranha", pronIpa: "[es'tɾaɲu]", pronHint: "esh-TRAH-nyoo", example: "Que situação estranha!", exampleEn: "What a strange situation!", group: "quality" },
 
-  { en: "bored", pt: "entediado", alts: ["entediada"], agreement: "fem.: entediada", pronIpa: "[ẽ.te.dʒi'a.du]", pronHint: "en-teh-jee-AH-doo", example: "Estou entediado em casa.", exampleEn: "I am bored at home.", group: "state & feeling" },
+  { en: "bored", pt: "entediado", alts: ["entediada"], agreement: "fem.: entediada", pronIpa: "[ẽ.te.dʒi'a.du]", pronHint: "en-teh-djee-AH-doo", example: "Estou entediado em casa.", exampleEn: "I am bored at home.", group: "state & feeling" },
   { en: "excited / pumped up", pt: "animado", alts: ["animada"], agreement: "fem.: animada", pronIpa: "[ɐ.ni'ma.du]", pronHint: "ah-nee-MAH-doo", example: "Estou animado para o fim de semana!", exampleEn: "I am excited for the weekend!", group: "state & feeling", note: "Use 'animado', not 'excitado' — in BR, 'excitado' has a sexual connotation." },
   { en: "angry", pt: "bravo", alts: ["brava"], agreement: "fem.: brava", pronIpa: "['bɾavu]", pronHint: "BRAH-voo", example: "Ela está brava comigo.", exampleEn: "She is angry with me.", group: "state & feeling", note: "False friend: 'bravo' in BR means angry, not brave. Brave = corajoso." },
   { en: "alone", pt: "sozinho", alts: ["sozinha"], agreement: "fem.: sozinha", pronIpa: "[so'ziɲu]", pronHint: "soh-ZEE-nyoo", example: "Ele mora sozinho.", exampleEn: "He lives alone.", group: "state & feeling" },

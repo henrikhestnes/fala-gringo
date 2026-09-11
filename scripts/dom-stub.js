@@ -36,7 +36,7 @@ El.prototype.setAttribute = function (k, v) { this.dataset['attr_' + k] = v; };
 El.prototype.removeAttribute = function (k) { delete this.dataset['attr_' + k]; };
 El.prototype.hasAttribute = function (k) { return this.dataset['attr_' + k] !== undefined; };
 El.prototype.getAttribute = function (k) { return this.dataset['attr_' + k]; };
-El.prototype.focus = function () {};
+El.prototype.focus = function () { document.activeElement = this; };
 El.prototype.blur = function () {};
 El.prototype.scrollIntoView = function () {};
 El.prototype.remove = function () {};
@@ -47,6 +47,8 @@ El.prototype.getContext = function () {
            globalAlpha: 1, fillStyle: '' };
 };
 El.prototype.closest = function () { return new El(); };
+El.prototype.querySelector = function () { return new El(); };
+El.prototype.querySelectorAll = function () { return []; };
 El.prototype.fire = function (t, evt) {
   (this._listeners[t] || []).forEach(fn => fn(evt || { key: 'x' }));
 };
@@ -110,7 +112,9 @@ window.localStorage = (function () {
   return {
     getItem: k => (Object.prototype.hasOwnProperty.call(m, k) ? m[k] : null),
     setItem: (k, v) => { m[k] = String(v); },
-    removeItem: k => { delete m[k]; }
+    removeItem: k => { delete m[k]; },
+    key: i => Object.keys(m)[i] || null,
+    get length() { return Object.keys(m).length; }
   };
 })();
 window.SpeechSynthesisUtterance = function () {};
@@ -129,5 +133,14 @@ window._activeRec = null;
 function flushTimers() { const t = timers.splice(0); t.forEach(fn => { try { fn(); } catch (e) {} }); }
 
 // shell elements that both index.html files provide
-['view', 'tabs', 'toast', 'modeBtn', 'themeBtn', 'syncBtn', 'goalBtn', 'sheet', 'buildInfo'].forEach(id => { registry[id] = new El(id); });
+['view', 'tabs', 'toast', 'modeBtn', 'themeBtn', 'syncBtn', 'goalBtn', 'sheet', 'buildInfo', 'settingsBtn', 'storageWarning', 'voiceWarning'].forEach(id => { registry[id] = new El(id); });
 registry.sheet.hidden = true;
+
+// Fixture replacement is deliberate in tests. Production applySynced merges:
+// restoring an older snapshot is no longer a way to erase newer answers.
+function seedState(data) {
+  const copy = JSON.parse(JSON.stringify(data));
+  Store.resetAll();
+  copy.resets = Store.snapshot().resets;
+  Store.applySynced(copy);
+}

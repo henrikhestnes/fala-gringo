@@ -7,7 +7,7 @@
 // verbos.js.
 
 window.DATA_NO_PALAVRINHAS = {
-  groups: ['pronomes', 'perguntas', 'advérbios', 'preposições'],
+  groups: ['pronomes', 'perguntas', 'advérbios', 'conjunções', 'preposições'],
 
   cards: [
     /* ------------------------------------------------------- pronomes ---- */
@@ -74,7 +74,8 @@ window.DATA_NO_PALAVRINHAS = {
     { no: 'nå', pt: 'agora', group: 'advérbios', pron: 'nô',
       example: 'Jeg må gå nå.', examplePt: 'Tenho que ir agora.' },
     { no: 'i dag', pt: 'hoje', group: 'advérbios', pron: 'i dág',
-      example: 'Det er kaldt i dag.', examplePt: 'Está frio hoje.' },
+      example: 'Det er kaldt i dag.', examplePt: 'Está frio hoje.',
+      tip: 'Se começa a frase, o verbo vem logo depois (ordem V2): "I dag er det kaldt".' },
     { no: 'i morgen', pt: 'amanhã', group: 'advérbios', pron: 'i mórn',
       example: 'Vi ses i morgen!', examplePt: 'A gente se vê amanhã!' },
     { no: 'i går', pt: 'ontem', group: 'advérbios', pron: 'i gôr',
@@ -96,15 +97,16 @@ window.DATA_NO_PALAVRINHAS = {
     { no: 'der', pt: 'lá / ali', group: 'advérbios', pron: 'dér',
       example: 'Butikken er der.', examplePt: 'A loja é ali.' },
     { no: 'kanskje', pt: 'talvez', group: 'advérbios', pron: 'kánche',
-      example: 'Kanskje i morgen.', examplePt: 'Talvez amanhã.' },
-    { no: 'og', pt: 'e', group: 'advérbios', pron: 'ó',
+      example: 'Kanskje i morgen.', examplePt: 'Talvez amanhã.',
+      tip: 'Começando a frase, o verbo vem logo em seguida (ordem V2): "Kanskje kommer han" (talvez ele venha).' },
+    { no: 'og', pt: 'e', group: 'conjunções', pron: 'ó',
       example: 'Kaffe og brød.', examplePt: 'Café e pão.',
       tip: 'O g é mudo: "ó".' },
-    { no: 'men', pt: 'mas', group: 'advérbios', pron: 'mén',
+    { no: 'men', pt: 'mas', group: 'conjunções', pron: 'mén',
       example: 'Jeg vil, men jeg kan ikke.', examplePt: 'Quero, mas não posso.' },
-    { no: 'eller', pt: 'ou', group: 'advérbios', pron: 'éler',
+    { no: 'eller', pt: 'ou', group: 'conjunções', pron: 'éler',
       example: 'Kaffe eller te?', examplePt: 'Café ou chá?' },
-    { no: 'fordi', pt: 'porque (resposta)', group: 'advérbios', pron: 'fordí',
+    { no: 'fordi', pt: 'porque (resposta)', group: 'conjunções', pron: 'fordí',
       example: 'Jeg er sliten fordi jeg jobbet mye.', examplePt: 'Estou cansado porque trabalhei muito.' },
 
     /* ---------------------------------------------------- preposições ---- */

@@ -15,17 +15,55 @@ const TTS_LANG = window.APP_LANG || 'pt-BR';
 // the best plain-system voice per language family (Luciana is Apple's pt-BR)
 const TTS_FAVOURITE = { pt: /luciana/i, en: /samantha/i, nb: /nora/i };
 
+/* The wording of the missing-voice notice: overridable through
+   window.APP_STRINGS.voiceMissing (the subpages say it in Portuguese, naming
+   their own language); the default names the language in words, never as a
+   locale code. */
+const TTS_STR = Object.assign({
+  voiceMissing: 'No Brazilian Portuguese voice is installed on this device, so the cards ' +
+                'stay silent — a European Portuguese voice would teach the wrong sounds. ' +
+                'Add a Brazilian voice in your system settings to hear them.'
+}, window.APP_STRINGS || {});
+
 let ttsVoice = null;
+let ttsVoiceCount = 0;       // how many voices getVoices() listed on the last look
+let ttsWarned = false;       // the missing-voice notice is given once a session, not per card
+
+/* A voice's locale, lower-cased, with the Norwegian aliases folded onto bokmål
+   (Windows and some Android builds tag Nora as `no` / `no-NO`). */
+function voiceLocale(v) {
+  let l = String(v.lang || '').toLowerCase().replace('_', '-');
+  if (l === 'no' || l === 'no-no') l = 'nb-no';
+  return l;
+}
+
+/* Voices this app may speak with. Portuguese is strict: only pt-BR (a pt-BR-x-…
+   variant included) — never pt-PT and never a bare `pt`, whose accent is
+   anyone's guess; this tool must not model European Portuguese. English and
+   Norwegian accept the same-family fallback (en-GB is fine for an English
+   learner; nn-NO is not bokmål but beats silence). */
+function acceptableVoices(voices) {
+  const family = TTS_LANG.slice(0, 2).toLowerCase();
+  const locale = TTS_LANG.toLowerCase().replace('_', '-');
+  return voices.filter(v => {
+    const l = voiceLocale(v);
+    if (!l) return false;
+    if (family === 'pt') return l === 'pt-br' || l.indexOf('pt-br-') === 0;
+    return l === locale || l.slice(0, 2) === family;
+  });
+}
 
 function loadVoices() {
-  const voices = window.speechSynthesis ? speechSynthesis.getVoices() : [];
-  const family = TTS_LANG.slice(0, 2).toLowerCase();
-  const inFamily = v => v.lang && v.lang.toLowerCase().startsWith(family);
-  const favourite = TTS_FAVOURITE[family];
-  ttsVoice = (favourite ? voices.find(v => inFamily(v) && favourite.test(v.name)) : null)
-          || voices.find(v => v.lang === TTS_LANG && /google|natural|premium|enhanced/i.test(v.name))
-          || voices.find(v => v.lang === TTS_LANG)
-          || voices.find(inFamily)
+  const voices = (window.speechSynthesis && speechSynthesis.getVoices()) || [];
+  ttsVoiceCount = voices.length;
+  const locale = TTS_LANG.toLowerCase().replace('_', '-');
+  const ok = acceptableVoices(voices);
+  const inLocale = v => voiceLocale(v) === locale || voiceLocale(v).indexOf(locale + '-') === 0;
+  const favourite = TTS_FAVOURITE[TTS_LANG.slice(0, 2).toLowerCase()];
+  ttsVoice = (favourite ? ok.find(v => inLocale(v) && favourite.test(v.name)) : null)
+          || ok.find(v => inLocale(v) && /google|natural|premium|enhanced/i.test(v.name))
+          || ok.find(v => inLocale(v))
+          || ok[0]
           || null;
 }
 
@@ -34,8 +72,28 @@ if (typeof window !== 'undefined' && window.speechSynthesis) {
   speechSynthesis.onvoiceschanged = loadVoices;
 }
 
+function voiceWarning(show) {
+  const el = document.getElementById('voiceWarning');
+  if (!el) return;
+  if (!show) { el.hidden = true; return; }
+  el.textContent = TTS_STR.voiceMissing;
+  el.hidden = false;
+  if (!ttsWarned && typeof showToast === 'function') showToast(TTS_STR.voiceMissing);
+  ttsWarned = true;
+}
+
 function speak(text, btn, onDone) {
   if (!window.speechSynthesis || !text) { if (onDone) onDone(); return; }
+  loadVoices();
+  // An EMPTY voice list (Chrome before voiceschanged, iOS home-screen apps) is
+  // not a missing voice: speak with the language set and let the engine pick.
+  // Only a populated list with no acceptable voice in it is.
+  if (!ttsVoice && ttsVoiceCount > 0) {
+    voiceWarning(true);
+    if (onDone) onDone();
+    return;
+  }
+  voiceWarning(false);
   speechSynthesis.cancel();
   document.querySelectorAll('.speak-btn.playing').forEach(b => b.classList.remove('playing'));
 

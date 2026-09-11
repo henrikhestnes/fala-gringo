@@ -85,7 +85,10 @@
 //        entender, aprender, pegar, ligar, comer, tomar, começar, tentar, sentir, perder, viver, mudar, parar, ler —
 //        the verbs a carioca actually puts in "se eu…" that the 40-verb core had left out
 
-const APP_VERSION = '1.23.6';
+// 1.24.0: conflict-safe sync and local tabs, reset generations, accessible settings
+// and backups, short practice, Browse search/lazy panels, stable Daily identities,
+// due-only review advancement, strict voice locales and audited pronunciation.
+const APP_VERSION = '1.24.0';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name
@@ -94,8 +97,9 @@ const APP_VERSION = '1.23.6';
   let when = '';
   const lm = document.lastModified ? new Date(document.lastModified) : null;
   if (lm && !isNaN(lm.getTime()) && Date.now() - lm.getTime() > 60000) {
+    const locale = document.documentElement.lang || 'en-GB';   // the page's own language decides the date format
     when = ' · updated ' +
-      lm.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) +
+      lm.toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' }) +
       ', ' + String(lm.getHours()).padStart(2, '0') + ':' +
       String(lm.getMinutes()).padStart(2, '0');
   }

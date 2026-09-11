@@ -99,7 +99,7 @@ window.DATA_EN_PHRASAL = {
 
     /* ------------------------------------------------------ pessoas ---- */
 
-    { pv: 'hang out', pt: 'ficar de boa, sair (com amigos)', group: 'pessoas', pron: 'rêng áut',
+    { pv: 'hang out', pt: 'ficar de boa, curtir junto (com amigos)', group: 'pessoas', pron: 'rréng áut',
       example: 'We hang out at the beach on weekends.', examplePt: 'A gente fica de boa na praia no fim de semana.' },
 
     { pv: 'get along', pt: 'se dar bem (com alguém)', group: 'pessoas', pron: 'guét alóng',
@@ -130,7 +130,7 @@ window.DATA_EN_PHRASAL = {
     { pv: 'call back', pt: 'ligar de volta, retornar (a ligação)', group: 'pessoas', pron: 'cól bék',
       example: 'Can you call back later?', examplePt: 'Pode ligar de volta mais tarde?' },
 
-    { pv: 'hang up', pt: 'desligar (o telefone)', group: 'pessoas', pron: 'rêng âp',
+    { pv: 'hang up', pt: 'desligar (o telefone)', group: 'pessoas', pron: 'rréng âp',
       example: 'Do not hang up, wait!', examplePt: 'Não desliga, espera!' },
 
     { pv: 'speak up', pt: 'falar mais alto', group: 'pessoas', pron: 'spík âp',
@@ -161,7 +161,7 @@ window.DATA_EN_PHRASAL = {
       example: 'Please fill out this form.', examplePt: 'Por favor, preenche esse formulário.' },
 
     { pv: 'give up', pt: 'desistir', group: 'estudo e trabalho', pron: 'guív âp',
-      example: 'Never give up!', examplePt: 'Nunca desista!' },
+      example: 'Never give up!', examplePt: 'Não desiste nunca!' },
 
     { pv: 'give back', pt: 'devolver', group: 'estudo e trabalho', pron: 'guív bék',
       example: 'You need to give back the keys.', examplePt: 'Você precisa devolver as chaves.' },
