@@ -61,3 +61,6 @@ if (loadFailed || !results) {
     ? 'FAILED: ' + failed.length + ' of ' + results.length + ' checks'
     : 'PASSED: all ' + results.length + ' checks');
 }
+
+// A printed failure must also fail shell/CI callers.
+if (!results || results.some(r => !r.ok) || loadFailed) throw new Error('Check suite failed');

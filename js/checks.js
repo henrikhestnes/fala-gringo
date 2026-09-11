@@ -81,6 +81,16 @@ function runChecks() {
     return bad.length ? bad.length + ' incomplete: ' + bad.slice(0, 10).join(', ') : true;
   });
 
+  check('identical verb forms use consistent pronunciation hints across tenses', () => {
+    const seen = new Map(), bad = [];
+    V.verbs.forEach(v => Object.values(v.tenses).forEach(rows => rows.forEach(r => {
+      const previous = seen.get(r.form);
+      if (previous && previous !== r.pron) bad.push(r.form + ': ' + previous + ' / ' + r.pron);
+      seen.set(r.form, r.pron);
+    })));
+    return bad.length ? bad.join('\n') : true;
+  });
+
   check('regular verbs match the conjugation oracle', () => {
     const bad = [];
     V.verbs.forEach(v => {
@@ -151,6 +161,16 @@ function runChecks() {
       if (same) wrong.push(v.pt);
     });
     return wrong.length ? 'flagged irregular but regular: ' + wrong.join(', ') : true;
+  });
+
+  /* The perfeito 3sg of -er verbs ends in -eu, pronounced [ew]: the hint is the
+     EH-oo diphthong (comeu = koh-MEH-oo), never the -ei sound of AY-oo. */
+  check('every verb form ending in -eu is hinted with EH-oo', () => {
+    const bad = [];
+    V.verbs.forEach(v => Object.values(v.tenses).forEach(rows => rows.forEach(r => {
+      if (/eu$/.test(r.form) && !/EH-oo$/.test(r.pron)) bad.push(r.form + ': ' + r.pron);
+    })));
+    return bad.length ? bad.join(', ') : true;
   });
 
   /* --------------------------------------------------- pronominal verbs --- */

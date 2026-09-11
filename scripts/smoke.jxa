@@ -19,12 +19,14 @@ const ROOT = ObjC.unwrap($.NSFileManager.defaultManager.currentDirectoryPath);
 
 const FILES = [
   'scripts/dom-stub.js',
-  'js/lib/text.js', 'js/lib/tts.js', 'js/lib/stt.js', 'js/lib/fx.js', 'js/progress.js', 'js/conjugate.js',
+  'js/lib/text.js', 'js/lib/tts.js', 'js/lib/stt.js', 'js/lib/fx.js', 'js/lib/state.js', 'js/progress.js', 'js/conjugate.js',
   'js/data/verbs.js', 'js/data/pronominal.js', 'js/data/nouns.js', 'js/data/adjectives.js', 'js/data/adverbs.js',
   'js/data/connecting.js', 'js/data/numbers.js', 'js/data/glossary.js', 'js/data/sentences.js',
   'js/topics.js', 'js/infer.js', 'js/quiz.js', 'js/browse.js', 'js/daily.js', 'js/milestones.js', 'js/app.js', 'js/lib/sync.js',
   'js/version.js',
-  'scripts/smoke-steps.js'
+  'scripts/smoke-steps.js',
+  'scripts/review-regressions.js',
+  'scripts/store-steps.js'
 ];
 
 var results = [];
@@ -54,3 +56,6 @@ const failed = results.filter(r => !r.ok).length;
 console.log('');
 console.log(failed ? ('FAILED: ' + failed + ' of ' + results.length)
                    : ('PASSED: all ' + results.length + ' smoke steps'));
+
+// A printed failure must also fail shell/CI callers.
+if (!results || results.some(r => !r.ok)) throw new Error('Check suite failed');

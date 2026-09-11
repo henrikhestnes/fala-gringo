@@ -23,7 +23,7 @@
 
   --text: #1a1a17;
   --text-2: #59564e;
-  --text-3: #8a867a;
+  --text-3: #6b675c;   /* 4.97:1 on --bg (the pre-1.24 #8a867a was 3.2:1) */
 
   --green: #009c3b;
   --green-ink: #04702e;
@@ -61,7 +61,7 @@
 
     --text: #f0eee8;
     --text-2: #b3afa4;
-    --text-3: #857f74;
+    --text-3: #a09a8f;   /* 6.6:1 on --bg, 6.0:1 on --surface, 4.8:1 on --surface-3 (was #857f74: 4.2:1 on a card) */
 
     --green: #2ec25f;
     --green-ink: #7fe0a0;
@@ -94,7 +94,7 @@
 
   --text: #f0eee8;
   --text-2: #b3afa4;
-  --text-3: #857f74;
+  --text-3: #a09a8f;
 
   --green: #2ec25f;
   --green-ink: #7fe0a0;
@@ -262,7 +262,9 @@ button { cursor: pointer; touch-action: manipulation; }
 .goal-btn.done .goal-ring text { fill: var(--green-ink); font-size: 10px; }
 .goal-streak.cold { opacity: .5; filter: grayscale(1); }
 /* the learner's title (Iniciante / Intermediário / Avançado): a quiet tag
-   after the flame; on phones it yields to the ring and the tap reads it out */
+   after the flame — "Practicing: Iniciante" in full, and on a phone the short
+   form ("Practicing Iniciante", smaller) rather than nothing: the word that
+   says it is the tabs' difficulty, not a rank, must stay */
 .goal-title {
   font-size: .66rem;
   font-weight: 600;
@@ -272,7 +274,12 @@ button { cursor: pointer; touch-action: manipulation; }
   padding-left: .35rem;
   border-left: 1px solid var(--border);
 }
-@media (max-width: 560px) { .goal-title { display: none; } }
+.goal-title-short { display: none; }
+@media (max-width: 600px) {
+  .goal-title { font-size: .58rem; letter-spacing: .02em; max-width: 7.5rem; }
+  .goal-title-long { display: none; }
+  .goal-title-short { display: inline; }
+}
 .goal-btn.celebrate { animation: goal-pop .55s ease; }
 @keyframes goal-pop {
   40% { transform: scale(1.18); }
@@ -323,7 +330,9 @@ button { cursor: pointer; touch-action: manipulation; }
 
 /* Idle chips: quiet off-white pills (a touch of the page cream mixed in).
    The active tab wears the flag: green field, yellow lettering, and the
-   counter as a blue-on-yellow pill — the flag's own layering. */
+   counter as a blue-on-yellow pill — the flag's own layering. The field is
+   the flag's green deepened to #04702e: yellow on it reads at 4.7:1, where
+   the pure #009c3b managed 2.7:1. */
 .tab {
   border: 1px solid var(--border);
   background: color-mix(in srgb, var(--surface) 82%, var(--bg));
@@ -340,8 +349,8 @@ button { cursor: pointer; touch-action: manipulation; }
 }
 .tab:hover { border-color: var(--border-strong); color: var(--text); }
 .tab[aria-selected="true"] {
-  background: #009c3b;
-  border-color: #009c3b;
+  background: #04702e;
+  border-color: #04702e;
   color: #ffdf00;
 }
 .tab[aria-selected="true"] .pct {
@@ -1140,7 +1149,9 @@ footer .build-info {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .shake, .goal-btn.celebrate { animation: none; }
+  /* every animation the app runs: the shake, the ring's pop, the sync dot's
+     pulse, the mic's red dot, the sheet sliding up */
+  .shake, .goal-btn.celebrate, #syncBtn.sync-error::after, .mic-dot, .sheet-panel { animation: none; }
   * { transition-duration: .01ms !important; }
 }
 
@@ -1153,3 +1164,35 @@ footer .build-info {
   .verb-row { grid-template-columns: 1.8rem 1.7rem 1fr 1.7rem; }
   .verb-text { flex-direction: column; gap: .1rem; }
 }
+
+/* Shared keyboard, settings and first-session controls. */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid var(--green); outline-offset: 3px; }
+[hidden] { display: none !important; }
+.storage-warning { margin: 1rem auto; padding: .85rem 1rem; max-width: 50rem; border: 2px solid var(--red); border-radius: .6rem; color: var(--text); background: var(--surface); }
+/* the missing-voice notice (js/lib/tts.js): a quiet note, not an alarm — the app still works, it is just silent */
+.voice-warning { margin: .8rem auto 0; padding: .6rem 1rem; max-width: 50rem; font-size: .85rem; line-height: 1.45; color: var(--text-2); background: var(--yellow-soft); border: 1px solid var(--yellow); border-radius: .6rem; }
+.toast.tappable { pointer-events: auto; cursor: pointer; text-decoration: underline; text-underline-offset: .15em; }
+.settings-check { display: flex; align-items: flex-start; gap: .5rem; margin: .6rem 0 0; font-size: .85rem; line-height: 1.45; color: var(--text-2); }
+.settings-check input { margin-top: .2rem; flex: none; }
+.welcome { padding: 1.25rem; margin: 0 0 1.5rem; border: 1px solid var(--border); border-radius: 1rem; background: var(--surface); }
+.welcome h1 { font-size: 1.4rem; margin: 0 0 .5rem; }
+.welcome p { margin: .5rem 0 1rem; line-height: 1.55; }
+.welcome .welcome-help, .session-note { font-size: .85rem; color: var(--text-2); }
+.search-label { display: block; margin-bottom: .4rem; }
+.browse-search { width: 100%; padding: .8rem; font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: .5rem; }
+#browseCount { font-size: .85rem; margin: .5rem 0; color: var(--text-2); }
+.verb-text button, .conj-line button.form { border: 0; background: transparent; text-align: left; font-family: inherit; padding: 0; cursor: pointer; }
+.conj-line button.form { color: inherit; font-size: inherit; }
+.conjugation-slot { grid-column: 1 / -1; }
+.settings-field { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .6rem; margin: 1rem 0; }
+.settings-field input[type=number] { width: 5rem; font: inherit; padding: .5rem; border: 1px solid var(--border); border-radius: .4rem; color: var(--text); background: var(--surface); }
+.settings-field input[type=file] { max-width: 100%; }
+.sheet-panel p { line-height: 1.5; }
+.goal-title { max-width: 11rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 600px) { .topbar-inner { gap: .35rem; } .icon-btn { flex-shrink: 0; } }
+
+.pron-legend { max-width: 38rem; margin: .6rem auto; text-align: left; }
+.pron-legend summary { cursor: pointer; }
+.verb-text button.verb-pt { color: var(--text); font-size: 1rem; }
+.verb-text button.hidden { color: transparent; background: var(--surface-3); border: 1px dashed var(--border-strong); }

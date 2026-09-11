@@ -30,7 +30,7 @@ window.DATA_EN_IRREGULARES = {
       examplePart: 'I have been here before.', examplePartPt: 'Eu já estive aqui antes.' },
 
     { base: 'be (you / we / they)', pt: 'ser, estar (você / nós / eles)',
-      past: 'were', pastPron: 'uêr',
+      past: 'were', pastPron: 'uâr',
       examplePast: 'They were at the beach.', examplePastPt: 'Eles estavam na praia.' },
 
     { base: 'go', pt: 'ir',

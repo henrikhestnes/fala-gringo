@@ -10,10 +10,11 @@
 // (bokmål). `hint` (só no Modo Nutella) dá a pista em norueguês — o
 // infinitivo do verbo, o substantivo cru, a primeira palavra da frase.
 
+// o exemplo é norueguês (lang do idioma estudado); a tradução herda o pt-BR da página
 function exampleBlock(no, pt) {
   if (!no) return '';
-  return '<div class="example">"' + escapeHtml(no) + '"' +
-         (pt ? '<span class="en">' + escapeHtml(pt) + '</span>' : '') + '</div>';
+  return '<div class="example" lang="nb-NO">"' + escapeHtml(no) + '"' +
+         (pt ? '<span class="en" lang="pt-BR">' + escapeHtml(pt) + '</span>' : '') + '</div>';
 }
 function tipBlock(html) { return html ? '<div class="tip">' + html + '</div>' : ''; }
 

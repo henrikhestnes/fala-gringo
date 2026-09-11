@@ -126,5 +126,23 @@ function runChecks() {
     return summary.join('\n');
   });
 
+  check('no accepted answer belongs to two different lexemes', () => {
+    // cost/cost inside one verb is fine; "found" serving find and found is not —
+    // the near-miss matcher would take a rival for a slip
+    const bad = [];
+    TOPICS.filter(t => t.kind === 'quiz').forEach(t => {
+      const owner = {};
+      topicCards(t).forEach(c => {
+        const lex = String(c.id).split('|')[0];
+        c.accepted.forEach(a => {
+          const k = normalize(a);
+          if (owner[k] && owner[k] !== lex) bad.push(t.id + ': "' + a + '" in ' + owner[k] + ' and ' + lex);
+          owner[k] = owner[k] || lex;
+        });
+      });
+    });
+    if (bad.length) fail(bad.join('\n'));
+  });
+
   return results;
 }

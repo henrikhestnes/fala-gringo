@@ -198,7 +198,7 @@ window.DATA_NO_SUBSTANTIVOS = {
       ex: 'De har ei hytte.', exPt: 'Eles têm uma cabana.',
       exDef: 'Hytta ligger ved sjøen.', exDefPt: 'A cabana fica na beira do mar.' },
 
-    { n: 'strand', g: 'f', pt: 'praia', ptDef: 'a praia', pron: 'stránd', pronDef: 'strána',
+    { n: 'strand', g: 'f', pt: 'praia', ptDef: 'a praia', pron: 'strán', pronDef: 'strána',
       ex: 'Det er ei strand her.', exPt: 'Tem uma praia aqui.',
       exDef: 'Stranda er full.', exDefPt: 'A praia está cheia.' },
 

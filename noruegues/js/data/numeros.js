@@ -12,7 +12,7 @@ window.DATA_NO_NUMEROS = {
     /* --------------------------------------------------------- até 20 ---- */
     { no: 'null', pt: 'zero (0)', group: 'até 20', pron: 'nûl',
       example: 'Det er null grader.', examplePt: 'Está zero grau.' },
-    { no: 'en', alts: ['ett', 'én'], pt: 'um (1)', group: 'até 20', pron: 'ên',
+    { no: 'en', alts: ['ett'], pt: 'um (1)', group: 'até 20', pron: 'ên',
       example: 'Jeg har en bror.', examplePt: 'Tenho um irmão.',
       tip: '"Ett" com substantivo neutro (ett hus), "én" quando se quer dizer "um só".' },
     { no: 'to', pt: 'dois (2)', group: 'até 20', pron: 'tú',
@@ -57,7 +57,7 @@ window.DATA_NO_NUMEROS = {
       example: 'Jeg er tjue år.', examplePt: 'Tenho vinte anos.' },
 
     /* ------------------------------------------------ dezenas e mais ---- */
-    { no: 'tjueen', alts: ['tjueén', 'enogtyve'], pt: 'vinte e um (21)', group: 'dezenas e mais', pron: 'chûe-ên',
+    { no: 'tjueen', alts: ['enogtyve'], pt: 'vinte e um (21)', group: 'dezenas e mais', pron: 'chûe-ên',
       example: 'Han er tjueen år.', examplePt: 'Ele tem vinte e um anos.',
       tip: 'Dezena + unidade, tudo junto: tjueto, tjuetre, tjuefire…' },
     { no: 'tretti', alts: ['tredve'], pt: 'trinta (30)', group: 'dezenas e mais', pron: 'tréti',

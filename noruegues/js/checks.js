@@ -173,5 +173,19 @@ function runChecks() {
     return summary.join('\n');
   });
 
+  check('no alternative answer normalises to its own canonical', () => {
+    // én for en, tjueén for tjueen: normalize() drops the accent, so such an alt is dead data
+    const bad = [];
+    cards.forEach(c => {
+      const seen = {};
+      c.accepted.forEach(a => {
+        const k = normalize(a);
+        if (seen[k]) bad.push(c.id + ': "' + a + '" = "' + seen[k] + '"');
+        seen[k] = seen[k] || a;
+      });
+    });
+    if (bad.length) fail(bad.join('\n'));
+  });
+
   return results;
 }

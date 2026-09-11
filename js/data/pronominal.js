@@ -114,10 +114,10 @@ window.DATA_PRONOMINAL = {
       pt: "se divertir", en: "to have fun", tip: "'Divertir-se' = to have fun, enjoy yourself. 'Se divertiu?' is the standard morning-after question about any party.",
       tenses: {
         perfeito: [
-          { form: "me diverti", meaning: "I had fun", pron: "mee jee-vehr-CHEE", example: "Eu me diverti muito na festa." },
-          { form: "se divertiu", meaning: "you had fun", pron: "see jee-vehr-CHEE-oo", example: "Você se divertiu no show?" },
-          { form: "nos divertimos", meaning: "we had fun", pron: "noosh jee-vehr-CHEE-moosh", example: "Nós nos divertimos demais no carnaval." },
-          { form: "se divertiram", meaning: "you all had fun", pron: "see jee-vehr-CHEE-rahng", example: "Vocês se divertiram na viagem?" },
+          { form: "me diverti", meaning: "I had fun", pron: "mee djee-vehr-CHEE", example: "Eu me diverti muito na festa." },
+          { form: "se divertiu", meaning: "you had fun", pron: "see djee-vehr-CHEE-oo", example: "Você se divertiu no show?" },
+          { form: "nos divertimos", meaning: "we had fun", pron: "noosh djee-vehr-CHEE-moosh", example: "Nós nos divertimos demais no carnaval." },
+          { form: "se divertiram", meaning: "you all had fun", pron: "see djee-vehr-CHEE-rahng", example: "Vocês se divertiram na viagem?" },
         ],
       },
     },
@@ -138,11 +138,11 @@ window.DATA_PRONOMINAL = {
   phrases: [
     { pt: "Se cuida!", en: "Take care!", alts: ["cuide-se"], pron: "see KWEE-dah", tip: "Rio's standard goodbye. Formal writing would demand 'Cuide-se', but on the street the pronoun comes first — pure spoken BR." },
     { pt: "Não se preocupa!", en: "Don't worry!", alts: ["não se preocupe"], pron: "nowng see preh-oh-KOO-pah", tip: "Textbook grammar wants 'não se preocupe' (subjunctive); relaxed carioca speech says 'não se preocupa'. Both accepted here." },
-    { pt: "Se acalma!", en: "Calm down!", alts: ["acalme-se", "calma"], pron: "see ah-KAHL-mah", tip: "Pronoun-first imperative, standard spoken BR. A bare 'Calma!' works too." },
+    { pt: "Se acalma!", en: "Calm down!", alts: ["acalme-se", "calma"], pron: "see ah-KOW-mah", tip: "Pronoun-first imperative, standard spoken BR. A bare 'Calma!' works too." },
     { pt: "A gente se vê!", en: "See you around!", alts: ["nos vemos"], pron: "ah ZHEHN-chee see VEH", tip: "Literally 'we see each other' — the everyday way to say goodbye to someone you'll bump into again. 'A gente' takes 'se'." },
     { pt: "A gente se fala!", en: "Talk to you later!", alts: ["nos falamos"], pron: "ah ZHEHN-chee see FAH-lah", tip: "Same pattern as 'a gente se vê' — reciprocal 'se' with 'a gente'. How phone calls and chats end all over Brazil." },
     { pt: "Como você se chama?", en: "What's your name?", alts: ["como se chama"], pron: "KOH-moo voh-SEH see SHAH-mah", tip: "'Qual é o seu nome?' is heard just as much, but 'como você se chama?' is the pronominal classic." },
-    { pt: "Você se lembra de mim?", en: "Do you remember me?", alts: ["você lembra de mim", "se lembra de mim", "lembra de mim"], pron: "voh-SEH see LEHM-brah jee MEENG", tip: "'Lembrar-se de' — keep the 'de'. In casual speech the pronoun often drops ('você lembra de mim?'); both are natural." },
+    { pt: "Você se lembra de mim?", en: "Do you remember me?", alts: ["você lembra de mim", "se lembra de mim", "lembra de mim"], pron: "voh-SEH see LEHM-brah djee MEENG", tip: "'Lembrar-se de' — keep the 'de'. In casual speech the pronoun often drops ('você lembra de mim?'); both are natural." },
     { pt: "Eu me viro.", en: "I'll manage / I'll figure it out.", alts: ["me viro"], pron: "eh-oo mee VEE-roo", tip: "'Virar-se' = to get by, to sort yourself out. Pure Rio attitude: 'relaxa, eu me viro'." },
     { pt: "Eles se casaram ano passado.", en: "They got married last year.", alts: ["eles casaram ano passado", "se casaram ano passado"], pron: "EH-leesh see kah-ZAH-rahng", tip: "'Casar(-se)' works with or without the pronoun in spoken BR — 'casaram' and 'se casaram' are both everyday." },
     { pt: "Eu me acostumei com o calor.", en: "I got used to the heat.", alts: ["me acostumei com o calor"], pron: "mee ah-kosh-too-MAY", tip: "'Acostumar-se com' = to get used to. 'Já me acostumei' = I'm used to it by now." },

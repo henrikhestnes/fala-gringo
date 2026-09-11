@@ -22,7 +22,7 @@
     tierNames: ['Iniciante', 'Intermediário', 'Avançado'],
     tierTitle: 'Level: {tier}',
     graduatedTitle: '🎓 Graduated — {pct}% of the cards at review level 3 or higher',
-    learnerTitle: 'You: {tier} — the highest level among the tabs you have taken up',
+    learnerTitle: 'Practicing: {tier} — the difficulty of your chosen topics, not a fluency assessment',
     milestoneToast: '🏅 {label}',
     sheetTitle: 'Your progress',
     sheetToday: 'Today',
@@ -38,10 +38,42 @@
     sheetEarned: 'earned {date}',
     sheetClose: 'Close',
     sheetNoTitle: 'Drill a tab to take it up',
-    streakNone: 'no streak yet — today starts one'
+    streakNone: 'no streak yet — today starts one',
+    // the learner's title by the flame: the long form, and the short one phones show
+    practicing: 'Practicing: {tier}',
+    practicingShort: 'Practicing {tier}',
+    // the settings sheet (⚙): goals, backup, and the tooltips of the top-bar buttons
+    settingsTitle: 'Settings and backup',
+    settingsHelp: 'Your daily goal combines reviews and new cards. The Foco deck can offer more; you can stop when you reach your goal. Verbs arrive as whole conjugations.',
+    settingGoalMax: 'Total daily goal',
+    settingGoalNew: 'New cards in your goal',
+    settingNewPerDay: 'New cards per topic',
+    settingsSave: 'Save settings',
+    settingsSaved: 'Settings saved',
+    settingsInvalid: 'Use whole numbers: total 1–100, new cards 0–total, and new cards per topic 1–100.',
+    backupTitle: 'Progress backup',
+    backupHelp: 'Keep a copy of this language’s progress. Import merges it with your current progress; your sync code is never included.',
+    backupExport: 'Export backup',
+    backupImport: 'Import backup',
+    backupRestore: 'Restore instead of merging — the backup replaces this device’s progress (undoes an accidental reset)',
+    backupImported: 'Backup imported',
+    backupRestored: 'Backup restored',
+    backupBad: 'Could not import: invalid file or a backup for another language.',
+    modeHint: 'Modo Raiz (without hints) tests recall. Modo Nutella (with hints) helps you get started.',
+    themeAuto: 'Theme: automatic. Tap for light.',
+    themeLight: 'Theme: light. Tap for dark.',
+    themeDark: 'Theme: dark. Tap to follow your device.',
+    updateReady: 'A new version is ready — tap to reload.'
   }, window.APP_STRINGS || {});
 
-  function toast(msg) { if (typeof showToast === 'function') showToast(msg); }
+  const PT = !!window.APP_LANG;
+  // dates (milestones, the heatmap tooltips) in the page's own language
+  const DATE_LOCALE = document.documentElement.lang || 'en-GB';
+  let sheetKind = 'progress';
+  let sheetOpener = null;
+  let shortRequest = false;
+
+  function toast(msg, onTap) { if (typeof showToast === 'function') showToast(msg, onTap); }
 
   /* ------------------------------------------------------------- theming */
 
@@ -71,10 +103,7 @@
   function updateThemeButton() {
     const btn = document.getElementById('themeBtn');
     const pref = themePref();
-    const label = pref === null
-      ? 'Theme: follows the system (now ' + effectiveTheme() + '). Tap for light.'
-      : pref === 'light' ? 'Theme: light. Tap for dark.'
-      : 'Theme: dark. Tap to follow the system.';
+    const label = pref === null ? APP_STR.themeAuto : pref === 'light' ? APP_STR.themeLight : APP_STR.themeDark;
     btn.setAttribute('title', label);
     btn.setAttribute('aria-label', label);
     btn.innerHTML = THEME_ICONS[pref || 'auto'];
@@ -140,10 +169,15 @@
         }
       }
       return caption + '<button class="tab' + (t.kind === 'daily' ? ' daily' : '') + '" role="tab" ' +
-        'aria-selected="' + (t.id === activeId) + '" data-tab="' + t.id + '"' +
+        'id="tab-' + t.id + '" aria-controls="view" tabindex="' + (t.id === activeId ? '0' : '-1') + '" aria-selected="' + (t.id === activeId) + '" data-tab="' + t.id + '"' +
         (title ? ' title="' + escapeHtml(title) + '"' : '') + '>' +
         escapeHtml(t.label) + extra + '</button>';
     }).join('');
+    // on a phone the strip scrolls: keep the selected tab in view
+    const selected = document.getElementById('tab-' + activeId);
+    if (selected && typeof selected.scrollIntoView === 'function') {
+      try { selected.scrollIntoView({ inline: 'center', block: 'nearest' }); } catch (e) { /* old engines */ }
+    }
   }
 
   /* The learner's title: the highest tier among the tabs they have taken up —
@@ -181,6 +215,7 @@
      bar is not a scoreboard of zeros. The flame dims until today counts. */
   const RING_C = 2 * Math.PI * 9;   // circumference of the r=9 ring
   let lastLeft = -1;
+  let celebratedOn = 0;             // the day the goal celebration ran: once a day, not after every miss→fix
 
   function streakLabel(st) {
     return st.n === 1 ? APP_STR.streakDay : tfill(APP_STR.streakDays, { n: st.n });
@@ -209,7 +244,10 @@
           (done ? '✓' : goal.left) + '</text>' +
       '</svg>' +
       '<span class="goal-streak' + (st.today ? '' : ' cold') + '">🔥' + st.n + '</span>' +
-      (tier ? '<span class="goal-title">' + escapeHtml(tierName(tier)) + '</span>' : '');
+      (tier ? '<span class="goal-title">' +
+                '<span class="goal-title-long">' + escapeHtml(tfill(APP_STR.practicing, { tier: tierName(tier) })) + '</span>' +
+                '<span class="goal-title-short">' + escapeHtml(tfill(APP_STR.practicingShort, { tier: tierName(tier) })) + '</span>' +
+              '</span>' : '');
     const doneText = goal.waiting ? tfill(APP_STR.goalHit, { n: goal.waiting }) : APP_STR.goalDone;
     const title = (done ? doneText
                         : tfill(APP_STR.goalLeft, { n: goal.left, reviews: goal.reviews, fresh: goal.fresh, done: goal.done }) +
@@ -220,8 +258,11 @@
     btn.setAttribute('title', title);
     btn.setAttribute('aria-label', title);
 
-    // the moment the last card of the day clears: a small celebration, once
-    if (done && lastLeft > 0) {
+    // the moment the last card of the day clears: a small celebration, once a
+    // day — a later miss reopens the goal by one card, and fixing it is not a
+    // second finish
+    if (done && lastLeft > 0 && celebratedOn !== Store.today()) {
+      celebratedOn = Store.today();
       btn.classList.add('celebrate');
       toast(doneText + (st.n ? ' ' + streakLabel(st) : ''));
     }
@@ -235,7 +276,8 @@
         toast(fresh.map(m => tfill(APP_STR.milestoneToast, { label: m.icon + ' ' + m.label })).join(' · '));
       }
     }
-    if (!document.getElementById('sheet').hidden) renderSheet();   // keep an open sheet live
+    // Keep the open dialog stable: rebuilding it would destroy keyboard focus.
+    // Its data is refreshed the next time it is opened.   // keep an open sheet live
   }
 
   /* ------------------------------------------------------- progress sheet */
@@ -248,7 +290,7 @@
     return new Date(d.getTime() + d.getTimezoneOffset() * 60000);
   }
   function dayToDate(day) {
-    return dayToLocal(day).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    return dayToLocal(day).toLocaleDateString(DATE_LOCALE, { day: 'numeric', month: 'short', year: 'numeric' });
   }
 
   /* The activity heatmap: the last HEAT_WEEKS weeks of the day log as a
@@ -283,6 +325,7 @@
   }
 
   function renderSheet() {
+    if (sheetKind === 'settings') { renderSettings(); return; }
     const el = document.getElementById('sheet');
     if (!el) return;
     const st = Store.streak();
@@ -301,9 +344,9 @@
     const earned = ms.filter(m => m.earned).length;
     el.innerHTML = '' +
       '<div class="sheet-backdrop" data-sheet-close="1"></div>' +
-      '<div class="sheet-panel" role="dialog" aria-modal="true" aria-label="' + escapeHtml(APP_STR.sheetTitle) + '">' +
+      '<div class="sheet-panel" lang="' + (PT ? 'pt-BR' : 'en') + '" role="dialog" aria-modal="true" aria-label="' + escapeHtml(APP_STR.sheetTitle) + '">' +
         '<button class="sheet-close" type="button" data-sheet-close="1" aria-label="' + escapeHtml(APP_STR.sheetClose) + '">×</button>' +
-        '<h2>' + escapeHtml(APP_STR.sheetTitle) + '</h2>' +
+        '<h2 id="sheetHeading" tabindex="-1">' + escapeHtml(APP_STR.sheetTitle) + '</h2>' +
         '<p class="sheet-standing">' +
           (tier ? '<span class="sheet-tier">' + escapeHtml(tierName(tier)) + '</span> · ' : '') +
           escapeHtml(streakText) + '</p>' +
@@ -324,26 +367,102 @@
       '</div>';
   }
 
-  function openSheet() {
+  function setBackgroundInert(value) {
+    document.querySelectorAll('header, main, footer, .storage-warning').forEach(el => { el.inert = value; });
+  }
+  /* `opener` is the button that opened the sheet, so focus can go back to it:
+     document.activeElement is `body` after a mouse click in Safari, which never
+     focuses buttons, so the caller names it and we fall back to the button of
+     the kind of sheet. */
+  function openSheet(kind, opener) {
+    sheetKind = kind === 'settings' ? 'settings' : 'progress';
+    const active = document.activeElement;
+    sheetOpener = opener ||
+      (active && active !== document.body && active !== document.documentElement && typeof active.focus === 'function' ? active : null) ||
+      document.getElementById(sheetKind === 'settings' ? 'settingsBtn' : 'goalBtn');
+    Quiz.stopVoice();
     const el = document.getElementById('sheet');
     if (!el) return;
     renderSheet();
     el.hidden = false;
     document.documentElement.classList.add('sheet-open');
+    setBackgroundInert(true);
+    const heading = document.getElementById('sheetHeading');
+    if (heading) heading.focus();
   }
 
-  function closeSheet() {
+  /* Returns whether a sheet was open. Focus goes back to the opener; `false`
+     leaves focus to the caller (route(): the tab a sheet link led to). */
+  function closeSheet(focusTarget) {
     const el = document.getElementById('sheet');
-    if (!el || el.hidden) return;
+    if (!el || el.hidden) return false;
     el.hidden = true;
     el.innerHTML = '';
     document.documentElement.classList.remove('sheet-open');
+    setBackgroundInert(false);
+    if (focusTarget !== false) {
+      const target = focusTarget || sheetOpener;
+      if (target && typeof target.focus === 'function') target.focus();
+    }
+    sheetOpener = null;
+    Quiz.resumeMic();
+    return true;
+  }
+
+  function renderSettings() {
+    const el = document.getElementById('sheet');
+    const LABELS = { goalMax: APP_STR.settingGoalMax, goalNew: APP_STR.settingGoalNew, newPerDay: APP_STR.settingNewPerDay };
+    const field = (key, value, min) => '<label class="settings-field" for="setting-' + key + '">' + escapeHtml(LABELS[key]) +
+      '<input id="setting-' + key + '" type="number" inputmode="numeric" min="' + min + '" max="100" step="1" value="' + value + '" required></label>';
+    el.innerHTML = '<div class="sheet-backdrop" data-sheet-close="1"></div>' +
+      '<div class="sheet-panel" lang="' + (PT ? 'pt-BR' : 'en') + '" role="dialog" aria-modal="true" aria-labelledby="sheetHeading">' +
+      '<button class="sheet-close" type="button" data-sheet-close="1" aria-label="' + escapeHtml(APP_STR.sheetClose) + '">×</button>' +
+      '<h2 id="sheetHeading" tabindex="-1">' + escapeHtml(APP_STR.settingsTitle) + '</h2><p>' + escapeHtml(APP_STR.settingsHelp) + '</p>' +
+      '<form id="settingsForm">' + field('goalMax', Store.goalMax(), 1) + field('goalNew', Store.goalNew(), 0) +
+      field('newPerDay', Store.newPerDay(), 1) + '<button class="btn primary" type="submit">' + escapeHtml(APP_STR.settingsSave) + '</button></form>' +
+      '<p id="settingsStatus" role="status" aria-live="polite"></p>' +
+      '<h3>' + escapeHtml(APP_STR.backupTitle) + '</h3><p>' + escapeHtml(APP_STR.backupHelp) + '</p>' +
+      '<button class="btn" id="exportBackup" type="button">' + escapeHtml(APP_STR.backupExport) + '</button>' +
+      '<label class="settings-field" for="importBackup">' + escapeHtml(APP_STR.backupImport) + '<input id="importBackup" type="file" accept=".json,application/json"></label>' +
+      '<label class="settings-check" for="restoreBackup"><input id="restoreBackup" type="checkbox"> ' + escapeHtml(APP_STR.backupRestore) + '</label></div>';
+    document.getElementById('settingsForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const values = ['goalMax', 'goalNew', 'newPerDay'].map(k => Number(document.getElementById('setting-' + k).value));
+      const status = document.getElementById('settingsStatus');
+      if (values.some(n => !Number.isInteger(n) || n < 0 || n > 100) || values[0] < 1 || values[2] < 1 || values[1] > values[0]) { status.textContent = APP_STR.settingsInvalid; return; }
+      ['goalMax', 'goalNew', 'newPerDay'].forEach((k, i) => Store.setPref(k, values[i]));
+      status.textContent = APP_STR.settingsSaved;
+      renderGoal();
+    });
+    document.getElementById('exportBackup').addEventListener('click', () => {
+      const data = Store.exportBackup();
+      const url = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
+      const link = document.createElement('a');
+      link.href = url; link.download = 'fala-' + (window.APP_SYNC_APP || 'portugues') + '-backup.json';
+      document.body.appendChild(link); link.click(); link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    });
+    document.getElementById('importBackup').addEventListener('change', async e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const status = document.getElementById('settingsStatus');
+      const restoreBox = document.getElementById('restoreBackup');
+      const restore = !!(restoreBox && restoreBox.checked);   // the backup wins over this device (an accidental reset undone)
+      try {
+        if (file.size > 2 * 1024 * 1024) throw new Error('too large');
+        const raw = await file.text();
+        if (restore) Store.importBackup(raw, 'restore'); else Store.importBackup(raw);
+        status.textContent = restore ? APP_STR.backupRestored : APP_STR.backupImported;
+        renderTabs(); renderGoal();
+      } catch (_) { status.textContent = APP_STR.backupBad; }
+      e.target.value = '';
+    });
   }
 
   /* Tap: the progress sheet — title, streak, today's tabs, milestones. */
   function goalTap() {
     const el = document.getElementById('sheet');
-    if (el && !el.hidden) closeSheet(); else openSheet();
+    if (el && !el.hidden) closeSheet(); else openSheet('progress', document.getElementById('goalBtn'));
   }
 
   function updateModeButton() {
@@ -352,6 +471,7 @@
     // "Raiz vs Nutella" is Brazil's own meme for hardcore vs soft.
     btn.setAttribute('aria-pressed', Mode.hard ? 'true' : 'false');
     btn.textContent = Mode.hard ? 'Modo Raiz' : 'Modo Nutella';
+    btn.setAttribute('aria-label', (Mode.hard ? 'Modo Raiz' : 'Modo Nutella') + ' — ' + APP_STR.modeHint);
     btn.title = Mode.hard ? APP_STR.modeHardTitle : APP_STR.modeEasyTitle;
   }
 
@@ -367,12 +487,21 @@
   function route() {
     const topic = topicById(currentTopicId());
     Quiz.stopVoice();   // leaving a drill must stop the mic + pending auto-advance
-    closeSheet();       // a tab link on the sheet lands on the tab, not behind the sheet
+    if (topic.kind !== 'quiz') Quiz.unmount();   // Browse and the Daily: no drill deck may linger behind them
+    // a tab link on the sheet lands on the tab, not behind the sheet — and
+    // focus follows to the selected tab, not back to the ring that opened it
+    const fromSheet = closeSheet(false);
     renderTabs();
     window.scrollTo(0, 0);
     if (topic.kind === 'browse') Browse.render();
     else if (topic.kind === 'daily') Daily.mount();
-    else Quiz.mount(topic);
+    else Quiz.mount(topic, shortRequest ? 5 : 0);
+    shortRequest = false;
+    view().setAttribute('aria-labelledby', 'tab-' + topic.id);
+    if (fromSheet) {
+      const tab = document.getElementById('tab-' + topic.id);
+      if (tab && typeof tab.focus === 'function') tab.focus();
+    }
     renderGoal();
   }
 
@@ -384,6 +513,7 @@
   /* ------------------------------------------------- delegated interaction */
 
   document.addEventListener('click', e => {
+    if (e.target.closest('[data-start-practice]')) { shortRequest = true; go(TOPICS.find(t => t.kind === 'quiz').id); return; }
     const tab = e.target.closest('[data-tab]');
     if (tab) { go(tab.dataset.tab); return; }
 
@@ -427,15 +557,17 @@
     const conj = e.target.closest('[data-conj]');
     if (conj) {
       const row = conj.closest('.verb-row');
-      if (row) row.classList.toggle('expanded');
+      if (row) Browse.toggleConjugation(row, conj);
       return;
     }
 
     const word = e.target.closest('.verb-pt, .verb-en');
-    if (word) { word.classList.toggle('hidden'); return; }
+    if (word) { word.classList.toggle('hidden'); word.setAttribute('aria-pressed', word.classList.contains('hidden') ? 'true' : 'false'); return; }
   });
 
   document.getElementById('themeBtn').addEventListener('click', toggleTheme);
+  const settingsBtn = document.getElementById('settingsBtn');
+  if (settingsBtn) settingsBtn.addEventListener('click', () => openSheet('settings', settingsBtn));
   const goalBtn = document.getElementById('goalBtn');
   if (goalBtn) goalBtn.addEventListener('click', goalTap);
   document.getElementById('modeBtn').addEventListener('click', () => {
@@ -448,7 +580,28 @@
   });
 
   window.addEventListener('hashchange', route);
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
+  document.addEventListener('keydown', e => {
+    const sheet = document.getElementById('sheet');
+    if (sheet && !sheet.hidden) {
+      if (e.key === 'Escape') { e.preventDefault(); closeSheet(); return; }
+      if (e.key === 'Tab') {
+        const controls = Array.from(sheet.querySelectorAll('button, input, a[href], select, textarea, [tabindex="0"]')).filter(el => !el.disabled && !el.hidden);
+        if (!controls.length) { e.preventDefault(); return; }
+        const first = controls[0], last = controls[controls.length - 1];
+        if (e.shiftKey && (document.activeElement === first || !controls.includes(document.activeElement))) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && (document.activeElement === last || !controls.includes(document.activeElement))) { e.preventDefault(); first.focus(); }
+      }
+      return;
+    }
+    const tab = e.target.closest('[role="tab"]');
+    if (!tab || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+    e.preventDefault();
+    const tabs = Array.from(document.querySelectorAll('#tabs [role="tab"]'));
+    let i = tabs.indexOf(tab);
+    i = e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : (i + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+    tabs.forEach((t, n) => t.setAttribute('tabindex', n === i ? '0' : '-1'));
+    tabs[i].focus(); // Manual activation: Enter/Space uses the native button click.
+  });
 
   // The brand links home as "./" (the host redirects index.html there, and the
   // service worker must never hand a redirected response to a navigation).
@@ -464,10 +617,23 @@
   // simply runs without it, same degradation as mic mode.
   if ('serviceWorker' in navigator &&
       (location.protocol === 'https:' || location.hostname === 'localhost')) {
-    // one root worker serves both apps; a subpage points back up at it
-    navigator.serviceWorker.register(window.SW_PATH || 'sw.js');
+    // one root worker serves all three apps; a subpage points back up at it.
+    // updateViaCache 'none': the worker script itself is never served from the
+    // HTTP cache, so a deploy is picked up on the next visit.
+    try {
+      const reg = navigator.serviceWorker.register(window.SW_PATH || 'sw.js', { updateViaCache: 'none' });
+      if (reg && typeof reg.catch === 'function') reg.catch(() => { /* offline support is optional */ });
+      // a new worker taking over AFTER this page loaded means a new version is
+      // cached: say so, and reload on a tap (the first controller is just the install)
+      let hadController = !!navigator.serviceWorker.controller;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!hadController) { hadController = true; return; }
+        toast(APP_STR.updateReady, () => location.reload());
+      });
+    } catch (e) { /* a browser that has the API but refuses the registration */ }
   }
 
   // sync.js re-renders through this after pulling remote progress
-  window.App = { refresh: route, updateTabPct: updateTabPct, refreshGoal: renderGoal, openSheet: openSheet, closeSheet: closeSheet };
+  const refreshProgress = () => { renderTabs(); renderGoal(); applyTheme(); updateModeButton(); };
+  window.App = { refresh: route, refreshProgress: refreshProgress, updateTabPct: updateTabPct, refreshGoal: renderGoal, openSheet: openSheet, closeSheet: closeSheet };
 })();

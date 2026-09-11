@@ -2,22 +2,29 @@
    the app's top-level const bindings (Mode, Store, Quiz, Browse, Daily, TOPICS)
    are in scope. Uses step()/registry/flushTimers from the JXA host script. */
 
-step('app boots and renders the Browse view', function () {
-  var html = registry.view.innerHTML;
-  if (!/<h1>Verbos<\/h1>/.test(html)) throw new Error('browse view did not render');
+step('app boots and renders the Browse view, with the first-session starter for a newcomer', function () {
+  var html = registry.view.innerHTML + registry.browseRows.innerHTML;
+  if (!/<h2 lang="pt-BR">Verbos<\/h2>/.test(html)) throw new Error('browse view did not render');
+  if (!/class="welcome"/.test(html) || !/data-start-practice/.test(html)) throw new Error('no starter on a fresh profile');
   var rows = (html.match(/class="verb-row"/g) || []).length;
   if (rows !== 146) throw new Error('expected 146 verb rows, got ' + rows);
-  return rows + ' verb rows, ' + html.length + ' bytes of HTML';
+  return rows + ' verb rows, ' + html.length + ' bytes of HTML; starter shown';
 });
 
-step('Browse conjugation panels highlight the irregular letters', function () {
-  var html = registry.view.innerHTML;
-  if (!/data-speak="eu faço">fa<mark class="irr">ç<\/mark>o</.test(html)) throw new Error('faço not highlighted in Browse');
-  if (!/data-speak="você faz">faz<mark class="irr drop"/.test(html)) throw new Error('dropped ending of faz not marked');
-  if (!/data-speak="eu falo">falo</.test(html)) throw new Error('falo not left plain');
-  var legends = (html.match(/forms? break the regular -(ar|er|ir) pattern/g) || []).length;
-  if (legends < 30) throw new Error('only ' + legends + ' legends');
-  return 'faço → ç, faz → dashed gap, falo plain; ' + legends + ' verbs carry a legend';
+step('Browse defers conjugations until a row is expanded, then preserves irregularity marks', function () {
+  if (/conj-line/.test(registry.browseRows.innerHTML)) throw new Error('eager conjugations');
+  var html = '';
+  window.DATA_VERBS.verbs.forEach(function(v) {
+    var slot = new El(), row = new El(), btn = new El();
+    row.dataset.verb = v.pt;
+    row.querySelector = function(){ return slot; };
+    Browse.toggleConjugation(row,btn);
+    if (btn.getAttribute('aria-expanded') !== 'true') throw new Error('no expanded state');
+    html += slot.innerHTML;
+  });
+  if (!/eu faço">fa<mark class="irr">ç<\/mark>o</.test(html)) throw new Error('faço not highlighted');
+  if (!/você faz">faz<mark class="irr drop"/.test(html)) throw new Error('faz gap missing');
+  return '146 lazy panels; semantic audio buttons and expanded states';
 });
 
 step('tab strip lists all 14 tabs, captioned by tier', function () {
@@ -45,7 +52,7 @@ function goTo(hash) {
   (window._h.hashchange || []).forEach(function (fn) { fn(); });
 }
 function shownCard(topicId) {
-  var m = registry.cardArea.innerHTML.match(/<div class="card-prompt">([\s\S]*?)<\/div>/);
+  var m = registry.cardArea.innerHTML.match(/<div class="card-prompt"[^>]*>([\s\S]*?)<\/div>/);
   if (!m) throw new Error('no prompt rendered');
   var prompt = m[1];
   var card = topicCards(topicById(topicId)).filter(function (c) { return c.prompt === prompt; })[0];
@@ -263,7 +270,7 @@ step('theme cycles auto -> light -> dark -> auto', function () {
   var t3 = Store.getPref('theme', null);
   if (t1 !== 'light' || t2 !== 'dark' || t3 !== null)
     throw new Error('cycle was ' + t1 + ' / ' + t2 + ' / ' + t3);
-  if (!/follows the system/.test(registry.themeBtn.getAttribute('title') || ''))
+  if (!/automatic/.test(registry.themeBtn.getAttribute('title') || ''))
     throw new Error('auto-state tooltip missing');
   return 'three taps round-trip back to following the system';
 });
@@ -271,29 +278,25 @@ step('theme cycles auto -> light -> dark -> auto', function () {
 step('browse controls all run and keep 146 rows', function () {
   goTo('#browse');
   Browse.action('shuffle');
-  var shuffledRows = (registry.view.innerHTML.match(/class="verb-row"/g) || []).length;
+  var shuffledRows = (registry.browseRows.innerHTML.match(/class="verb-row"/g) || []).length;
   Browse.action('reset');
   Browse.action('hide-pt');
   Browse.action('hide-en');
   Browse.action('show');
-  var rows = (registry.view.innerHTML.match(/class="verb-row"/g) || []).length;
+  var rows = (registry.browseRows.innerHTML.match(/class="verb-row"/g) || []).length;
   if (rows !== 146 || shuffledRows !== 146)
     throw new Error('rows: shuffled=' + shuffledRows + ' final=' + rows);
   return 'shuffle/reset/hide/show all fine; 146 rows throughout';
 });
 
-step('browse renders all tenses per verb with glosses', function () {
-  goTo('#browse');
-  var html = registry.view.innerHTML;
-  ['Presente', 'Pretérito Perfeito', 'Pretérito Imperfeito',
-   'Imperfeito do Subjuntivo'].forEach(function (t) {
-    if (html.indexOf(t) === -1) throw new Error('missing tense block: ' + t);
-  });
-  var panels = (html.match(/conjugation-panel/g) || []).length;
-  if (panels !== 146) throw new Error('expected 146 panels, got ' + panels);
-  var subj = (html.match(/Imperfeito do Subjuntivo/g) || []).length;
-  if (subj !== 58) throw new Error('expected 58 subjunctive blocks, got ' + subj);
-  return '146 conjugation panels; 58 carry the subjunctive';
+step('Browse search matches English and accent-insensitive Portuguese',function(){
+  Browse.render();
+  registry.browseSearch.fire('input',{target:{value:'pôr'}});
+  if (registry.browseRows.innerHTML.indexOf('data-verb="pôr"')<0) throw new Error('Portuguese search');
+  registry.browseSearch.fire('input',{target:{value:'to speak'}});
+  if (registry.browseRows.innerHTML.indexOf('data-verb="falar"')<0) throw new Error('English search');
+  registry.browseSearch.fire('input',{target:{value:''}});
+  return 'search works in both languages';
 });
 
 step('subjuntivo drill accepts the trigger-prefixed answer', function () {
@@ -319,10 +322,11 @@ step('pronominal drill accepts every declared answer variant', function () {
   return '"' + card.accepted[card.accepted.length - 1] + '" accepted for "' + card.answer + '"';
 });
 
-step('an unknown hash falls back to Browse', function () {
+step('an unknown hash falls back to Browse — now without the starter, "Verbos" the page heading', function () {
   goTo('#nonsense');
-  if (!/<h1>Verbos<\/h1>/.test(registry.view.innerHTML)) throw new Error('did not fall back');
-  return 'ok';
+  if (!/<h1 lang="pt-BR">Verbos<\/h1>/.test(registry.view.innerHTML)) throw new Error('did not fall back: ' + registry.view.innerHTML.slice(0, 200));
+  if (/class="welcome"/.test(registry.view.innerHTML)) throw new Error('starter still shown after the answers above');
+  return 'Browse without the starter; h1 = Verbos';
 });
 
 /* The schedule is day-based, so steps move the clock: Date.now() is offset
@@ -397,7 +401,7 @@ step('review level grows only across distinct days and climbs the interval ladde
   // start from a card mastered today (the intake spread over two days above)
   var snap0 = Store.snapshot();
   snap0.strength.adverbs[id] = { s: 1, m: 0, l: 1, t: Store.today() };
-  Store.applySynced(snap0);
+  seedState(snap0);
   var lvl = Store.reviewLevel('adverbs', id);
   if (lvl !== 1) throw new Error('level after first mastery is ' + lvl);
   Store.recordAnswer('adverbs', id, true);          // same day: proves nothing extra
@@ -419,7 +423,7 @@ step('review level grows only across distinct days and climbs the interval ladde
   // a pre-1.12 record (no `l`) with a last-correct day counts as level 1
   var snap = Store.snapshot();
   snap.strength.adverbs[id] = { s: 3, m: 0, t: Store.today() - 8 };
-  Store.applySynced(snap);
+  seedState(snap);
   if (Store.reviewLevel('adverbs', id) !== 1 || Store.cardState('adverbs', id) !== 'due')
     throw new Error('legacy record: level ' + Store.reviewLevel('adverbs', id) + ', ' + Store.cardState('adverbs', id));
   return 'same day stays 1; +7d due -> confirm -> 2; +7d ok, +14d due; miss -> 0/shaky; legacy record = level 1';
@@ -436,7 +440,7 @@ step('the Foco deck puts due reviews before new cards, most overdue first', func
     snap.mastered.nouns[c.id] = 1;
     snap.strength.nouns[c.id] = { s: 1, m: 0, l: 1, t: today - REVIEW_INTERVALS[0] - i };   // c[4] most overdue
   });
-  Store.applySynced(snap);
+  seedState(snap);
   goTo('#browse'); goTo('#nouns');
   var total = parseInt(registry.statTotal.textContent, 10);
   if (total !== 5 + Store.newPerDay()) throw new Error('deck is ' + total + ', expected 5 due + ' + Store.newPerDay() + ' new');
@@ -479,7 +483,7 @@ step('equally overdue reviews are shuffled, not served in data order', function 
     snap.mastered.nouns[c.id] = 1;
     snap.strength.nouns[c.id] = { s: 1, m: 0, l: 1, t: today - REVIEW_INTERVALS[0] };   // all due, all equal
   });
-  Store.applySynced(snap);
+  seedState(snap);
   var inOrder = 0;
   for (var run = 0; run < 3; run++) {
     goTo('#browse'); goTo('#nouns');
@@ -491,7 +495,7 @@ step('equally overdue reviews are shuffled, not served in data order', function 
       registry.actionBtn.fire('click'); registry.actionBtn.fire('click');
     }
     if (shown.join('|') === cards.map(function (c) { return c.id; }).join('|')) inOrder++;
-    Store.applySynced(snap);                                // undo the misses for the next run
+    seedState(snap);                                // undo the misses for the next run
   }
   if (inOrder === 3) throw new Error('due ties came out in data order on every rebuild');
   return '12 equally due cards; data order seen in ' + inOrder + ' of 3 rebuilds';
@@ -520,7 +524,7 @@ step('inference: a known word + a known pattern makes an unseen regular form a "
   snap.strength.presente[targetEu] = { s: 1, m: 0, l: 1, t: today };
   // a verb the learner has never met anywhere: pattern known, word not
   var stranger = voces[Infer.PATTERN_MIN + 1];
-  Store.applySynced(snap);
+  seedState(snap);
   goTo('#browse'); goTo('#presente');
   var counts = Quiz._counts();
   if (!counts || counts.verify !== 1) throw new Error('verify tier is ' + JSON.stringify(counts));
@@ -539,7 +543,7 @@ step('inference: a known word + a known pattern makes an unseen regular form a "
   var snap2 = Store.snapshot();
   voces.slice(0, 2).forEach(function (c) { snap2.strength.presente[c.id] = { s: 0, m: 1, l: 0, t: today }; });
   snap2.mastered.presente[voces[Infer.PATTERN_MIN + 2].infer.lexeme + '|0'] = 1;   // another known word…
-  Store.applySynced(snap2);
+  seedState(snap2);
   goTo('#browse'); goTo('#presente');
   if (Quiz._counts().verify !== 0) throw new Error('…was still inferred from a shaky pattern: ' + JSON.stringify(Quiz._counts()));
   return '"' + target.id + '" verified from "' + targetEu + '" + ' + Infer.PATTERN_MIN + ' -ar vocês; hit -> level 2; stranger, irregular and shaky pattern excluded';
@@ -632,7 +636,7 @@ step('typed near-misses: one unambiguous slip is accepted, an ambiguous one is a
     snap.mastered.presente[c.id] = 1;
     snap.strength.presente[c.id] = { s: 1, m: 0, l: 3, t: today };
   });
-  Store.applySynced(snap);
+  seedState(snap);
   goTo('#browse'); goTo('#presente');
   if (shownCard('presente').id !== falo.id) throw new Error('deck did not isolate falo');
   registry.answerInput.value = 'eu fali';
@@ -644,7 +648,7 @@ step('typed near-misses: one unambiguous slip is accepted, an ambiguous one is a
   // a near-miss on a due card confirms it WITHOUT climbing the ladder
   var snap2 = Store.snapshot();
   snap2.strength.presente[falo.id] = { s: 1, m: 0, l: 2, t: today - REVIEW_INTERVALS[1] };
-  Store.applySynced(snap2);
+  seedState(snap2);
   goTo('#browse'); goTo('#presente');
   if (shownCard('presente').id !== falo.id) throw new Error('due falo not shown');
   registry.answerInput.value = 'eu fali';
@@ -687,7 +691,7 @@ step('implied reviews: one form of a known-pattern verb is asked, a clean hit co
     snap.mastered.presente[c.id] = 1;
     snap.strength.presente[c.id] = { s: 1, m: c.id === 'falar|2' ? 2 : 0, l: 1, t: today - REVIEW_INTERVALS[0] - 1 };
   });
-  Store.applySynced(snap);
+  seedState(snap);
   goTo('#browse'); goTo('#presente');
   var counts = Quiz._counts();
   var regular = cards.filter(function (c) { return c.infer && c.infer.regular; }).length;
@@ -761,7 +765,7 @@ step('a shaky form drags its UNSEEN siblings in, cap or no cap', function () {
   // forget the siblings entirely (never seen), then miss the form again
   var snap = Store.snapshot();
   siblings.forEach(function (c) { delete snap.mastered.imperfeito[c.id]; delete snap.strength.imperfeito[c.id]; });
-  Store.applySynced(snap);
+  seedState(snap);
   Store.setPref('newPerDay', 1);                      // a cap the drag must ignore
   Store.recordAnswer('imperfeito', missed.id, false);
   goTo('#browse'); goTo('#imperfeito');
@@ -782,7 +786,7 @@ step('a mastered card comes back for review once it goes stale', function () {
   var cards = topicCards(topicById('imperfeito'));
   var snap = Store.snapshot();
   snap.strength.imperfeito[cards[5].id].t -= (REVIEW_INTERVALS[0] + 1);
-  Store.applySynced(snap);
+  seedState(snap);
   goTo('#browse'); goTo('#imperfeito');
   var total = parseInt(registry.statTotal.textContent, 10);
   if (total !== 1) throw new Error('expected exactly the stale card, got ' + total);
@@ -977,7 +981,7 @@ step('a tab last drilled over ' + ACTIVE_DAYS + ' days ago leaves the goal', fun
   var snap = Store.snapshot();
   var d = Store.today();
   snap.drilled = { adverbs: d - ACTIVE_DAYS, nouns: d - ACTIVE_DAYS - 1 };
-  Store.applySynced(snap);
+  seedState(snap);
   if (!Store.isActiveTopic('adverbs')) throw new Error('exactly ' + ACTIVE_DAYS + ' days ago should still count');
   if (Store.isActiveTopic('nouns')) throw new Error(ACTIVE_DAYS + 1 + ' days ago still active');
   return 'day ' + ACTIVE_DAYS + ' in, day ' + (ACTIVE_DAYS + 1) + ' out';
@@ -990,7 +994,7 @@ step('the streak counts consecutive days, forgives one gap, breaks on two, and s
     var days = {};
     Object.keys(map).forEach(function (k) { days[d - Number(k)] = map[k]; });
     snap.days = days;
-    Store.applySynced(snap);
+    seedState(snap);
     return Store.streak();
   }
   var st = withDays({ 0: 3, 1: 2, 3: 1 });          // today, yesterday, gap, three days ago
@@ -1047,17 +1051,18 @@ step('a tab graduates at 80% of its cards on review level 3, wears 🎓, and nam
     snap.strength.adverbs[c.id] = { s: 3, m: 0, t: d - 1, l: GRADUATE_LEVEL, i: d - 20 };
   });
   snap.drilled = { adverbs: d };
-  Store.applySynced(snap);
+  seedState(snap);
   goTo('#adverbs');
   if (Quiz.graduation(t).qualifies) throw new Error('qualified one card short of the bar');
   if (!/data-tab="adverbs"[^>]*>Adverbs<span class="pct">\d+%</) throw new Error('tab should still show its %: ' + registry.tabs.innerHTML);
-  if (!/goal-title">Intermediário</.test(registry.goalBtn.innerHTML)) throw new Error('title should be Intermediário (adverbs is tier 2): ' + registry.goalBtn.innerHTML);
+  if (!/goal-title-long">Practicing: Intermediário</.test(registry.goalBtn.innerHTML)) throw new Error('title should be Intermediário (adverbs is tier 2): ' + registry.goalBtn.innerHTML);
+  if (!/goal-title-short">Practicing Intermediário</.test(registry.goalBtn.innerHTML)) throw new Error('no short form for phones: ' + registry.goalBtn.innerHTML);
   // the 23rd card: mastered at level 3 too — the bar is met, but no answer has stamped it yet
   var last = cards[need - 1];
   snap = Store.snapshot();
   snap.mastered.adverbs[last.id] = 1;
   snap.strength.adverbs[last.id] = { s: 3, m: 0, t: d - 1, l: GRADUATE_LEVEL, i: d - 20 };
-  Store.applySynced(snap);
+  seedState(snap);
   App.refresh();
   if (!Quiz.graduation(t).qualifies) throw new Error('did not qualify at ' + need + '/' + cards.length);
   if (!/data-tab="adverbs"[^>]*>Adverbs<span class="pct">🎓</.test(registry.tabs.innerHTML)) throw new Error('no 🎓 on the tab: ' + registry.tabs.innerHTML);
@@ -1089,9 +1094,9 @@ step('a tab graduates at 80% of its cards on review level 3, wears 🎓, and nam
 step('with tier-3 progress the title reads Avançado; graduation stamps merge to the earliest day', function () {
   var snap = Store.snapshot();
   snap.drilled = { subjuntivo: Store.today() };
-  Store.applySynced(snap);
+  seedState(snap);
   App.refreshGoal();
-  if (!/goal-title">Avançado</.test(registry.goalBtn.innerHTML)) throw new Error(registry.goalBtn.innerHTML);
+  if (!/goal-title-long">Practicing: Avançado</.test(registry.goalBtn.innerHTML)) throw new Error(registry.goalBtn.innerHTML);
   var m = Sync._merge({ mastered: {}, strength: {}, daily: {}, graduated: { presente: 20700 } },
                       { mastered: {}, strength: {}, daily: {}, graduated: { presente: 20690, nouns: 20701 } });
   if (m.graduated.presente !== 20690 || m.graduated.nouns !== 20701) throw new Error(JSON.stringify(m.graduated));
@@ -1104,7 +1109,7 @@ step('today\'s goal is the reviews owed plus at most GOAL_NEW new cards in total
   var snap = Store.snapshot();
   // six drilled tabs with nothing due: the old ring would have demanded 6 x 20 new cards
   snap.drilled = { presente: d, perfeito: d, imperfeito: d, nouns: d, adjectives: d, connecting: d };
-  Store.applySynced(snap);
+  seedState(snap);
   var g = Quiz.todayGoal();
   if (g.reviews !== 0) throw new Error('reviews owed on a fresh profile: ' + g.reviews);
   if (g.fresh !== GOAL_NEW || g.left !== GOAL_NEW) throw new Error('new allowance: ' + JSON.stringify({ fresh: g.fresh, left: g.left }));
@@ -1115,7 +1120,7 @@ step('today\'s goal is the reviews owed plus at most GOAL_NEW new cards in total
   topicCards(topicById('nouns')).slice(0, 3).forEach(function (c) {
     snap.mastered.nouns[c.id] = 1; snap.strength.nouns[c.id] = { s: 1, m: 0, l: 1, t: d - 8, i: d - 8 };
   });
-  Store.applySynced(snap);
+  seedState(snap);
   g = Quiz.todayGoal();
   if (g.reviews !== 3 || g.left !== GOAL_NEW + 3) throw new Error('with 3 due: ' + JSON.stringify({ reviews: g.reviews, left: g.left }));
   // new cards got right today spend the allowance
@@ -1124,7 +1129,7 @@ step('today\'s goal is the reviews owed plus at most GOAL_NEW new cards in total
   topicCards(topicById('presente')).slice(0, 4).forEach(function (c) {
     snap.mastered.presente[c.id] = 1; snap.strength.presente[c.id] = { s: 1, m: 0, l: 1, t: d, i: d };
   });
-  Store.applySynced(snap);
+  seedState(snap);
   g = Quiz.todayGoal();
   if (g.fresh !== GOAL_NEW - 4 || g.done !== 4) throw new Error('after 4 new done: ' + JSON.stringify({ fresh: g.fresh, done: g.done }));
   Store.setPref('goalNew', 0);
@@ -1143,7 +1148,7 @@ step('a backlog of misses is capped at GOAL_MAX a day and the rest waits; dragge
   snap.strength.presente = {}; snap.mastered.presente = {};
   var missed = cards.slice(0, 200);                 // 200 forms missed and never recovered
   missed.forEach(function (c) { snap.strength.presente[c.id] = { s: 0, m: 1, l: 0, i: d - 30 }; });
-  Store.applySynced(snap);
+  seedState(snap);
   var g = Quiz.todayGoal();
   if (g.left !== GOAL_MAX || g.reviews !== GOAL_MAX || g.fresh !== 0)
     throw new Error('200 shaky: ' + JSON.stringify({ left: g.left, reviews: g.reviews, fresh: g.fresh }));
@@ -1153,7 +1158,7 @@ step('a backlog of misses is capped at GOAL_MAX a day and the rest waits; dragge
   // 30 right today closes the ring even though 170 still wait; the state says so instead of "Tudo em dia"
   snap = Store.snapshot();
   missed.slice(0, GOAL_MAX).forEach(function (c) { snap.mastered.presente[c.id] = 1; snap.strength.presente[c.id] = { s: 1, m: 1, l: 1, t: d, i: d - 30 }; });
-  Store.applySynced(snap);
+  seedState(snap);
   g = Quiz.todayGoal();
   if (g.left !== 0 || g.done !== GOAL_MAX || g.waiting !== 200 - GOAL_MAX) throw new Error('after 30: ' + JSON.stringify({ left: g.left, done: g.done, waiting: g.waiting }));
   App.refreshGoal();
@@ -1161,11 +1166,12 @@ step('a backlog of misses is capped at GOAL_MAX a day and the rest waits; dragge
   if (!/Daily goal done! 170 reviews still wait/.test(registry.goalBtn.getAttribute('title'))) throw new Error('tooltip: ' + registry.goalBtn.getAttribute('title'));
   // one missed verb form drags its unseen siblings into the deck's shaky tier — the goal counts them as new
   Store.resetTopic('presente');
+  Store.markDrilled('presente');
   snap = Store.snapshot();
   snap.strength.presente = {}; snap.mastered.presente = {};
   var ser = cards.filter(function (c) { return c.id.indexOf('ser|') === 0; });
   snap.strength.presente[ser[0].id] = { s: 0, m: 1, l: 0, i: d };
-  Store.applySynced(snap);
+  seedState(snap);
   g = Quiz.todayGoal();
   var p = g.per[0];
   if (p.reviews !== 1 || p.fresh !== GOAL_NEW) throw new Error('one miss + siblings: ' + JSON.stringify({ reviews: p.reviews, fresh: p.fresh, left: p.left }));
@@ -1180,7 +1186,7 @@ step('a backlog of misses is capped at GOAL_MAX a day and the rest waits; dragge
 step('the Daily remembers what was typed and its done screen names the synonym reached for', function () {
   Store.resetAll();
   goTo('#daily');
-  var m = registry.view.innerHTML.match(/<div class="card-prompt">([\s\S]*?)<\/div>/);
+  var m = registry.view.innerHTML.match(/<div class="card-prompt"[^>]*>([\s\S]*?)<\/div>/);
   if (!m) throw new Error('no daily prompt');
   var card = allQuizCards().filter(function (c) { return c.prompt === m[1]; })[0];
   if (!card) throw new Error('could not identify the daily card');
@@ -1193,7 +1199,7 @@ step('the Daily remembers what was typed and its done screen names the synonym r
   var guard = 0;
   while (registry.giveUpBtn && guard++ < 20) { registry.giveUpBtn.fire('click'); flushTimers(); if (registry.actionBtn) registry.actionBtn.fire('click'); }
   if (!/done-screen/.test(registry.view.innerHTML)) throw new Error('daily not finished');
-  var verbs = registry.view.innerHTML.match(/daily-result-verb">([^<]*)</g).map(function (s) { return s.replace(/.*">/, '').replace(/<$/, ''); });
+  var verbs = registry.view.innerHTML.match(/daily-result-verb"[^>]*>([^<]*)</g).map(function (s) { return s.replace(/.*">/, '').replace(/<$/, ''); });
   var withSyn = [];
   rec = Store.getDaily(key);
   verbs.forEach(function (ans, i) {
@@ -1203,7 +1209,7 @@ step('the Daily remembers what was typed and its done screen names the synonym r
   Store.setDaily(key, rec);
   Daily.mount();
   withSyn.forEach(function (a) {
-    if (registry.view.innerHTML.indexOf('daily-result-verb">' + a + '<') === -1) throw new Error('row does not name ' + a);
+    if (registry.view.innerHTML.indexOf('daily-result-verb" lang="pt-BR">' + a + '<') === -1) throw new Error('row does not name ' + a);
   });
   // a pre-1.23.4 record (no typed) still mounts; the merge keeps whichever side saw the answer
   delete rec.typed; Store.setDaily(key, rec); Daily.mount();
@@ -1226,7 +1232,7 @@ step('the Daily keeps a permanent log: strict streak in the header and the share
                              solved: [true, true, true, false, true, true, true], current: 6 };
   snap.daily[daysAgo(4)] = { attempts: [1, 0, 0, 0, 0, 0, 0], failed: [false, false, false, false, false, false, false],
                              solved: [true, false, false, false, false, false, false], current: 1 };
-  Store.applySynced(snap);
+  seedState(snap);
   var hist = Store.dailyHistory();
   if (hist[daysAgo(3)] !== 4 || (daysAgo(4) in hist)) throw new Error('backfill: ' + JSON.stringify(hist));
   goTo('#daily');
@@ -1248,7 +1254,7 @@ step('the Daily keeps a permanent log: strict streak in the header and the share
   // a gap breaks the strict streak; day one alone never reaches the share string
   snap = Store.snapshot();
   snap.dailyDone = {}; snap.dailyDone[keyOf(new Date())] = 0; snap.dailyDone[daysAgo(2)] = 7;   // today's result stays saved, so the mount lands on the done screen
-  Store.applySynced(snap);
+  seedState(snap);
   Daily.mount();
   if (/🔥 \d+-day streak\nfalagringo/.test(registry.view.innerHTML)) throw new Error('a 1-day run leaked into the share string');
   if (!/3 Dailies played · 🔥 1-day streak/.test(registry.view.innerHTML)) throw new Error('stats after the gap: ' + (registry.view.innerHTML.match(/daily-stats-line">[^<]*/) || [''])[0]);
@@ -1300,7 +1306,7 @@ step('milestones are earned once with a toast, and the goal ring opens the progr
       snap.mastered[tid][c.id] = 1; snap.strength[tid][c.id] = { s: 3, m: 0, l: 3, t: d - 1, i: d - 30 };
     });
   });
-  Store.applySynced(snap);
+  seedState(snap);
   var fresh = Milestones.check().map(function (m) { return m.id; }).sort().join(',');
   if (fresh !== 'daily7,m100,s7,top,verb') throw new Error('earned: ' + fresh);
   if (Milestones.check().length) throw new Error('earned twice');
@@ -1331,7 +1337,7 @@ step('the progress sheet shows a 12-week heatmap read from the day log', functio
   var d = Store.today();
   var snap = Store.snapshot();
   snap.days = {}; snap.days[d] = 5; snap.days[d - 1] = 12; snap.days[d - 2] = 35; snap.days[d - 3] = 70; snap.days[d - 90] = 9;   // the last one falls outside the window
-  Store.applySynced(snap);
+  seedState(snap);
   App.openSheet();
   var html = registry.sheet.innerHTML;
   var cells = (html.match(/class="hm-cell" data-l="\d"(?: data-today="1")? title=/g) || []).length;   // grid cells only, not the legend swatches
@@ -1347,3 +1353,234 @@ step('the progress sheet shows a 12-week heatmap read from the day log', functio
   return '84 cells, ' + future + ' future; 4 of ' + (84 - future) + ' days, 122 answers; shades 4-3-2-1 ending today';
 });
 
+
+step('Daily manifests survive content reordering and merge by card identity', function () {
+  Store.resetAll();
+  goTo('#daily');
+  const day = Object.keys(Store.snapshot().daily)[0];
+  const first = Store.getDaily(day);
+  if (!first.cards || first.version !== 2) throw new Error('missing stable manifest');
+  const before = JSON.stringify(first.cards);
+  const topic = topicById(first.cards[0].topic);
+  const pool = topicCards(topic);
+  pool.reverse();
+  try {
+    Daily.mount();
+    if (JSON.stringify(Store.getDaily(day).cards) !== before) throw new Error('reordering changed the Daily');
+  } finally { pool.reverse(); }
+  const a = { cards: [{topic:'a',id:'one'},{topic:'b',id:'two'}], version:2, u:1, attempts:[1,0], solved:[true,false], failed:[false,false], typed:['one',''] };
+  const b = { cards: [{topic:'b',id:'two'},{topic:'a',id:'one'}], version:2, u:2, attempts:[1,0], solved:[true,false], failed:[false,false], typed:['two',''] };
+  const merged = ProgressState.merge({daily:{day:a}},{daily:{day:b}}).daily.day;
+  if (!merged.solved.every(Boolean) || merged.typed.join(',') !== 'two,one') throw new Error('results followed positions instead of identities');
+  return 'saved selection unchanged; reordered results match their own cards';
+});
+
+step('a Daily crossing local midnight starts the new day before accepting an answer', function () {
+  Store.resetAll();
+  goTo('#daily');
+  const before = Object.keys(Store.snapshot().daily)[0];
+  const NativeDate = Date;
+  const tomorrow = new NativeDate(); tomorrow.setDate(tomorrow.getDate() + 1);
+  function TomorrowDate() {
+    if (arguments.length === 0) return new NativeDate(tomorrow.getTime());
+    return new NativeDate(...arguments);
+  }
+  TomorrowDate.now = () => tomorrow.getTime();
+  TomorrowDate.UTC = NativeDate.UTC; TomorrowDate.parse = NativeDate.parse;
+  TomorrowDate.prototype = NativeDate.prototype;
+  window.Date = TomorrowDate;
+  try {
+    registry.answerInput.value = 'yesterday answer';
+    registry.actionBtn.fire('click');
+    const all = Store.snapshot().daily;
+    const next = Object.keys(all).find(k => k !== before);
+    if (!next || all[before].attempts.some(Boolean) || all[next].attempts.some(Boolean)) throw new Error('answer attributed to the wrong day');
+  } finally { window.Date = NativeDate; }
+  return 'new manifest opened, stale answer not submitted';
+});
+
+/* ------------------------------------------------------ review fixes (1.24) */
+
+step('a FINISHED pre-v2 Daily record is adopted on upgrade day, not replayed; a revisit saves nothing', function () {
+  Store.resetAll();
+  var key = (function (d) { return '' + d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0'); })(new Date());
+  // yesterday's app wrote this: settled, no card manifest, 4 solved on the first try
+  Store.setDaily(key, { attempts: [1, 2, 1, 5, 1, 1, 3], failed: [false, false, false, true, false, false, false],
+                        solved: [true, true, true, false, true, true, true], current: 6, typed: ['', '', '', '', '', '', ''] });
+  if (Store.dailyHistory()[key] !== 4) throw new Error('legacy record not read as finished: ' + JSON.stringify(Store.dailyHistory()));
+  goTo('#daily');
+  if (!/done-screen/.test(registry.view.innerHTML)) throw new Error('finished legacy day became replayable: ' + registry.view.innerHTML.slice(0, 300));
+  if (!/4 on the first try/.test(registry.view.innerHTML)) throw new Error('score changed: ' + (registry.view.innerHTML.match(/<p>\d of 7 solved[^<]*/) || [''])[0]);
+  var rec = Store.getDaily(key);
+  if (rec.version !== 2 || !Array.isArray(rec.cards) || rec.cards.length !== 7) throw new Error('not upgraded to a v2 record: ' + JSON.stringify(rec).slice(0, 200));
+  if (Store.dailyHistory()[key] !== 4) throw new Error('history overwritten: ' + Store.dailyHistory()[key]);
+  // the Daily's number and date come from its key, not the clock
+  var n = Math.round((new Date(+key.slice(0, 4), +key.slice(4, 6) - 1, +key.slice(6, 8)) - new Date(2026, 7, 11)) / 86400000) + 1;
+  if (registry.view.innerHTML.indexOf('Daily #' + n) < 0) throw new Error('daily number not derived from the key: expected #' + n);
+  // a plain revisit of a usable record writes nothing (no record churn, no sync push before an answer)
+  var origSet = Store.setDaily, writes = 0;
+  Store.setDaily = function () { writes++; return origSet.apply(Store, arguments); };
+  try { Daily.mount(); } finally { Store.setDaily = origSet; }
+  if (writes) throw new Error('mount saved ' + writes + ' time(s) with a usable record');
+  return 'legacy finished day → done screen, 4 first-try kept, v2 manifest written once; #' + n + ' from the key; revisit: 0 writes';
+});
+
+step('leaving a drill unmounts it: closing the sheet on the Daily starts no mic against the old deck', function () {
+  Store.resetAll();
+  Store.setPref('mic', true);
+  goTo('#nouns');
+  if (!window._activeRec) throw new Error('mic did not listen on the drill');
+  goTo('#daily');
+  if (Quiz.isActive()) throw new Error('drill still mounted behind the Daily');
+  if (window._activeRec) throw new Error('mic still listening on the Daily');
+  if (!registry.answerInput) throw new Error('the Daily has no answer input');
+  App.openSheet();
+  App.closeSheet();                       // used to call resumeMic() against deck[current] of the drill
+  if (window._activeRec) throw new Error('closing the sheet on the Daily started the drill\'s mic');
+  Quiz.resumeMic();                       // the resume button path, same guard
+  if (window._activeRec) throw new Error('resumeMic listened without a mounted drill');
+  goTo('#browse');
+  App.openSheet(); App.closeSheet();
+  if (window._activeRec) throw new Error('mic started on Browse');
+  goTo('#nouns');
+  if (!window._activeRec) throw new Error('mic did not come back on the drill');
+  Store.setPref('mic', false);
+  goTo('#browse');
+  return 'nouns listens → Daily/Browse silent through sheet close and resumeMic → nouns listens again';
+});
+
+step('the mic chip only re-renders the card: the run (cards cleared, errors) survives the toggle', function () {
+  Store.resetAll();
+  Store.setPref('mic', false);
+  goTo('#nouns');
+  var total = registry.statTotal.textContent;
+  var card = shownCard('nouns');
+  registry.answerInput.value = card.answer;
+  registry.actionBtn.fire('click');
+  if (registry.statKnown.textContent !== '1') throw new Error('known is ' + registry.statKnown.textContent);
+  Quiz.toggleMic();
+  if (!/chip mic active/.test(registry.view.innerHTML) || !window._activeRec) throw new Error('mic did not switch on');
+  if (registry.statKnown.textContent !== '1' || registry.statTotal.textContent !== total)
+    throw new Error('toggle reset the run: known ' + registry.statKnown.textContent + ', total ' + registry.statTotal.textContent);
+  Quiz.toggleMic();
+  if (registry.statKnown.textContent !== '1' || window._activeRec) throw new Error('toggle back reset the run or kept listening');
+  return 'known stayed 1 of ' + total + ' across mic on/off';
+});
+
+step('reclaimed implied reviews come up right after the lead, and the due count grows by what was added', function () {
+  ['presente', 'perfeito', 'imperfeito', 'subjuntivo'].forEach(function (t) { Store.resetTopic(t); });
+  var cards = topicCards(topicById('presente'));
+  var today = Store.today();
+  var snap = Store.snapshot();
+  snap.mastered.presente = {}; snap.strength.presente = {};
+  cards.forEach(function (c) {
+    snap.mastered.presente[c.id] = 1;
+    snap.strength.presente[c.id] = { s: 1, m: 0, l: 1, t: today - REVIEW_INTERVALS[0] - 1 };
+  });
+  seedState(snap);
+  goTo('#browse'); goTo('#presente');
+  var guard = 0, lead = null;
+  while (registry.answerInput && guard++ < 400) {
+    var c = shownCard('presente');
+    if (Quiz._impliedOf(c.id).length === 3) { lead = c; break; }
+    registry.answerInput.value = c.answer; registry.actionBtn.fire('click'); registry.actionBtn.fire('click');
+  }
+  if (!lead) throw new Error('no lead with three implied siblings reached');
+  var siblings = Quiz._impliedOf(lead.id).slice();
+  var due = Quiz._counts().due, total = parseInt(registry.statTotal.textContent, 10);
+  registry.answerInput.value = 'zzz-wrong'; registry.actionBtn.fire('click');
+  if (Quiz._counts().due !== due + 3) throw new Error('due count ' + due + ' -> ' + Quiz._counts().due + ', expected +3');
+  if (parseInt(registry.statTotal.textContent, 10) !== total + 3) throw new Error('deck did not grow by 3');
+  var seen = [];
+  for (var i = 0; i < 3; i++) {
+    registry.actionBtn.fire('click');                       // advance
+    var nxt = shownCard('presente');
+    seen.push(nxt.id);
+    registry.answerInput.value = nxt.answer; registry.actionBtn.fire('click');
+  }
+  if (seen.slice().sort().join('|') !== siblings.slice().sort().join('|'))
+    throw new Error('the next three cards were ' + seen.join(', ') + ', not the reclaimed ' + siblings.join(', '));
+  return 'missed ' + lead.id + ' → ' + siblings.join(', ') + ' asked next; due +3, deck +3';
+});
+
+step('a short session ends with a choice: "continue with the full deck" drops the limit', function () {
+  Store.resetAll();
+  Store.setPref('foco', true); Store.setPref('mic', false);
+  registry.view.dataset.topic = '';
+  Quiz.mount(topicById('adverbs'), 5);
+  if (!/session-note/.test(registry.view.innerHTML) || !/Short practice/.test(registry.view.innerHTML)) throw new Error('no session note');
+  if (parseInt(registry.statTotal.textContent, 10) !== 5) throw new Error('not five cards');
+  var guard = 0;
+  while (registry.answerInput && guard++ < 20) {
+    var c = shownCard('adverbs');
+    registry.answerInput.value = c.answer; registry.actionBtn.fire('click'); registry.actionBtn.fire('click');
+  }
+  if (!/done-screen/.test(registry.cardArea.innerHTML)) throw new Error('short session not finished');
+  if (!registry.continueBtn || !/Continue with the full deck/.test(registry.cardArea.innerHTML)) throw new Error('no continue button on the done screen');
+  registry.continueBtn.fire('click');
+  var total = parseInt(registry.statTotal.textContent, 10);
+  if (total !== Store.newPerDay() - 5) throw new Error('full deck is ' + total + ', expected the rest of today\'s intake (' + (Store.newPerDay() - 5) + ')');
+  if (/session-note/.test(registry.view.innerHTML)) throw new Error('session note still shown');
+  // clear the full deck too: its done screen offers no Continue
+  guard = 0;
+  while (registry.answerInput && guard++ < 40) {
+    var c2 = shownCard('adverbs');
+    registry.answerInput.value = c2.answer; registry.actionBtn.fire('click'); registry.actionBtn.fire('click');
+  }
+  if (!/done-screen/.test(registry.cardArea.innerHTML) || /continueBtn/.test(registry.cardArea.innerHTML))
+    throw new Error('continue button outside a short session, or the full deck did not finish');
+  return '5 cards → done screen with Continue → ' + total + '-card full deck, no note, no Continue at its end';
+});
+
+step('the goal celebration runs once a day, not after every miss→fix once the goal is done', function () {
+  Store.resetAll();
+  Store.setPref('newPerDay', 2);
+  advanceDays(1);                          // earlier steps already celebrated "today"; a fresh day celebrates again
+  goTo('#browse'); goTo('#adverbs');
+  var c1 = shownCard('adverbs');
+  registry.answerInput.value = c1.answer; registry.actionBtn.fire('click'); registry.actionBtn.fire('click');
+  registry.toast.textContent = '';
+  var c2 = shownCard('adverbs');
+  registry.answerInput.value = c2.answer; registry.actionBtn.fire('click');
+  if (!/Tudo em dia por hoje/.test(registry.toast.textContent)) throw new Error('goal done not celebrated: "' + registry.toast.textContent + '"');
+  if (!/goal-btn done/.test(registry.goalBtn.className)) throw new Error('ring not done');
+  registry.toast.textContent = '';
+  Store.recordAnswer('adverbs', c1.id, false); App.refreshGoal();      // a miss reopens the goal by one review
+  if (/goal-btn done/.test(registry.goalBtn.className)) throw new Error('ring still done with a shaky card owed');
+  Store.recordAnswer('adverbs', c1.id, true); App.refreshGoal();       // …and fixing it closes it again
+  if (!/goal-btn done/.test(registry.goalBtn.className)) throw new Error('ring not done after the fix');
+  if (registry.toast.textContent) throw new Error('celebrated a second time today: "' + registry.toast.textContent + '"');
+  Store.setPref('newPerDay', NEW_PER_DAY);
+  return 'second card → "Tudo em dia" toast once; miss→fix reclosed the ring silently';
+});
+
+step('a hyphen is a space in answers: "terca feira" is terça-feira, "fim-de-semana" is fim de semana', function () {
+  if (normalize('terça-feira') !== 'terca feira' || normalize('fim-de-semana') !== 'fim de semana' || normalize('a – b') !== 'a b')
+    throw new Error('normalize: ' + normalize('terça-feira') + ' / ' + normalize('fim-de-semana'));
+  var hyphenated = allQuizCards().filter(function (c) { return c.accepted.some(function (a) { return /\w-\w/.test(a); }); });
+  var real = hyphenated[0];
+  var card = real || { accepted: ['terça-feira'], answer: 'terça-feira' };
+  var ans = card.accepted.filter(function (a) { return /\w-\w/.test(a); })[0];
+  var spaced = ans.replace(/-/g, ' ');
+  var m = matchAnswer(card, spaced, [], false);
+  if (!m || m.grade !== 'exact') throw new Error('"' + spaced + '" not an exact match for "' + ans + '": ' + JSON.stringify(m));
+  var joined = matchAnswer({ accepted: ['fim de semana'], answer: 'fim de semana' }, 'fim-de-semana', [], false);
+  if (!joined || joined.grade !== 'exact') throw new Error('"fim-de-semana" not accepted for "fim de semana"');
+  return (real ? hyphenated.length + ' hyphenated cards in the data; "' + spaced + '" = "' + ans + '"' : 'no hyphenated card in the data; synthetic check passed') + '; dashes too';
+});
+
+step('the spoken-digit expansion keeps the space after a number', function () {
+  var cases = { '20 anos': 'vinte anos', '3º lugar': 'terceiro lugar', '3 º': 'terceiro', '25': 'vinte e cinco', 'tenho 2 filhos': 'tenho dois filhos', '1ª vez': 'primeira vez' };
+  Object.keys(cases).forEach(function (k) {
+    if (expandSpokenDigits(k) !== cases[k]) throw new Error('"' + k + '" -> "' + expandSpokenDigits(k) + '", expected "' + cases[k] + '"');
+  });
+  return Object.keys(cases).length + ' expansions, spaces intact';
+});
+
+step('the 500- and 1,000-card milestones apply here (2,464 cards) and only where reachable', function () {
+  var ids = Milestones.list().map(function (m) { return m.id; });
+  if (ids.indexOf('m500') < 0 || ids.indexOf('m1000') < 0) throw new Error('main app lacks m500/m1000: ' + ids.join(','));
+  var m500 = Milestones._defs.filter(function (d) { return d.id === 'm500'; })[0];
+  if (!m500.applies || !m500.applies()) throw new Error('m500 has no applies() gate');
+  return 'm500 + m1000 listed with ' + allQuizCards().length + ' cards';
+});

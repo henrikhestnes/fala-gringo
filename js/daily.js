@@ -60,15 +60,20 @@ const Daily = (function () {
     return '<div class="daily-dist" aria-label="Dailies by cards solved on the first try">' + rows.join('') + '</div>';
   }
 
+  /* The mounted challenge's own date, from its key — not the clock, so a page
+     left open past midnight keeps naming the Daily it shows until rollDay(). */
+  function keyDate() {
+    const k = key || todayKey();
+    return new Date(+k.slice(0, 4), +k.slice(4, 6) - 1, +k.slice(6, 8));
+  }
+
   function dailyNumber() {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    return Math.floor((today - EPOCH) / 86400000) + 1;
+    return Math.round((keyDate() - EPOCH) / 86400000) + 1;
   }
 
   function formatDate() {
-    const d = new Date();
-    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    const locale = document.documentElement.lang || 'en-GB';
+    return keyDate().toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' });
   }
 
   function seededShuffle(arr, rng) {
@@ -106,6 +111,7 @@ const Daily = (function () {
 
   function save() {
     Store.setDaily(key, {
+      version: 2, cards: cards.map(e => ({ topic: e.card.topic, id: e.card.id })),
       attempts: attempts, failed: failed, solved: solved, current: current, typed: typed
     });
   }
@@ -114,9 +120,27 @@ const Daily = (function () {
     key = todayKey();
     cards = pickCards();
     const saved = Store.getDaily(key);
+    const history = Store.dailyHistory();
+    if (saved && Array.isArray(saved.cards)) {
+      const resolved = saved.cards.map(ref => {
+        const topic = topicById(ref.topic);
+        const card = topic && topicCards(topic).find(c => c.id === ref.id);
+        return card ? { card: card, topicLabel: topic.label } : null;
+      });
+      if (resolved.length === SIZE && resolved.every(Boolean)) cards = resolved;
+    }
+    const identity = cards.map(e => ({ topic: e.card.topic, id: e.card.id }));
     const n = cards.length;
-    const usable = saved && Array.isArray(saved.attempts) && saved.attempts.length === n &&
-                   Array.isArray(saved.solved) && Array.isArray(saved.failed);
+    const shaped = r => r && Array.isArray(r.attempts) && r.attempts.length === n &&
+                        Array.isArray(r.solved) && Array.isArray(r.failed);
+    // A pre-v2 record has no card IDs, so its positional answers cannot be
+    // trusted against a possibly different content release — unless the day is
+    // FINISHED (it is in the history): then the score is settled and the record
+    // is adopted as a finished v2 record over today's cards, so an upgrade day
+    // never becomes replayable and never overwrites a result.
+    const legacyDone = !!(saved && !saved.cards && key in history && shaped(saved));
+    if (legacyDone) Store.setDailyDone(key, history[key]);
+    const usable = saved && ((saved.version === 2 && JSON.stringify(saved.cards) === JSON.stringify(identity) && shaped(saved)) || legacyDone);
     if (usable) {
       attempts = saved.attempts.slice();
       failed = saved.failed.slice();
@@ -134,6 +158,10 @@ const Daily = (function () {
     const pending = cards.findIndex((c, i) => !solved[i] && !failed[i]);
     if (pending !== -1) current = pending;
     answered = false;
+    // the manifest is written when there is none to resume from (a first visit
+    // pins today's cards; a legacy record is upgraded); a plain revisit saves
+    // nothing — no record churn, no sync push before an answer
+    if (!usable || legacyDone) save();
     render();
   }
 
@@ -165,7 +193,13 @@ const Daily = (function () {
     return lines.join('\n');
   }
 
+  function rollDay() {
+    if (key && key !== todayKey()) { mount(); showToast(QUIZ_STRINGS.dailyRollover); return true; }
+    return false;
+  }
+
   function render() {
+    if (rollDay()) return;
     const view = document.getElementById('view');
     view.dataset.topic = 'daily';
     view.className = 'narrow';
@@ -176,7 +210,7 @@ const Daily = (function () {
     const card = entry.card;
     const left = MAX_ATTEMPTS - attempts[current];
     const hint = (!Mode.hard && card.hint)
-      ? '<span class="card-hint">' + escapeHtml(card.hint) + '</span>' : '';
+      ? '<span class="card-hint" lang="pt-BR">' + escapeHtml(card.hint) + '</span>' : '';
 
     view.innerHTML = '' +
       '<div class="view-head">' +
@@ -188,17 +222,18 @@ const Daily = (function () {
       '<div class="card">' +
         '<div class="card-meta"><span>' + escapeHtml(entry.topicLabel + ' · ' + card.meta) +
           '</span>' + hint + '</div>' +
-        '<div class="card-prompt">' + card.prompt + '</div>' +
+        '<div class="card-prompt" id="answerPrompt" lang="en">' + card.prompt + '</div>' +
         (card.target ? '<div class="card-target">' + card.target + '</div>' : '') +
         '<div class="card-sub">' + escapeHtml(card.sub) + ' · ' +
           formatCount(left, 'try', 'tries') + ' left</div>' +
         '<div class="input-row">' +
-          '<input class="answer-input" id="answerInput" type="text" placeholder="fala aí…" ' +
+          '<label class="sr-only" for="answerInput">Your answer in Brazilian Portuguese</label>' +
+          '<input class="answer-input" id="answerInput" lang="pt-BR" aria-describedby="answerPrompt" type="text" placeholder="fala aí…" ' +
             'autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" ' +
             'enterkeyhint="go" />' +
           '<button class="check-btn" id="actionBtn" type="button" aria-label="Check answer">&rarr;</button>' +
         '</div>' +
-        '<div class="feedback" id="feedback"></div>' +
+        '<div class="feedback" id="feedback" role="status" aria-live="polite" aria-atomic="true"></div>' +
         '<div id="revealArea"></div>' +
       '</div>' +
       '<div class="controls">' +
@@ -218,6 +253,7 @@ const Daily = (function () {
   }
 
   function handleAction() {
+    if (rollDay()) return;
     if (answered) { next(); return; }
     check();
   }
@@ -233,12 +269,12 @@ const Daily = (function () {
   function answerHtml(card, typed) {
     const face = cardFace(card, typed);
     const others = otherFaces(card, face);
-    return '<strong>' + escapeHtml(face.answer) + '</strong>' +
-      (face.pron ? '<span class="pron-tag">' + escapeHtml(face.pron) + '</span>' : '') +
+    return '<strong lang="pt-BR">' + escapeHtml(face.answer) + '</strong>' +
+      (face.pron ? '<span class="pron-tag" lang="en">' + escapeHtml(face.pron) + '</span>' : '') +
       (face.flag ? '<span class="pron-tag flag-tag">' + escapeHtml(face.flag) + '</span>' : '') +
       (face.speak ? speakButton(face.speak, face.answer) : '') +
       (others.length ? '<span class="also-tag">also ' +
-        others.map(a => '<b>' + escapeHtml(a) + '</b>').join(' · ') + '</span>' : '');
+        others.map(a => '<b lang="pt-BR">' + escapeHtml(a) + '</b>').join(' · ') + '</span>' : '');
   }
   function revealHtml(card, typed) { return cardFace(card, typed).reveal || ''; }
 
@@ -259,6 +295,7 @@ const Daily = (function () {
       input.disabled = true;
       input.classList.add('correct');
       document.getElementById('actionBtn').classList.add('go-green');
+      document.getElementById('actionBtn').setAttribute('aria-label', 'Next card');
       feedback.className = 'feedback ok';
       feedback.innerHTML = '✓ ' + praiseWord() + ' ' + answerHtml(card, input.value);
       document.getElementById('revealArea').innerHTML = revealHtml(card, input.value);
@@ -298,6 +335,7 @@ const Daily = (function () {
   }
 
   function failCard() {
+    if (rollDay()) return;
     const entry = cards[current];
     const card = entry.card;
     Store.recordAnswer(card.topic, card.id, false);
@@ -309,6 +347,7 @@ const Daily = (function () {
     const feedback = document.getElementById('feedback');
     if (input) { input.disabled = true; input.classList.add('wrong'); }
     document.getElementById('actionBtn').classList.add('go-red');
+    document.getElementById('actionBtn').setAttribute('aria-label', 'Next card');
     feedback.className = 'feedback err';
     const typed = input ? input.value : null;
     feedback.innerHTML = '✗ The answer is ' + answerHtml(card, typed);
@@ -347,7 +386,7 @@ const Daily = (function () {
     const rows = cards.map((entry, i) =>
       '<div class="daily-result-row">' +
         '<span class="daily-result-idx">' + (i + 1) + '</span>' +
-        '<span class="daily-result-verb">' + escapeHtml(cardFace(entry.card, typed[i]).answer) + '</span>' +
+        '<span class="daily-result-verb" lang="pt-BR">' + escapeHtml(cardFace(entry.card, typed[i]).answer) + '</span>' +
         '<span>' + resultDots(i) + '</span>' +
       '</div>').join('');
 
@@ -380,6 +419,7 @@ const Daily = (function () {
   }
 
   function copyResult() {
+    if (rollDay()) return;
     const text = shareString();
     const done = () => showToast('Result copied');
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -393,6 +433,10 @@ const Daily = (function () {
       ta.remove();
     }
   }
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && document.getElementById('view').dataset.topic === 'daily') rollDay();
+  });
 
   return { mount: mount, rerender: render, streak: dailyStreak };
 })();

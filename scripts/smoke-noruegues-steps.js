@@ -14,7 +14,7 @@ function goTo(hash) {
 function shownCard(topicId) {
   // the same pt gloss fronts both tenses of a verb (and both forms of a noun),
   // so match prompt + meta
-  var m = registry.cardArea.innerHTML.match(/<div class="card-prompt">([\s\S]*?)<\/div>/);
+  var m = registry.cardArea.innerHTML.match(/<div class="card-prompt"[^>]*>([\s\S]*?)<\/div>/);
   if (!m) throw new Error('no prompt rendered');
   var mm = registry.cardArea.innerHTML.match(/<div class="card-meta"><span>([\s\S]*?)<\/span>/);
   if (!mm) throw new Error('no meta rendered');
@@ -61,15 +61,19 @@ step('a correct Norwegian answer is accepted and marks mastery', function () {
   goTo('#verbos');                       // the strip now opens on Frases; the verb assertions below want Verbos
   var before = Store.masteredCount('verbos');
   var card = shownCard('verbos');
+  window.APP_STRINGS.praise = ['Mandou bem!'];               // the shell's list (see the config step); the smoke config has none
   registry.answerInput.value = card.answer.toUpperCase();   // case-insensitive too
   registry.actionBtn.fire('click');
+  delete window.APP_STRINGS.praise;
   if (!/✓/.test(registry.feedback.innerHTML))
     throw new Error('rejected: ' + registry.feedback.innerHTML);
   if (Store.masteredCount('verbos') !== before + 1)
     throw new Error('mastery not recorded');
   if (!/pron-tag/.test(registry.feedback.innerHTML))
     throw new Error('no pronunciation hint shown');
-  return '"' + card.answer.toUpperCase() + '" accepted for "' + card.prompt + '"';
+  if (!/^✓ Mandou bem! <strong lang="nb-NO">/.test(registry.feedback.innerHTML))
+    throw new Error('praise override / answer lang missing: ' + registry.feedback.innerHTML.slice(0, 80));
+  return '"' + card.answer.toUpperCase() + '" accepted for "' + card.prompt + '"; praise from APP_STRINGS';
 });
 
 step('a miss reveals the answer with the Portuguese wording and an example', function () {
@@ -157,7 +161,7 @@ step('Modo Raiz hides the hint; Modo Nutella shows the infinitive', function () 
   goTo('#verbos');
   if (/card-hint/.test(registry.cardArea.innerHTML)) throw new Error('hint leaked in Modo Raiz');
   registry.modeBtn.fire('click');
-  var m = registry.cardArea.innerHTML.match(/card-hint">([^<]*)</);
+  var m = registry.cardArea.innerHTML.match(/card-hint"[^>]*>([^<]*)</);
   if (!m) throw new Error('no hint in Modo Nutella');
   var card = shownCard('verbos');
   if (m[1] !== escapeHtml(card.hint)) throw new Error('hint is "' + m[1] + '"');
@@ -178,6 +182,33 @@ step('the mic listens in nb-NO and uses the page\'s own digit table', function (
   if (micAnswer(sju, ['Sju!']) !== 'sju') throw new Error('normalized spoken match failed');
   Quiz.toggleMic();
   return 'lang=nb-NO; "7" → sju via APP_SPOKEN_DIGITS; "20" no longer → vinte';
+});
+
+/* The runner's CONFIG is a reduced copy of the shell's inline block; this step
+   reads the real noruegues/index.html for the page's own digit table and its
+   Portuguese overrides of the engine strings added in 1.24. */
+step('the shell\'s inline config: the digit table keeps spaces and sentence dots; PT overrides for the 1.24 strings', function () {
+  var html = read(ROOT + '/noruegues/index.html');
+  var d = html.match(/window\.APP_SPOKEN_DIGITS = (\(function \(\) \{[\s\S]*?\n\}\)\(\));/);
+  if (!d) throw new Error('APP_SPOKEN_DIGITS block not found in the shell');
+  var expand = (0, eval)('(' + d[1] + ')');
+  var cases = { '20 kroner': 'tjue kroner', 'Vi er 2.': 'Vi er to.', '2. plass': 'andre plass', '7': 'sju', '25': 'tjuefem' };
+  Object.keys(cases).forEach(function (k) {
+    if (expand(k) !== cases[k]) throw new Error('"' + k + '" -> "' + expand(k) + '", expected "' + cases[k] + '"');
+  });
+  var m = html.match(/window\.APP_STRINGS = (\{[\s\S]*?\n\});/);
+  if (!m) throw new Error('APP_STRINGS block not found in the shell');
+  var S = (0, eval)('(' + m[1] + ')');
+  var keys = ['praise', 'miss', 'introText', 'introStart', 'sessionNote', 'continueFull', 'dailyRollover', 'voiceMissing',
+              'practicing', 'practicingShort', 'settingsTitle', 'settingsHelp', 'settingGoalMax', 'settingGoalNew', 'settingNewPerDay',
+              'settingsSave', 'settingsSaved', 'settingsInvalid', 'backupTitle', 'backupHelp', 'backupExport', 'backupImport',
+              'backupRestore', 'backupImported', 'backupRestored', 'backupBad', 'modeHint', 'themeAuto', 'themeLight', 'themeDark',
+              'updateReady', 'syncUpdateApp'];
+  var missing = keys.filter(function (k) { return !(k in S); });
+  if (missing.length) throw new Error('shell lacks: ' + missing.join(', '));
+  if (!Array.isArray(S.praise) || S.praise.some(function (w) { return /gringo|carioca/i.test(w); })) throw new Error('praise list is for a gringo: ' + S.praise);
+  if (/[a-z]{2}-[A-Z]{2}/.test(S.voiceMissing) || !/norueguês/.test(S.voiceMissing)) throw new Error('voice notice: ' + S.voiceMissing);
+  return Object.keys(cases).length + ' digit cases; ' + keys.length + ' Portuguese overrides present';
 });
 
 step('progress lives under its own storage key, apart from the other apps', function () {
@@ -225,7 +256,8 @@ step('every drill tab carries a tier, and the title by the flame reads the highe
   var best = 0;
   TOPICS.forEach(function (t) { if (t.kind === 'quiz' && Store.isActiveTopic(t.id) && t.tier > best) best = t.tier; });
   var name = ['Iniciante', 'Intermediário', 'Avançado'][best - 1];
-  if (!name || registry.goalBtn.innerHTML.indexOf('goal-title">' + name + '<') < 0)
+  // the smoke config leaves `practicing` in English; the shell's PT wording is checked by the config step below
+  if (!name || !new RegExp('goal-title-long">[^<]*: ' + name + '<').test(registry.goalBtn.innerHTML))
     throw new Error('expected title ' + name + ' in ' + registry.goalBtn.innerHTML);
   return TOPICS.filter(function (t) { return t.kind === 'quiz'; }).map(function (t) { return t.id + '=' + t.tier; }).join(' ') + '; title ' + name;
 });
@@ -239,7 +271,8 @@ step('the tab strip captions each tier once, in order', function () {
 
 step('milestones list only what this app can reach; the sheet opens in Portuguese', function () {
   var ids = Milestones.list().map(function (m) { return m.id; });
-  ['daily7', 'dstreak7'].forEach(function (id) { if (ids.indexOf(id) >= 0) throw new Error(id + ' should not apply here: ' + ids.join(',')); });
+  if (allQuizCards().length >= 500) throw new Error('this app now has ' + allQuizCards().length + ' cards; revisit the m500 assertion');
+  ['daily7', 'dstreak7', 'm500', 'm1000'].forEach(function (id) { if (ids.indexOf(id) >= 0) throw new Error(id + ' should not apply here: ' + ids.join(',')); });
   if (ids.indexOf('first') < 0 || ids.indexOf('s7') < 0) throw new Error('core milestones missing: ' + ids.join(','));
   if (!Store.milestoneOn('first')) throw new Error('the correct answers above did not earn "first"');
   registry.goalBtn.fire('click');

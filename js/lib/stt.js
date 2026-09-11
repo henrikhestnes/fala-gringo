@@ -98,10 +98,13 @@ function ptCardinal(n) {
 }
 
 /* "25" -> "vinte e cinco", "3º"/"3ª" -> "terceiro"/"terceira"; anything the
-   tables don't cover is left alone. */
+   tables don't cover is left alone. The ordinal marker is optional and taken
+   TOGETHER with any whitespace before it, so a plain "20 anos" keeps its space
+   ("vinte anos", not "vinteanos"). */
 function expandSpokenDigits(text) {
-  return String(text).replace(/(\d+)\s*([ºª°]?)/g, (m, num, marker) => {
+  return String(text).replace(/(\d+)(\s*[ºª°])?/g, (m, num, marker) => {
     const n = parseInt(num, 10);
+    marker = marker ? marker.trim() : '';
     if (marker && marker !== '°' && n >= 1 && n <= 10) {
       const w = PT_ORDINALS[n];
       return marker === 'ª' ? w.replace(/o$/, 'a') : w;

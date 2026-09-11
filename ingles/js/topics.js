@@ -6,10 +6,11 @@
 // A direção é invertida: o prompt é português, a resposta digitada é inglês.
 // `hint` (só no Modo Nutella) mostra o verbo inglês na forma base.
 
+// o exemplo é inglês (lang do idioma estudado); a tradução herda o pt-BR da página
 function exampleBlock(en, pt) {
   if (!en) return '';
-  return '<div class="example">"' + escapeHtml(en) + '"' +
-         (pt ? '<span class="en">' + escapeHtml(pt) + '</span>' : '') + '</div>';
+  return '<div class="example" lang="en-US">"' + escapeHtml(en) + '"' +
+         (pt ? '<span class="en" lang="pt-BR">' + escapeHtml(pt) + '</span>' : '') + '</div>';
 }
 function tipBlock(html) { return html ? '<div class="tip">' + html + '</div>' : ''; }
 

@@ -1,9 +1,19 @@
 // Persistent state: per-card mastery, mode preferences, daily results, the
 // day log (answers per day, for the streak) and the tabs the learner drills.
-// One localStorage key, wrapped in try/catch so private browsing degrades to
+// ONE localStorage key, wrapped in try/catch so unavailable storage degrades to
 // an in-memory session instead of throwing. A page sharing this engine sets
 // window.APP_STORE_KEY before loading this file to keep its own progress blob
 // (the /ingles/ subpage does) — the two apps must never mix mastery data.
+//
+// Two rules keep the blob safe (1.24):
+//  * read-before-mutate — every mutation first folds in whatever another tab
+//    of the same app wrote since (the `storage` event covers the idle case), so
+//    a stale in-memory copy can never overwrite a newer miss or a reset;
+//  * never write over what could not be read — a blob that fails to parse is
+//    moved aside under `<key>:bad:<time>` and the app starts fresh; if storage
+//    itself is unreadable, saves are refused and the shell shows the warning.
+//  Shapes are coerced, not rejected (ProgressState.clean): an unknown field
+//  from a newer release is dropped, never a reason to lose the learner's work.
 
 const STORE_KEY = window.APP_STORE_KEY || 'pvs:v1';
 
@@ -16,8 +26,8 @@ const STORE_KEY = window.APP_STORE_KEY || 'pvs:v1';
 const FOCUS_STREAK = 1;
 
 /* Review schedule: days a mastered card stays out of the Foco deck, indexed by
-   its review level — how many times it has been confirmed on DISTINCT days since
-   its last miss (same-day repeats prove nothing extra). 7, 14, 30, 60, then 120
+   its review level — how many due reviews have been confirmed since
+   its last miss (early and same-day practice do not raise it). 7, 14, 30, 60, then 120
    for good; a miss makes it shaky again and restarts the ladder. */
 const REVIEW_INTERVALS = [7, 14, 30, 60, 120];
 
@@ -59,43 +69,98 @@ const GRADUATE_LEVEL = 3;
 const GRADUATE_SHARE = 0.8;
 
 const Store = (function () {
-  const empty = { mastered: {}, daily: {}, dailyDone: {}, prefs: {}, strength: {}, days: {}, drilled: {}, graduated: {}, milestones: {} };
   let state;
-
-  function load() {
-    try {
-      const raw = localStorage.getItem(STORE_KEY);
-      const parsed = raw ? JSON.parse(raw) : null;
-      if (!parsed || typeof parsed !== 'object') return JSON.parse(JSON.stringify(empty));
-      return {
-        mastered: parsed.mastered && typeof parsed.mastered === 'object' ? parsed.mastered : {},
-        daily: parsed.daily && typeof parsed.daily === 'object' ? parsed.daily : {},
-        dailyDone: parsed.dailyDone && typeof parsed.dailyDone === 'object' ? parsed.dailyDone : {},
-        prefs: parsed.prefs && typeof parsed.prefs === 'object' ? parsed.prefs : {},
-        strength: parsed.strength && typeof parsed.strength === 'object' ? parsed.strength : {},
-        days: parsed.days && typeof parsed.days === 'object' ? parsed.days : {},
-        drilled: parsed.drilled && typeof parsed.drilled === 'object' ? parsed.drilled : {},
-        graduated: parsed.graduated && typeof parsed.graduated === 'object' ? parsed.graduated : {},
-        milestones: parsed.milestones && typeof parsed.milestones === 'object' ? parsed.milestones : {}
-      };
-    } catch (e) {
-      return JSON.parse(JSON.stringify(empty));
-    }
-  }
-
-  /* js/lib/sync.js registers itself here (Store.onChange) once it has finished
-     initialising. Deliberately NOT `typeof Sync`: that is a top-level const, and
-     a save() fired while sync.js is still running its initialiser (it stores the
-     nudge counter) would hit the temporal dead zone and throw — which once left
-     Sync uninitialised and every later save() throwing, so a miss showed no answer. */
   let listener = null;
+  let storageError = false;   // the last read or write of localStorage failed
+  let readFailed = false;     // storage itself could not be read: never write over it
+  let lastRaw = null;         // the canonical blob as last read/written (skips re-parsing)
+  let clock = 0;
 
+  /* The device's actor id for the causal vectors on answer records (see
+     ProgressState.merge). ONE per device, shared by the three apps on the
+     origin and stable across sessions — a vector therefore has one entry per
+     device, not one per page load. Falls back to a session id when storage is
+     unavailable. */
+  const DEVICE_KEY = 'fg:device';
+  const writer = (function () {
+    const mint = () => Date.now().toString(36).slice(-4) + Math.random().toString(36).slice(2, 8);
+    try {
+      let id = localStorage.getItem(DEVICE_KEY);
+      if (!id || !/^[a-z0-9]{4,16}$/.test(id)) { id = mint(); localStorage.setItem(DEVICE_KEY, id); }
+      return id;
+    } catch (e) { return mint(); }
+  })();
+
+  function stamp() {
+    // Observe merged clocks before the next local event (including clock rollback).
+    clock = Math.max(clock + 1, Date.now());
+    Object.values(state.resets).concat(Object.values(state.prefTimes)).forEach(value => { clock = Math.max(clock, value + 1); });
+    Object.values(state.daily).forEach(value => { clock = Math.max(clock, (value.u || 0) + 1); });
+    Object.values(state.strength).forEach(t => Object.values(t).forEach(e => { clock = Math.max(clock, (e.u || 0) + 1); }));
+    return clock;
+  }
+  function notifyStorage() {
+    const el = typeof document !== 'undefined' && document.getElementById('storageWarning');
+    if (el) el.hidden = !storageError;
+  }
+  /* Read the canonical blob; null when unchanged since the last read/write.
+     An unparseable blob is quarantined, never overwritten. Leftover per-tab
+     journals from the unreleased 1.24 previews are folded in and removed. */
+  function readDisk() {
+    let raw = localStorage.getItem(STORE_KEY);
+    let disk = null;
+    if (raw !== lastRaw) {
+      let parsed = null;
+      if (raw) {
+        try { parsed = JSON.parse(raw); }
+        catch (e) {
+          try { localStorage.setItem(STORE_KEY + ':bad:' + Date.now(), raw); localStorage.removeItem(STORE_KEY); } catch (_) { /* keep going */ }
+          raw = null;
+        }
+      }
+      disk = ProgressState.clean(parsed);
+      lastRaw = raw;
+    }
+    if (typeof localStorage.key === 'function') {
+      const stale = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(STORE_KEY + ':tab:')) stale.push(key);
+      }
+      stale.forEach(key => {
+        try { disk = ProgressState.merge(disk || state, ProgressState.clean(JSON.parse(localStorage.getItem(key) || '{}'))); } catch (e) { /* drop it */ }
+        localStorage.removeItem(key);
+      });
+    }
+    return disk;
+  }
+  function reconcile() {
+    try {
+      const disk = readDisk();
+      if (disk) state = ProgressState.merge(state, disk);
+      readFailed = false;
+    } catch (e) { readFailed = true; storageError = true; notifyStorage(); }
+  }
   function save() {
-    try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* ignore */ }
+    reconcile();
+    if (readFailed) { notifyStorage(); if (listener) listener(); return; }   // never overwrite what could not be read
+    try {
+      const raw = JSON.stringify(state);
+      localStorage.setItem(STORE_KEY, raw);
+      lastRaw = raw;
+      storageError = false;
+    } catch (e) { storageError = true; }
+    notifyStorage();
     if (listener) listener();
   }
-
-  state = load();
+  state = ProgressState.clean({});
+  reconcile();
+  window.addEventListener('storage', e => {
+    if (e.key === STORE_KEY) {
+      reconcile();
+      if (window.App && App.refreshProgress) App.refreshProgress();
+    }
+  });
 
   /* The calendar day as a number: LOCAL days since the epoch, so a streak, a
      review clock and "today's new cards" all turn over at the learner's own
@@ -126,8 +191,10 @@ const Store = (function () {
     return REVIEW_INTERVALS[i];
   }
 
-  return {
+  const api = {
     today: today,
+    storageFailed: () => storageError,
+    refreshStorage: reconcile,
 
     /* --- mastery: a card counts as mastered once answered correctly --- */
     isMastered(topicId, cardId) {
@@ -146,12 +213,15 @@ const Store = (function () {
       return t ? Object.keys(t).length : 0;
     },
     resetTopic(topicId) {
+      state.resets[topicId] = stamp();
+      delete state.drilled[topicId];
       delete state.mastered[topicId];
       delete state.strength[topicId];
       delete state.graduated[topicId];   // earned again with the progress
       save();
     },
     resetAll() {
+      state.resets = { all: stamp() };
       state.mastered = {};
       state.daily = {};
       state.dailyDone = {};
@@ -163,29 +233,44 @@ const Store = (function () {
       save();
     },
 
-    /* --- per-card strength record { s, m, t, l, i }: consecutive-correct
-       streak, lifetime misses, the day (epoch days) of the last correct answer,
-       the review level (distinct-day confirmations since the last miss — drives
-       the REVIEW_INTERVALS ladder) and the day the card was first introduced by
-       Foco. A single correct answer proves little, so a card stays "shaky" from
-       its first miss until it has been answered correctly FOCUS_STREAK times in
-       a row. Records written before 1.12 have no `l`: a card with a last-correct
+    /* --- per-card strength record { s, m, t, l, i, a, f, u, v }:
+         s  consecutive-correct streak          m  lifetime misses
+         t  the review clock — the day (epoch days) of the last DUE confirmation
+            (or implied one); the next review is due intervalFor(l) days later
+         l  the review level: due confirmations since the last miss (the
+            REVIEW_INTERVALS ladder); early or same-day practice does not raise it
+            and does not move `t` — a miss resets it to 0
+         i  the day Foco first introduced the card     a  the day of the last
+            direct correct answer (today's goal)        f  the day of the FIRST
+            direct correct answer (the new-card allowance — a verify card is
+            never "introduced", so `i` alone would let it slip past the cap)
+         u  event stamp, v { device: stamp } causal vector — both for the merge
+       A single correct answer proves little, so a card stays "shaky" from its
+       first miss until it has been answered correctly FOCUS_STREAK times in a
+       row. Records written before 1.12 have no `l`: a card with a last-correct
        day counts as level 1, i.e. exactly the old fixed 7-day review. --- */
-    recordAnswer(topicId, cardId, correct, minLevel, near) {
+    recordAnswer(topicId, cardId, correct, minLevel, near, implied) {
       if (!state.strength[topicId]) state.strength[topicId] = {};
       const s = state.strength[topicId][cardId] || { s: 0, m: 0 };
       if (correct) {
         const day = today();
         let l = levelOf(s);
-        if (day > (s.t || 0) && !near) l += 1;     // a new day confirms; a same-day repeat or a near-miss does not
+        const wasDue = !s.t || l === 0 || day - s.t >= intervalFor(l);
+        if (wasDue && !near) l = Math.min(l + 1, REVIEW_INTERVALS.length);     // only a due confirmation advances the ladder
         if (l < 1) l = 1;                          // …but a hit after a miss is always back on rung one
         if (minLevel && l < minLevel) l = minLevel;  // inferred-known cards start higher (js/infer.js)
-        s.s += 1; s.t = day; s.l = l;
+        s.s += 1; s.l = l;
+        // Extra practice does not postpone the next scheduled review.
+        if (wasDue || implied) s.t = day;
+        if (!implied) { s.a = day; if (!s.f) s.f = day; }
+        else s.a = s.a || 0;
       } else {
         s.s = 0; s.m += 1; s.l = 0;
       }
       state.strength[topicId][cardId] = s;
-      logDay();   // every answer, right or wrong, is a day practised
+      s.u = stamp();
+      s.v = ProgressState.capVector(Object.assign({}, s.v || {}, { [writer]: s.u }));
+      if (!implied) logDay();   // inferred siblings are scheduling, not learner activity
       save();
     },
     isShaky(topicId, cardId) {
@@ -251,10 +336,11 @@ const Store = (function () {
       const has = k => !!state.days[k];
       const doneToday = has(d);
       let n = 0;
+      let grace = false;   // ONE gap per run — practising every other day is not a streak
       let cur = doneToday ? d : d - 1;
       for (;;) {
         if (has(cur)) { n++; cur--; }
-        else if (has(cur - 1)) { cur--; }   // skip the one gap day; the day before it counts next
+        else if (!grace && has(cur - 1)) { grace = true; cur--; }   // skip the gap day; the day before it counts next
         else break;
       }
       return { n: n, today: doneToday, atRisk: n > 0 && !doneToday && !has(d - 1) };
@@ -312,7 +398,7 @@ const Store = (function () {
     doneToday(topicId) {
       const t = state.strength[topicId] || {};
       const day = today();
-      return Object.keys(t).filter(id => t[id].t === day).length;
+      return Object.keys(t).filter(id => (t[id].a !== undefined ? t[id].a : t[id].t) === day).length;
     },
 
     /* --- daily intake of unseen cards (the Foco cap) --- */
@@ -329,11 +415,17 @@ const Store = (function () {
       return n > 0 ? n : GOAL_MAX;
     },
     /* Unseen cards met and got right today (Foco-introduced, or a verify card
-       confirmed) — what has already been spent of the goal's new-card allowance. */
+       confirmed) — what has already been spent of the goal's new-card allowance.
+       `f` is the first direct correct answer; a pre-1.24 record has none, so it
+       falls back to "answered today and introduced today". */
     newDoneToday(topicId) {
       const t = state.strength[topicId] || {};
       const day = today();
-      return Object.keys(t).filter(id => t[id].t === day && t[id].i === day).length;
+      return Object.keys(t).filter(id => {
+        const e = t[id];
+        if (e.f !== undefined) return e.f === day;
+        return (e.a !== undefined ? e.a : e.t) === day && e.i === day;
+      }).length;
     },
     introducedOn(topicId, cardId) {
       const e = state.strength[topicId] && state.strength[topicId][cardId];
@@ -360,19 +452,42 @@ const Store = (function () {
     snapshot() {
       return JSON.parse(JSON.stringify({
         mastered: state.mastered, strength: state.strength, daily: state.daily, dailyDone: state.dailyDone,
-        days: state.days, drilled: state.drilled, graduated: state.graduated, milestones: state.milestones
+        days: state.days, drilled: state.drilled, graduated: state.graduated, milestones: state.milestones, resets: state.resets
       }));
     },
     applySynced(data) {
-      state.mastered = data.mastered && typeof data.mastered === 'object' ? data.mastered : {};
-      state.strength = data.strength && typeof data.strength === 'object' ? data.strength : {};
-      state.daily = data.daily && typeof data.daily === 'object' ? data.daily : {};
-      state.dailyDone = data.dailyDone && typeof data.dailyDone === 'object' ? data.dailyDone : {};
-      state.days = data.days && typeof data.days === 'object' ? data.days : {};
-      state.drilled = data.drilled && typeof data.drilled === 'object' ? data.drilled : {};
-      state.graduated = data.graduated && typeof data.graduated === 'object' ? data.graduated : {};
-      state.milestones = data.milestones && typeof data.milestones === 'object' ? data.milestones : {};
+      const clean = ProgressState.clean(data);
+      ProgressState.SECTIONS.forEach(k => {
+        if (k === 'prefs' || k === 'prefTimes') return;          // per device, never synced
+        if (k === 'resets' && !Object.keys(clean.resets).length) return;
+        state[k] = clean[k];
+      });
       save();
+    },
+
+    /* A backup file is the synced sections of this app only — never the sync
+       code, never device preferences. Import MERGES by default (the same rules
+       as sync, so an old file cannot undo newer work); `restore` is for the
+       "I reset by accident" case: the backup's records are re-stamped as new
+       events, so they survive the reset generation and win their conflicts. */
+    exportBackup() {
+      reconcile();
+      return JSON.stringify({ format: 'fala-gringo-backup', version: 2, app: STORE_KEY, data: this.snapshot() }, null, 2);
+    },
+    importBackup(raw, mode) {
+      const backup = JSON.parse(raw);
+      if (!backup || backup.format !== 'fala-gringo-backup' || backup.version !== 2 || backup.app !== STORE_KEY || !ProgressState.validate(backup.data)) throw new Error('invalid backup');
+      reconcile();
+      const data = ProgressState.clean(backup.data);
+      if (mode === 'restore') {
+        Object.keys(data.strength).forEach(topic => Object.keys(data.strength[topic]).forEach(id => {
+          const e = data.strength[topic][id];
+          e.u = stamp();
+          e.v = ProgressState.capVector(Object.assign({}, e.v || {}, { [writer]: e.u }));
+        }));
+        data.resets = Object.assign({}, state.resets, data.resets);   // keep every generation, records outlive them
+      }
+      this.applySynced(ProgressState.merge(this.snapshot(), data));
     },
 
     /* --- change notification: one subscriber (the sync module), called after
@@ -385,6 +500,7 @@ const Store = (function () {
     },
     setPref(key, value) {
       state.prefs[key] = value;
+      state.prefTimes[key] = stamp();
       save();
     },
 
@@ -393,6 +509,9 @@ const Store = (function () {
       return state.daily[key] || null;
     },
     setDaily(key, value) {
+      const previous = state.daily[key];
+      value = JSON.parse(JSON.stringify(value));
+      if (value.cards) value.u = previous && JSON.stringify(previous.cards) === JSON.stringify(value.cards) ? (previous.u || 0) : stamp();
       state.daily[key] = value;
       // keep only the 30 most recent days
       const keys = Object.keys(state.daily).sort();
@@ -403,7 +522,8 @@ const Store = (function () {
        first try. One small number a day, so it is never trimmed — the Daily
        streak and the first-try distribution (js/daily.js) read this. */
     setDailyDone(key, firstTry) {
-      if (state.dailyDone[key] === firstTry) return;
+      const prev = state.dailyDone[key];
+      if (prev !== undefined && prev >= firstTry) return;   // a finished day's score only ever improves
       state.dailyDone[key] = firstTry;
       save();
     },
@@ -427,6 +547,14 @@ const Store = (function () {
       return out;
     }
   };
+  // Refresh before mutations as well as before writes, so a tab's stale object
+  // cannot hide a newer miss, reset or preference change.
+  ['markMastered', 'resetTopic', 'resetAll', 'recordAnswer', 'markDrilled', 'markGraduated', 'markMilestone',
+   'markIntroduced', 'setPref', 'setDaily', 'setDailyDone'].forEach(name => {
+    const fn = api[name];
+    api[name] = function () { reconcile(); return fn.apply(api, arguments); };
+  });
+  return api;
 })();
 
 /* Difficulty. Hard Mode is the DEFAULT: the Portuguese infinitive (or other

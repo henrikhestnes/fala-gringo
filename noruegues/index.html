@@ -11,6 +11,12 @@
 <meta property="og:description" content="Treine norueguês digitando as respostas. Grátis, sem cadastro.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://falagringo.com/noruegues/">
+<meta property="og:image" content="https://falagringo.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='10' fill='%23ba0c2f'/><text x='32' y='36' font-size='42' text-anchor='middle' dominant-baseline='central'>🇳🇴</text></svg>">
 <link rel="stylesheet" href="../css/app.css">
 </head>
@@ -30,6 +36,7 @@
         <path d="M16 21V7m0 0-4 4m4-4 4 4"></path>
       </svg>
     </button>
+    <button class="icon-btn" id="settingsBtn" type="button" aria-label="Configurações e backup" title="Configurações e backup">⚙</button>
     <button class="icon-btn" id="themeBtn" type="button" aria-label="Alternar tema" title="Alternar tema">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
         <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path>
@@ -39,7 +46,9 @@
   <nav class="tabs" id="tabs" role="tablist" aria-label="Tópicos de estudo"></nav>
 </header>
 
-<main id="view"></main>
+<p class="storage-warning" id="storageWarning" role="alert" hidden>Seu progresso não está sendo salvo neste aparelho. Abra as configurações e exporte um backup antes de sair.</p>
+<p class="voice-warning" id="voiceWarning" role="status" hidden></p>
+<main><div id="view" role="tabpanel" tabindex="-1"></div></main>
 
 <footer>
   Norueguês (bokmål, como se fala em Oslo) para brasileiros &mdash; digite a resposta em norueguês.<br>
@@ -51,7 +60,7 @@
   <span class="build-info" id="buildInfo"></span>
 </footer>
 
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 <div class="sheet" id="sheet" hidden></div>
 
 <!-- Mesma arquitetura do app principal e do /ingles/: scripts clássicos, sem
@@ -82,15 +91,21 @@ window.APP_SPOKEN_DIGITS = (function () {
     return null;
   }
   return function (text) {
-    return String(text).replace(/(\d+)\s*(\.?)/g, function (m, num, dot) {
+    // o ponto só é ordinal quando vem colado ao número e ainda há texto depois
+    // ("2. plass"); um ponto final ("Vi er 2.") é só o fim da frase. E nada de
+    // engolir o espaço seguinte: "20 kroner" → "tjue kroner", não "tjuekroner".
+    return String(text).replace(/(\d+)(\.(?!\s*$))?/g, function (m, num, dot) {
       var n = parseInt(num, 10);
       if (dot && O[n]) return O[n];          // "2." é como o norueguês escreve o ordinal
       var w = words(n);
-      return w === null ? m : w;
+      return w === null ? m : w + (dot || '');
     });
   };
 })();
 window.APP_STRINGS = {
+  answerLabel: "Sua resposta em norueguês",
+  checkLabel: "Conferir resposta",
+  nextLabel: "Próximo cartão",
   focoTitle: 'As cartas que precisam de atenção, revisões primeiro: vencidas (após 7, 14, 30, 60 ' +
              'e depois 120 dias de acertos confirmados), erradas (até acertar de novo) ' +
              'e até {cap} cartas novas por dia. Desligue para treinar o baralho inteiro.',
@@ -128,6 +143,17 @@ window.APP_STRINGS = {
   startOver: 'De novo ↻',
   answerIs: 'A resposta é',
   nearIs: 'Quase! Você escreveu “{typed}” — a resposta é',
+  // a voz do app (js/lib/text.js): elogios para um brasileiro, não para um gringo
+  praise: ['Mandou bem!', 'Aí sim!', 'Show!', 'É isso aí!', 'Boa!', 'Arrasou!'],
+  miss: ['Quase!', 'Não foi dessa vez…', 'Relaxa, acontece.', 'Eita…'],
+  // primeira sessão + treino curto (js/quiz.js)
+  introText: 'Leia em português e responda em norueguês. Modo Raiz esconde as dicas; Modo Nutella mostra uma dica.',
+  introStart: 'Começar com cinco cartas →',
+  sessionNote: 'Treino curto: até cinco cartas. Depois, você escolhe se quer continuar.',
+  continueFull: 'Continuar com o baralho inteiro →',
+  dailyRollover: 'Um novo dia começou — aqui está o Daily de hoje.',
+  // voz ausente (js/lib/tts.js)
+  voiceMissing: 'Nenhuma voz em norueguês está instalada neste aparelho, então as cartas ficam mudas. Instale uma voz de norueguês nas configurações do sistema para ouvi-las.',
   listening: 'Ouvindo… manda aí, em norueguês',
   listeningEmpty: ' — diga “nada” se nada falta na lacuna',
   micResumeSuffix: ' — toque para ouvir de novo',
@@ -165,6 +191,31 @@ window.APP_STRINGS = {
   sheetClose: 'Fechar',
   sheetNoTitle: 'Treine uma aba para pegá-la',
   streakNone: 'sem sequência ainda — hoje começa uma',
+  // título do aprendiz (completo e a forma curta do celular)
+  practicing: 'Praticando: {tier}',
+  practicingShort: 'Praticando {tier}',
+  // configurações e backup (⚙, js/app.js)
+  settingsTitle: 'Configurações e backup',
+  settingsHelp: 'A meta diária soma suas revisões e cartas novas. O baralho Foco pode oferecer mais cartas; você pode parar quando bater a meta. Verbos entram com a conjugação inteira.',
+  settingGoalMax: 'Meta diária total',
+  settingGoalNew: 'Cartas novas na meta',
+  settingNewPerDay: 'Cartas novas por aba',
+  settingsSave: 'Salvar',
+  settingsSaved: 'Configurações salvas',
+  settingsInvalid: 'Use números inteiros: total de 1 a 100, novas de 0 até o total e novas por aba de 1 a 100.',
+  backupTitle: 'Backup do progresso',
+  backupHelp: 'Guarde uma cópia do progresso deste idioma. A importação combina o backup com seu progresso atual; o código de sync não vai no arquivo.',
+  backupExport: 'Exportar backup',
+  backupImport: 'Importar backup',
+  backupRestore: 'Restaurar em vez de combinar — o backup substitui o progresso deste aparelho (desfaz um zerar sem querer)',
+  backupImported: 'Backup importado',
+  backupRestored: 'Backup restaurado',
+  backupBad: 'Não deu pra importar: arquivo inválido ou de outro idioma.',
+  modeHint: 'Modo Raiz esconde as dicas. Modo Nutella mostra uma dica antes de responder.',
+  themeAuto: 'Tema: automático. Toque para usar o claro.',
+  themeLight: 'Tema: claro. Toque para usar o escuro.',
+  themeDark: 'Tema: escuro. Toque para seguir o aparelho.',
+  updateReady: 'Nova versão pronta — toque para recarregar.',
   milestones: {
     first:    ['Primeira carta', 'Sua primeira carta dominada.'],
     m100:     ['100 cartas', '100 cartas dominadas nas suas abas.'],
@@ -173,7 +224,7 @@ window.APP_STRINGS = {
     s7:       ['7 dias seguidos', 'Uma semana praticando sem falhar.'],
     s30:      ['30 dias seguidos', 'Um mês aparecendo todo dia.'],
     s100:     ['100 dias seguidos', 'Cem dias. Isso é constância.'],
-    top:      ['Topo da escada', 'Uma carta confirmada em cinco dias diferentes — a revisão de 120 dias.'],
+    top:      ['Topo da escada', 'Uma carta confirmada em cinco revisões espaçadas — a revisão de 120 dias.'],
     grad1:    ['Primeira formatura', 'Uma aba inteira no nível 3 ou mais de revisão.'],
     tier1:    ['{tier} completo', 'Todas as abas de {tier} formadas.'],
     tier2:    ['{tier} completo', 'Todas as abas de {tier} formadas.'],
@@ -192,13 +243,15 @@ window.APP_STRINGS = {
   tierNames: ['Iniciante', 'Intermediário', 'Avançado'],
   tierTitle: 'Nível: {tier}',
   graduatedTitle: '🎓 Formada — {pct}% das cartas no nível 3 ou mais de revisão',
-  learnerTitle: 'Você: {tier} — o nível mais alto entre as abas que você já pegou',
+  learnerTitle: 'Praticando: {tier} — dificuldade das abas escolhidas, não uma avaliação de fluência',
   graduatedToast: '🎓 {label}: formou! Próxima: {next}',
   graduatedToastLast: '🎓 {label}: formou — todas as abas já formaram!',
   // sync (js/lib/sync.js)
   syncTitleOff: 'Sync desligado — toque para conectar seus aparelhos',
   syncTitleError: 'O último sync falhou — vai tentar de novo',
   syncTitleBusy: 'Sincronizando…',
+  syncUpgrade: 'Sync pausado até o servidor ser atualizado. Seu progresso continua salvo neste aparelho.',
+  syncUpdateApp: 'Sync pausado — outro aparelho usa uma versão mais nova. Recarregue para atualizar este.',
   syncTitleNow: 'Sincronizado agora mesmo',
   syncTitleAgo: 'Sincronizado há {min} min',
   syncNoBackend: 'O sync precisa de um backend — veja sync-worker/README.md',
@@ -220,6 +273,7 @@ window.APP_STRINGS = {
 <script src="../js/lib/tts.js"></script>
 <script src="../js/lib/stt.js"></script>
 <script src="../js/lib/fx.js"></script>
+<script src="../js/lib/state.js"></script>
 <script src="../js/progress.js"></script>
 <script src="js/data/verbos.js"></script>
 <script src="js/data/substantivos.js"></script>

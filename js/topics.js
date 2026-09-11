@@ -37,10 +37,12 @@ function expandSlots(card) {
   return mappings.map(m => substituteSlots(card.pt, m));
 }
 
+/* The Portuguese example carries lang="pt-BR" and its English gloss lang="en",
+   so a screen reader switches voice mid-card — the shell itself is English. */
 function exampleBlock(pt, en) {
   if (!pt) return '';
-  return '<div class="example">"' + escapeHtml(pt) + '"' +
-         (en ? '<span class="en">' + escapeHtml(en) + '</span>' : '') + '</div>';
+  return '<div class="example" lang="pt-BR">"' + escapeHtml(pt) + '"' +
+         (en ? '<span class="en" lang="en">' + escapeHtml(en) + '</span>' : '') + '</div>';
 }
 function tipBlock(html) { return html ? '<div class="tip">' + html + '</div>' : ''; }
 function noteBlock(html) { return html ? '<div class="note">' + html + '</div>' : ''; }
@@ -130,10 +132,10 @@ function verbConjTable(verb, tense, tenseLabel, currentIndex) {
     '<tr class="' + (i === currentIndex ? 'is-current' : '') + (spans[i] ? ' is-irregular' : '') + '">' +
     '<td class="conj-pronoun">' + escapeHtml(r.person || V.personsShort[i]) + '</td>' +
     '<td class="conj-form">' + markIrregular(r.form, spans[i]) + '</td>' +
-    '<td class="conj-pron">' + escapeHtml(r.pron) + '</td></tr>').join('');
-  return '<div class="conj-table-wrapper"><div class="conj-table-label">' +
+    '<td class="conj-pron" lang="en">' + escapeHtml(r.pron) + '</td></tr>').join('');
+  return '<div class="conj-table-wrapper"><div class="conj-table-label" lang="pt-BR">' +
          escapeHtml(verb.pt + ' — ' + tenseLabel) + '</div>' +
-         '<table class="conj-table">' + rows + '</table>' +
+         '<table class="conj-table" lang="pt-BR">' + rows + '</table>' +
          conjNote(verb, expected, spans, currentIndex) + '</div>';
 }
 
@@ -239,10 +241,10 @@ function pronominalConjTable(verb, tense, currentIndex) {
     '<tr' + (i === currentIndex ? ' class="is-current"' : '') + '>' +
     '<td class="conj-pronoun">' + escapeHtml(V.personsShort[i]) + '</td>' +
     '<td class="conj-form">' + escapeHtml(r.form) + '</td>' +
-    '<td class="conj-pron">' + escapeHtml(r.pron) + '</td></tr>').join('');
-  return '<div class="conj-table-wrapper"><div class="conj-table-label">' +
+    '<td class="conj-pron" lang="en">' + escapeHtml(r.pron) + '</td></tr>').join('');
+  return '<div class="conj-table-wrapper"><div class="conj-table-label" lang="pt-BR">' +
          escapeHtml(verb.pt + ' — ' + PRONOMINAL_TENSE_LABEL[tense]) + '</div>' +
-         '<table class="conj-table">' + rows + '</table></div>';
+         '<table class="conj-table" lang="pt-BR">' + rows + '</table></div>';
 }
 
 function buildPronominalCards() {
@@ -429,7 +431,9 @@ function buildGlossaryCards() {
 
 function buildSentenceCards() {
   return window.DATA_SENTENCES.cards.map(c => {
-    const variants = expandSlots(c);
+    // slots expand inside the sentence; `alts` are whole alternative sentences
+    // (the canonical stays `pt`, so the reveal and the Daily read naturally)
+    const variants = expandSlots(c).concat(c.alts || []);
     return {
       id: c.en,
       group: c.group,
