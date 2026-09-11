@@ -48,23 +48,16 @@ step('a leftover per-tab journal is folded in and removed', function () {
   return 'journal merged, key gone';
 });
 
-step('the device id is stable across answers and causal vectors stay bounded', function () {
+step('an answer record stays small: eight numeric fields at most, no per-device bookkeeping', function () {
   Store.resetAll();
   var q = firstQuizCards();
   Store.recordAnswer(q.topic.id, q.cards[0].id, true);
   Store.recordAnswer(q.topic.id, q.cards[0].id, true);
   var rec = Store.snapshot().strength[q.topic.id][q.cards[0].id];
-  var actors = Object.keys(rec.v || {});
-  var device = localStorage.getItem('fg:device');
-  if (actors.length !== 1 || actors[0] !== device) throw new Error('vector actors: ' + JSON.stringify(rec.v) + ' device ' + device);
-  var snap = Store.snapshot();
-  var v = {}; for (var i = 0; i < 12; i++) v['dev' + i] = 1000 + i;
-  snap.strength[q.topic.id][q.cards[0].id].v = v;
-  seedState(snap);
-  Store.recordAnswer(q.topic.id, q.cards[0].id, true);
-  var n = Object.keys(Store.snapshot().strength[q.topic.id][q.cards[0].id].v).length;
-  if (n > 8) throw new Error('vector grew to ' + n + ' actors');
-  return 'one actor per device (' + device + '); 12 actors capped to ' + n;
+  var keys = Object.keys(rec).sort().join(',');
+  if (Object.values(rec).some(function (v) { return typeof v !== 'number'; })) throw new Error('non-numeric field: ' + JSON.stringify(rec));
+  if (Object.keys(rec).length > 8) throw new Error('record has ' + Object.keys(rec).length + ' fields: ' + keys);
+  return keys + '; ' + JSON.stringify(rec).length + ' bytes';
 });
 
 step('the streak forgives ONE gap per run — every other day is not a streak', function () {
@@ -136,7 +129,7 @@ step('a reset drops what predates it but keeps what another device learned after
   var cut = Store.snapshot().resets[q.topic.id];
   // B keeps drilling offline after A's reset: one new card
   other.mastered[q.topic.id][q.cards[1].id] = 1;
-  other.strength[q.topic.id][q.cards[1].id] = { s: 1, m: 0, l: 1, t: Store.today(), u: cut + 5000, v: { devB: cut + 5000 } };
+  other.strength[q.topic.id][q.cards[1].id] = { s: 1, m: 0, l: 1, t: Store.today(), u: cut + 5000 };
   var merged = ProgressState.merge(Store.snapshot(), other);
   var m = merged.mastered[q.topic.id] || {};
   if (m[q.cards[0].id]) throw new Error('pre-reset card resurrected');
@@ -158,4 +151,14 @@ step('a backup import merges by default and can RESTORE past an accidental reset
   var again = ProgressState.merge(Store.snapshot(), JSON.parse(backup).data);   // and it survives a re-merge with the old file
   if (!again.mastered[q.topic.id][q.cards[0].id]) throw new Error('restored record lost on the next merge');
   return 'merge respects the reset; restore re-stamps the records so they outlive it';
+});
+
+step('merge is conservative: a miss anywhere keeps the card shaky, whichever side it is on', function () {
+  var d = Store.today();
+  var a = { strength: { topic: { card: { s: 2, m: 0, l: 2, t: d - 1 } } } };
+  var b = { strength: { topic: { card: { s: 0, m: 1, l: 0, t: d - 8 } } } };
+  var ab = ProgressState.merge(a, b).strength.topic.card, ba = ProgressState.merge(b, a).strength.topic.card;
+  if (ab.s !== 0 || ab.m !== 1 || ab.l !== 0) throw new Error('miss lost: ' + JSON.stringify(ab));
+  if (ProgressState.stable(ab) !== ProgressState.stable(ba)) throw new Error('order-dependent: ' + JSON.stringify(ab) + ' vs ' + JSON.stringify(ba));
+  return 's=0 m=1 l=0 in both orders';
 });

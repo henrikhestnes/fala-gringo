@@ -98,18 +98,8 @@ const Browse = (function () {
     const view = document.getElementById('view');
     view.dataset.topic = 'browse';
     view.className = shuffled ? 'shuffled' : '';
-    // the first-session starter is for a learner who has never answered a card;
-    // once they have, the verb list is the page and "Verbos" its heading again
-    const fresh = Quiz.newcomer();
-    const welcome = fresh
-      ? '<section class="welcome"><h1>Start speaking Brazilian Portuguese</h1>' +
-        '<p>Try five cards: read the English and type the Portuguese. You can answer with or without accents.</p>' +
-        '<button class="btn primary" type="button" data-start-practice="1">Start a short practice →</button>' +
-        '<p class="welcome-help">Modo Raiz = without hints · Modo Nutella = with hints. Change it above whenever you like.</p></section>'
-      : '';
-    const h = fresh ? 'h2' : 'h1';
-    view.innerHTML = welcome +
-      '<div class="view-head"><' + h + ' lang="pt-BR">Verbos</' + h + '><p>Browse ' + window.DATA_VERBS.verbs.length + ' verbs — tap a word to hide or reveal it.</p></div>' +
+    view.innerHTML =
+      '<div class="view-head"><h1 lang="pt-BR">Verbos</h1><p>Browse ' + window.DATA_VERBS.verbs.length + ' verbs — tap a word to hide or reveal it.</p></div>' +
       '<label class="search-label" for="browseSearch">Find a verb in Portuguese or English</label>' +
       '<input class="browse-search" id="browseSearch" type="search" autocomplete="off" placeholder="falar, speak…" value="' + escapeHtml(query) + '">' +
       '<p id="browseCount" role="status" aria-live="polite"></p>' +

@@ -76,21 +76,9 @@ const Store = (function () {
   let lastRaw = null;         // the canonical blob as last read/written (skips re-parsing)
   let clock = 0;
 
-  /* The device's actor id for the causal vectors on answer records (see
-     ProgressState.merge). ONE per device, shared by the three apps on the
-     origin and stable across sessions — a vector therefore has one entry per
-     device, not one per page load. Falls back to a session id when storage is
-     unavailable. */
-  const DEVICE_KEY = 'fg:device';
-  const writer = (function () {
-    const mint = () => Date.now().toString(36).slice(-4) + Math.random().toString(36).slice(2, 8);
-    try {
-      let id = localStorage.getItem(DEVICE_KEY);
-      if (!id || !/^[a-z0-9]{4,16}$/.test(id)) { id = mint(); localStorage.setItem(DEVICE_KEY, id); }
-      return id;
-    } catch (e) { return mint(); }
-  })();
-
+  /* Event stamps (ms, monotonic within a session): on answer records (`u`),
+     resets and preference changes. A reset is a generation; the merge keeps a
+     record only if it postdates the reset it is compared against. */
   function stamp() {
     // Observe merged clocks before the next local event (including clock rollback).
     clock = Math.max(clock + 1, Date.now());
@@ -244,7 +232,7 @@ const Store = (function () {
             direct correct answer (today's goal)        f  the day of the FIRST
             direct correct answer (the new-card allowance — a verify card is
             never "introduced", so `i` alone would let it slip past the cap)
-         u  event stamp, v { device: stamp } causal vector — both for the merge
+         u  event stamp (for the reset generations in the merge)
        A single correct answer proves little, so a card stays "shaky" from its
        first miss until it has been answered correctly FOCUS_STREAK times in a
        row. Records written before 1.12 have no `l`: a card with a last-correct
@@ -269,7 +257,6 @@ const Store = (function () {
       }
       state.strength[topicId][cardId] = s;
       s.u = stamp();
-      s.v = ProgressState.capVector(Object.assign({}, s.v || {}, { [writer]: s.u }));
       if (!implied) logDay();   // inferred siblings are scheduling, not learner activity
       save();
     },
@@ -469,7 +456,8 @@ const Store = (function () {
        code, never device preferences. Import MERGES by default (the same rules
        as sync, so an old file cannot undo newer work); `restore` is for the
        "I reset by accident" case: the backup's records are re-stamped as new
-       events, so they survive the reset generation and win their conflicts. */
+       events, so they survive the reset generation (conflicts with records
+       this device still has are merged conservatively, as always). */
     exportBackup() {
       reconcile();
       return JSON.stringify({ format: 'fala-gringo-backup', version: 2, app: STORE_KEY, data: this.snapshot() }, null, 2);
@@ -481,9 +469,7 @@ const Store = (function () {
       const data = ProgressState.clean(backup.data);
       if (mode === 'restore') {
         Object.keys(data.strength).forEach(topic => Object.keys(data.strength[topic]).forEach(id => {
-          const e = data.strength[topic][id];
-          e.u = stamp();
-          e.v = ProgressState.capVector(Object.assign({}, e.v || {}, { [writer]: e.u }));
+          data.strength[topic][id].u = stamp();
         }));
         data.resets = Object.assign({}, state.resets, data.resets);   // keep every generation, records outlive them
       }

@@ -37,10 +37,7 @@ step('the chrome uses the Portuguese strings from APP_STRINGS', function () {
     throw new Error('masteredLine override missing from the chrome');
   if (!/>Certas</.test(registry.view.innerHTML))
     throw new Error('statKnown override missing from the stats row');
-  // the first-session starter (the subpages have no Browse tab to carry it) shows for a newcomer
-  if (!/class="welcome"/.test(registry.view.innerHTML) || !/data-start-practice/.test(registry.view.innerHTML))
-    throw new Error('the first-session starter is missing on a fresh profile');
-  return '"cartas dominadas" and "Certas" rendered; starter shown for the newcomer';
+  return '"cartas dominadas" and "Certas" rendered';
 });
 
 step('a correct English answer is accepted and marks mastery; the praise words come from APP_STRINGS', function () {
@@ -58,9 +55,7 @@ step('a correct English answer is accepted and marks mastery; the praise words c
     throw new Error('no pronunciation hint shown');
   if (!/^✓ Mandou bem! <strong lang="en-US">/.test(registry.feedback.innerHTML))
     throw new Error('praise override / answer lang missing: ' + registry.feedback.innerHTML.slice(0, 80));
-  Quiz.rerender();
-  if (/class="welcome"/.test(registry.view.innerHTML)) throw new Error('starter still shown after an answer');
-  return '"' + card.answer.toUpperCase() + '" accepted for "' + card.prompt + '"; praise from APP_STRINGS; starter gone';
+  return '"' + card.answer.toUpperCase() + '" accepted for "' + card.prompt + '"; praise from APP_STRINGS';
 });
 
 step('a miss reveals the answer with the Portuguese wording and an example', function () {
@@ -200,8 +195,7 @@ step('every drill tab carries a tier, and the title by the flame reads the highe
   var best = 0;
   TOPICS.forEach(function (t) { if (t.kind === 'quiz' && Store.isActiveTopic(t.id) && t.tier > best) best = t.tier; });
   var name = ['Iniciante', 'Intermediário', 'Avançado'][best - 1];
-  // the smoke config leaves `practicing` in English; the shell's PT wording is checked by the config step below
-  if (!name || !new RegExp('goal-title-long">[^<]*: ' + name + '<').test(registry.goalBtn.innerHTML))
+  if (!name || registry.goalBtn.innerHTML.indexOf('goal-title">' + name + '<') < 0)
     throw new Error('expected title ' + name + ' in ' + registry.goalBtn.innerHTML);
   return TOPICS.filter(function (t) { return t.kind === 'quiz'; }).map(function (t) { return t.id + '=' + t.tier; }).join(' ') + '; title ' + name;
 });
@@ -235,8 +229,8 @@ step('the shell\'s inline APP_STRINGS carries Portuguese overrides for the 1.24 
   var m = html.match(/window\.APP_STRINGS = (\{[\s\S]*?\n\});/);
   if (!m) throw new Error('APP_STRINGS block not found in the shell');
   var S = (0, eval)('(' + m[1] + ')');
-  var keys = ['praise', 'miss', 'introText', 'introStart', 'sessionNote', 'continueFull', 'dailyRollover', 'voiceMissing',
-              'practicing', 'practicingShort', 'settingsTitle', 'settingsHelp', 'settingGoalMax', 'settingGoalNew', 'settingNewPerDay',
+  var keys = ['praise', 'miss', 'dailyRollover', 'voiceMissing',
+              'settingsTitle', 'settingsHelp', 'settingGoalMax', 'settingGoalNew', 'settingNewPerDay',
               'settingsSave', 'settingsSaved', 'settingsInvalid', 'backupTitle', 'backupHelp', 'backupExport', 'backupImport',
               'backupRestore', 'backupImported', 'backupRestored', 'backupBad', 'modeHint', 'themeAuto', 'themeLight', 'themeDark',
               'updateReady', 'syncUpdateApp'];
@@ -244,7 +238,6 @@ step('the shell\'s inline APP_STRINGS carries Portuguese overrides for the 1.24 
   if (missing.length) throw new Error('shell lacks: ' + missing.join(', '));
   if (!Array.isArray(S.praise) || S.praise.some(function (w) { return /gringo|carioca/i.test(w); })) throw new Error('praise list is for a gringo: ' + S.praise);
   if (/[a-z]{2}-[A-Z]{2}/.test(S.voiceMissing) || !/inglês/.test(S.voiceMissing)) throw new Error('voice notice: ' + S.voiceMissing);
-  if (S.practicing.indexOf('{tier}') < 0 || S.practicingShort.indexOf('{tier}') < 0) throw new Error('practicing strings lack {tier}');
   return keys.length + ' Portuguese overrides present';
 });
 

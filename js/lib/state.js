@@ -1,6 +1,5 @@
 // Pure progress-state helpers shared by the store (js/progress.js), the sync
-// client (js/lib/sync.js), the backup import and the sync Worker
-// (sync-worker/worker.js imports this file for validation):
+// client (js/lib/sync.js) and the backup import:
 //
 //   clean(value)     — coerce anything into a well-formed state, STRIPPING what
 //                      it does not understand (unknown fields, wrong types) and
@@ -8,7 +7,7 @@
 //                      field from a newer release can never make a learner's
 //                      progress unreadable.
 //   validate(value)  — strict shape check for data that crosses a boundary
-//                      (a remote blob, a backup file, an upload to the Worker).
+//                      (a remote blob, a backup file).
 //   merge(a, b)      — the conservative two-way merge.
 //   stable(value)    — JSON with sorted keys, so two states that mean the same
 //                      thing compare equal whatever order their keys were built in.
@@ -18,11 +17,6 @@
   const SECTIONS = ['mastered', 'daily', 'dailyDone', 'prefs', 'prefTimes', 'strength', 'days', 'drilled', 'graduated', 'milestones', 'resets'];
   const RECORD_KEYS = ['s', 'm', 't', 'l', 'i', 'u', 'a', 'f'];   // see js/progress.js recordAnswer
   const BAD_KEYS = ['__proto__', 'constructor', 'prototype'];
-  /* Actors in a record's causal vector: one per DEVICE (js/progress.js keeps a
-     stable id per device), so this is only a safety net against a device that
-     keeps minting ids (storage cleared, private windows). Dropping the oldest
-     entries can only make a merge MORE conservative, never less. */
-  const MAX_ACTORS = 8;
 
   const isObj = v => !!v && typeof v === 'object' && !Array.isArray(v);
   const num = v => typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= Number.MAX_SAFE_INTEGER;
@@ -35,11 +29,6 @@
     if (!isObj(e)) return null;
     const out = {};
     RECORD_KEYS.forEach(k => { if (num(e[k])) out[k] = e[k]; });
-    if (isObj(e.v)) {
-      const v = {};
-      keysOf(e.v).forEach(actor => { if (num(e.v[actor])) v[actor] = e.v[actor]; });
-      if (Object.keys(v).length) out.v = capVector(v);
-    }
     if (out.s === undefined) out.s = 0;
     if (out.m === undefined) out.m = 0;
     return out;
@@ -107,8 +96,7 @@
     if (SECTIONS.some(k => value[k] !== undefined && !isObj(value[k]))) return false;
     const all = (o, fn) => Object.values(o || {}).every(fn);
     if (!all(value.mastered, t => isObj(t) && all(t, n => n === 1 || n === true))) return false;
-    if (!all(value.strength, t => isObj(t) && all(t, e => isObj(e) && Object.keys(e).every(k =>
-      k === 'v' ? (isObj(e.v) && all(e.v, num)) : (RECORD_KEYS.includes(k) && num(e[k])))))) return false;
+    if (!all(value.strength, t => isObj(t) && all(t, e => isObj(e) && Object.keys(e).every(k => RECORD_KEYS.includes(k) && num(e[k]))))) return false;
     if (['days', 'drilled', 'graduated', 'milestones', 'dailyDone', 'resets', 'prefTimes'].some(k => !all(value[k], num))) return false;
     if (!all(value.prefs, v => v === null || ['string', 'number', 'boolean'].includes(typeof v))) return false;
     const bools = (d, k) => d[k] === undefined || (Array.isArray(d[k]) && d[k].length === d.attempts.length && d[k].every(v => typeof v === 'boolean'));
@@ -135,13 +123,6 @@
 
   /* ----------------------------------------------------------------- merge */
 
-  function capVector(v) {
-    const actors = Object.keys(v);
-    if (actors.length <= MAX_ACTORS) return v;
-    const out = {};
-    actors.sort((a, b) => v[b] - v[a]).slice(0, MAX_ACTORS).forEach(a => { out[a] = v[a]; });
-    return out;
-  }
   function eachKey(a, b, fn) {
     const seen = Object.create(null);
     [a, b].forEach(o => keysOf(o).forEach(k => {
@@ -193,35 +174,19 @@
     eachKey(x.strength, y.strength, (topic, a, b) => {
       const t = out.strength[topic] = {};
       eachKey(a || {}, b || {}, (card, sa, sb) => {
-        // one-sided: take it verbatim
+        // one-sided: take it verbatim; both: the pessimistic view — misses
+        // never shrink, the streak and level are the lower ones (a card is
+        // never pushed further out than either device believes), the review
+        // clock the newer, "introduced" and "first correct" the earliest. A
+        // shaky card can therefore never graduate out of Foco by syncing; the
+        // price is that a miss seen on one device stays until it is answered
+        // right again anywhere, which is the safe side to err on.
         if (!sa || !sb) { t[card] = sa || sb; return; }
-        // Causal vectors tell a retry that OBSERVED a miss (it dominates) from
-        // two devices answering independently (concurrent). Concurrent, or a
-        // legacy record without a vector: the pessimistic view — misses never
-        // shrink, the streak and level are the lower ones, the review clock the
-        // newer, "introduced" the earliest. A fast wall clock alone never wins.
-        const vector = {};
-        eachKey(sa.v, sb.v, (actor, a, b) => { vector[actor] = Math.max(a || 0, b || 0); });
-        const dominates = (p, q) => Object.keys(q).every(k => (p[k] || 0) >= q[k]) &&
-          Object.keys(p).some(k => p[k] > (q[k] || 0));
-        let newest = null;
-        if (sa.v && sb.v) {
-          if (dominates(sa.v, sb.v)) newest = sa;
-          else if (dominates(sb.v, sa.v)) newest = sb;
-        }
-        if (newest) {
-          const r = Object.assign({}, newest, { m: Math.max(sa.m || 0, sb.m || 0), v: capVector(vector) });
-          if (sa.i || sb.i) r.i = Math.min(sa.i || Infinity, sb.i || Infinity);
-          if (sa.f || sb.f) r.f = Math.min(sa.f || Infinity, sb.f || Infinity);
-          t[card] = r;
-          return;
-        }
         const merged = { s: Math.min(sa.s || 0, sb.s || 0), m: Math.max(sa.m || 0, sb.m || 0), l: Math.min(lvl(sa), lvl(sb)) };
         if (sa.t || sb.t) merged.t = Math.max(sa.t || 0, sb.t || 0);   // a card never confirmed has no clock
         if (sa.i || sb.i) merged.i = Math.min(sa.i || Infinity, sb.i || Infinity);
         if (sa.f || sb.f) merged.f = Math.min(sa.f || Infinity, sb.f || Infinity);
         ['u', 'a'].forEach(k => { if (sa[k] !== undefined || sb[k] !== undefined) merged[k] = Math.max(sa[k] || 0, sb[k] || 0); });
-        if (Object.keys(vector).length) merged.v = capVector(vector);
         t[card] = merged;
       });
     });
@@ -270,5 +235,5 @@
     return out;
   }
 
-  return { merge: mergeStates, clean: cleanState, validate: validate, stable: stable, capVector: capVector, SECTIONS: SECTIONS };
+  return { merge: mergeStates, clean: cleanState, validate: validate, stable: stable, SECTIONS: SECTIONS };
 })();

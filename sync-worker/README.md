@@ -1,44 +1,59 @@
-# Sync backend, protocol v2
+# Sync backend
 
-The static site uses a secret code shared across the three apps. Progress is separate: the root uses the bare code, English prefixes `ingles`, and Norwegian prefixes `noruegues`. The code is a bearer secret sent only to the configured HTTPS endpoint. Backups never include it.
+A single Cloudflare Worker + KV namespace that stores each app's progress blob
+under a random secret sync code. The free tier is far more than enough: a blob
+is a couple of hundred KB at most and syncs a handful of times per study session.
 
-## Upgrade before publishing the v1.24 client
+## Deploy
 
-Version 2 replaces blind KV writes with **revision-checked writes to a Durable Object**. KV has no atomic compare-and-set and cannot safely arbitrate concurrent device updates. Each secret code has its own object. The first request that finds a **value** in KV imports it (once); an empty KV answer is served as a virtual revision 0 and is *not* stored, so a value KV only serves a little later (it is eventually consistent, up to ~60 s) is still picked up on a following request, and a PUT on a never-seen code creates revision 1 directly. A malformed legacy value is cleaned (`ProgressState.clean`) rather than failing every request for that code. The original KV value is left untouched for recovery.
+The checked-in `wrangler.jsonc` targets the existing `fala-gringo-sync` Worker
+and its production `SYNC` namespace. From the repository root:
 
-1. The checked-in config targets the existing `fala-gringo-sync` Worker and its production account.
-2. Its `SYNC` namespace (`9014f52e474248a5bfb344afdc2021b7`) was verified against active version `f8d906f2-fe2b-40fa-9dcb-57c81bfb2370` on 2026-09-10. Recheck the live binding if deploying later; preserve it rather than creating an empty replacement namespace.
-3. From the repository root, deploy the backend using `npx --yes wrangler deploy --config sync-worker/wrangler.jsonc`. Wrangler bundles `worker.js` and the shared `js/lib/state.js` validation code. The `v2` migration creates the SQLite-backed `SyncState` Durable Object class.
-4. Verify with a separate test code: GET returns `X-Sync-Version: 2` and `ETag: "0"`; PUT with `If-Match: "0"` advances the revision; reusing the old revision returns 412. Verify that an existing account imports correctly before publishing the client.
-5. Publish the static site. Existing browser clients must reload to v1.24: blind PUTs from older versions receive 428 and cannot overwrite upgraded progress (their pulls keep working, so nothing is lost meanwhile).
+```sh
+npx --yes wrangler deploy --config sync-worker/wrangler.jsonc
+```
 
-Either order degrades safely — a v1.24 client against the old KV worker pauses itself ("server needs updating", pull-only), an old client against the new worker pulls but cannot push — but deploy the worker **first**, at a quiet hour: the import takes whatever KV serves, and KV can lag a push made seconds earlier by up to a minute.
+For a new installation: create a KV namespace (`wrangler kv namespace create SYNC`),
+put its id in `wrangler.jsonc`, deploy, and copy the worker URL into `SYNC_URL`
+at the top of `js/lib/sync.js`.
 
-The config contains verified account and namespace identifiers, which are not credentials. Both `SYNC` and `SYNC_STATE` bindings are required. No deployment is part of the local test suites. There is no rate limit in the Worker itself — every GET on a well-formed code touches a Durable Object (nothing is stored until a value exists) — so add a Cloudflare rate-limiting rule on the route if abuse ever shows up.
-
-The deployment dry run passed on 2026-09-10 with Wrangler 4.129.0 and both expected bindings. It did not publish the Worker or create the Durable Object namespace.
-
-For a local bundle/configuration check without publishing, run `npx --yes wrangler deploy --dry-run --config sync-worker/wrangler.jsonc --outdir /private/tmp/fala-gringo-sync-bundle`.
-
-For a new installation, create a KV namespace, place its ID in the same config, then deploy. It serves as the empty migration source for new accounts.
+`wrangler.jsonc` also carries a two-step Durable Object migration (`v2` created a
+`SyncState` class, `v3` deleted it). That is history from 2026-09-11, when a
+revision-checked protocol was live for a few hours before being rolled back to
+this simpler design; wrangler needs the record to reconcile the namespace, so
+leave it in place.
 
 ## Protocol
 
-- `GET /<code>` returns the progress object (or `null`) and its quoted integer `ETag`.
-- `PUT /<code>` requires `If-Match` with that exact ETag and a validated progress object. A transaction checks the revision and writes the next one atomically.
-- A stale revision returns 412; a missing precondition returns 428. The client fetches, merges and retries a conflict up to three times, then backs off.
-- The body is capped at 1 MiB while streaming. CORS exposes ETag and the protocol version. Responses are not cacheable.
+- `GET /<code>` returns the stored JSON object, or the literal `null`.
+- `PUT /<code>` stores the body: a JSON object with `mastered` and `strength`
+  maps, at most 1 MiB. Anything else is 400; a bigger body is 413.
+- The code is `[a-z0-9]{16,64}`. The `/ingles/` and `/noruegues/` pages prefix
+  it on the wire (`/ingles<code>`), so one code gives three separate blobs.
 
-A failed GET or an old backend never permits an upload. A remote blob carrying a record field the client does not know (written by a newer client) pauses that client — it neither pulls nor pushes, and its button says to reload. Clients keep progress locally and retry when online, when visible, or after the retry delay (10 minutes while paused). Changes are normally uploaded after 2.5 seconds idle and at most once a minute during sustained practice; a tab going hidden attempts one last GET + conditional PUT (harmless if cut short), and the next visit reconciles first anyway. States are compared with sorted-key JSON, so key order never counts as a change.
+The client (`js/lib/sync.js`) pulls and merges on load, then pushes the merged
+state at most once a minute while drilling and once more when the tab hides.
+Every push is preceded by a pull-and-merge, so the server only ever holds the
+latest blob. Two devices pushing within the same minute can still overwrite
+each other on the server; the loser's answers live on locally and heal on its
+next pull. A failed GET never leads to a push. A blob carrying fields the
+client does not know (a newer client wrote it) pauses that client instead of
+being stripped and pushed back.
 
-## Conflict semantics
+## Merge semantics
 
-`js/lib/state.js` is the pure merge/validation implementation used by the browser and backend validation. New answer records carry a monotonic `u` timestamp and a causal `v` vector with **one entry per device** (`fg:device` in localStorage, stable across sessions; capped at 8 actors as a safety net — dropping an actor only makes a merge more conservative). A retry that observed a miss supersedes it; concurrent offline answers and legacy records use conservative minimum streak/level. A device with a fast clock cannot hide a concurrent miss. Clock advancement observes merged event clocks, including after local clock rollback. Reset markers start a new global or topic generation: a side on an older generation drops the records it wrote *before* the reset and keeps those written after it (offline work on another device survives). Preferences and sync codes stay local.
+`js/lib/state.js` (`ProgressState.merge`) is the one merge used by sync, by the
+backup import and between tabs. It is conservative: mastered cards are unioned,
+misses are kept, a card's streak and review level are the lower of the two
+sides, the review clock the newer. `resets` are generations: a device on an
+older generation drops the records it wrote before the reset (records carry an
+event stamp) and keeps what it did afterwards. Preferences and the sync code
+never travel.
 
-Daily result slots merge by `{topic, id}`, never by position across different manifests. A challenge revision determines the selected manifest; overlapping identities retain their results. Device answer counts retain their existing max-merge semantics, rather than pretending that replicated counts are additive.
+## Tests
 
-## Tests and rollout limits
-
-Run `node --test scripts/check-sync.mjs` for transport integration tests using Node's built-in APIs (no packages). They cover simultaneous writes, migration (including a KV value that appears late, and a malformed one), stale/legacy requests, malformed/oversized bodies, failed pulls, retry merging, code changes in flight, a newer client's blob pausing an older one, and key-order-insensitive comparison. The six JXA suites cover app and state behavior without Node (`scripts/store-steps.js` holds the store's persistence regressions).
-
-The integration tests model serialized Durable Object storage; they do not provision Cloudflare or replace a staging migration check. Consult the official [Durable Object storage documentation](https://developers.cloudflare.com/durable-objects/api/sqlite-storage-api/) for the transaction guarantees.
+`node --test scripts/check-sync.mjs` runs the worker handler and the real sync
+client together in node (no packages): size and shape rejections, no push after
+a failed GET, the newer-client pause, union of two devices' progress, and
+key-order-insensitive comparison. The six JXA suites cover the store and the
+merge without node.

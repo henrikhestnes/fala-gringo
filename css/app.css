@@ -262,9 +262,7 @@ button { cursor: pointer; touch-action: manipulation; }
 .goal-btn.done .goal-ring text { fill: var(--green-ink); font-size: 10px; }
 .goal-streak.cold { opacity: .5; filter: grayscale(1); }
 /* the learner's title (Iniciante / Intermediário / Avançado): a quiet tag
-   after the flame — "Practicing: Iniciante" in full, and on a phone the short
-   form ("Practicing Iniciante", smaller) rather than nothing: the word that
-   says it is the tabs' difficulty, not a rank, must stay */
+   after the flame — smaller on a phone rather than hidden */
 .goal-title {
   font-size: .66rem;
   font-weight: 600;
@@ -274,11 +272,8 @@ button { cursor: pointer; touch-action: manipulation; }
   padding-left: .35rem;
   border-left: 1px solid var(--border);
 }
-.goal-title-short { display: none; }
 @media (max-width: 600px) {
   .goal-title { font-size: .58rem; letter-spacing: .02em; max-width: 7.5rem; }
-  .goal-title-long { display: none; }
-  .goal-title-short { display: inline; }
 }
 .goal-btn.celebrate { animation: goal-pop .55s ease; }
 @keyframes goal-pop {
@@ -1175,10 +1170,6 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .toast.tappable { pointer-events: auto; cursor: pointer; text-decoration: underline; text-underline-offset: .15em; }
 .settings-check { display: flex; align-items: flex-start; gap: .5rem; margin: .6rem 0 0; font-size: .85rem; line-height: 1.45; color: var(--text-2); }
 .settings-check input { margin-top: .2rem; flex: none; }
-.welcome { padding: 1.25rem; margin: 0 0 1.5rem; border: 1px solid var(--border); border-radius: 1rem; background: var(--surface); }
-.welcome h1 { font-size: 1.4rem; margin: 0 0 .5rem; }
-.welcome p { margin: .5rem 0 1rem; line-height: 1.55; }
-.welcome .welcome-help, .session-note { font-size: .85rem; color: var(--text-2); }
 .search-label { display: block; margin-bottom: .4rem; }
 .browse-search { width: 100%; padding: .8rem; font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: .5rem; }
 #browseCount { font-size: .85rem; margin: .5rem 0; color: var(--text-2); }

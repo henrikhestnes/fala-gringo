@@ -85,10 +85,15 @@
 //        entender, aprender, pegar, ligar, comer, tomar, começar, tentar, sentir, perder, viver, mudar, parar, ler —
 //        the verbs a carioca actually puts in "se eu…" that the 40-verb core had left out
 
-// 1.24.0: conflict-safe sync and local tabs, reset generations, accessible settings
-// and backups, short practice, Browse search/lazy panels, stable Daily identities,
-// due-only review advancement, strict voice locales and audited pronunciation.
-const APP_VERSION = '1.24.0';
+// 1.24.0: a safe store (read-before-mutate, never overwrite an unreadable blob, unknown
+//         fields stripped not fatal), reset generations, accessible tabs/dialogs/live regions,
+//         settings sheet with backups, Browse search/lazy panels, stable Daily identities,
+//         due-only review advancement, pt-BR-only voices, audited pronunciation and glosses
+// 1.24.1: back to the simple sync — pull, merge, push to the KV worker (no keepalive, 1 MiB cap);
+//         the revision-checked Durable Object protocol and the per-record causal vectors that
+//         shipped with 1.24.0 were more machinery than the problem deserved; the onboarding
+//         starter/short session and the "Practicing:" wording go too
+const APP_VERSION = '1.24.1';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

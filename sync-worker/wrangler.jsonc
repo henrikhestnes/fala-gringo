@@ -1,13 +1,18 @@
+// Config for the sync Worker (deployed by hand: see README.md).
+//
+// The `v2`/`v3` migration pair records that a Durable Object class named
+// SyncState existed for a few hours on 2026-09-11 and was then deleted — the
+// history must stay so wrangler can reconcile the live namespace; do not
+// remove it. The KV namespace is the store; its id is not a credential.
 {
   "name": "fala-gringo-sync",
   "account_id": "2d9cd71eed7053be2a3685407e9035a5",
   "workers_dev": true,
   "main": "worker.js",
   "compatibility_date": "2026-09-10",
-  "durable_objects": {
-    "bindings": [{ "name": "SYNC_STATE", "class_name": "SyncState" }]
-  },
-  "migrations": [{ "tag": "v2", "new_sqlite_classes": ["SyncState"] }],
-  // Existing production SYNC binding, verified against the active Worker version.
+  "migrations": [
+    { "tag": "v2", "new_sqlite_classes": ["SyncState"] },
+    { "tag": "v3", "deleted_classes": ["SyncState"] }
+  ],
   "kv_namespaces": [{ "binding": "SYNC", "id": "9014f52e474248a5bfb344afdc2021b7" }]
 }

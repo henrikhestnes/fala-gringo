@@ -22,7 +22,7 @@
     tierNames: ['Iniciante', 'Intermediário', 'Avançado'],
     tierTitle: 'Level: {tier}',
     graduatedTitle: '🎓 Graduated — {pct}% of the cards at review level 3 or higher',
-    learnerTitle: 'Practicing: {tier} — the difficulty of your chosen topics, not a fluency assessment',
+    learnerTitle: 'You: {tier} — the highest level among the tabs you have taken up',
     milestoneToast: '🏅 {label}',
     sheetTitle: 'Your progress',
     sheetToday: 'Today',
@@ -39,9 +39,6 @@
     sheetClose: 'Close',
     sheetNoTitle: 'Drill a tab to take it up',
     streakNone: 'no streak yet — today starts one',
-    // the learner's title by the flame: the long form, and the short one phones show
-    practicing: 'Practicing: {tier}',
-    practicingShort: 'Practicing {tier}',
     // the settings sheet (⚙): goals, backup, and the tooltips of the top-bar buttons
     settingsTitle: 'Settings and backup',
     settingsHelp: 'Your daily goal combines reviews and new cards. The Foco deck can offer more; you can stop when you reach your goal. Verbs arrive as whole conjugations.',
@@ -71,7 +68,6 @@
   const DATE_LOCALE = document.documentElement.lang || 'en-GB';
   let sheetKind = 'progress';
   let sheetOpener = null;
-  let shortRequest = false;
 
   function toast(msg, onTap) { if (typeof showToast === 'function') showToast(msg, onTap); }
 
@@ -244,10 +240,7 @@
           (done ? '✓' : goal.left) + '</text>' +
       '</svg>' +
       '<span class="goal-streak' + (st.today ? '' : ' cold') + '">🔥' + st.n + '</span>' +
-      (tier ? '<span class="goal-title">' +
-                '<span class="goal-title-long">' + escapeHtml(tfill(APP_STR.practicing, { tier: tierName(tier) })) + '</span>' +
-                '<span class="goal-title-short">' + escapeHtml(tfill(APP_STR.practicingShort, { tier: tierName(tier) })) + '</span>' +
-              '</span>' : '');
+      (tier ? '<span class="goal-title">' + escapeHtml(tierName(tier)) + '</span>' : '');
     const doneText = goal.waiting ? tfill(APP_STR.goalHit, { n: goal.waiting }) : APP_STR.goalDone;
     const title = (done ? doneText
                         : tfill(APP_STR.goalLeft, { n: goal.left, reviews: goal.reviews, fresh: goal.fresh, done: goal.done }) +
@@ -495,8 +488,7 @@
     window.scrollTo(0, 0);
     if (topic.kind === 'browse') Browse.render();
     else if (topic.kind === 'daily') Daily.mount();
-    else Quiz.mount(topic, shortRequest ? 5 : 0);
-    shortRequest = false;
+    else Quiz.mount(topic);
     view().setAttribute('aria-labelledby', 'tab-' + topic.id);
     if (fromSheet) {
       const tab = document.getElementById('tab-' + topic.id);
@@ -513,7 +505,6 @@
   /* ------------------------------------------------- delegated interaction */
 
   document.addEventListener('click', e => {
-    if (e.target.closest('[data-start-practice]')) { shortRequest = true; go(TOPICS.find(t => t.kind === 'quiz').id); return; }
     const tab = e.target.closest('[data-tab]');
     if (tab) { go(tab.dataset.tab); return; }
 
