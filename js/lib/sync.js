@@ -267,6 +267,7 @@ const Sync = (function () {
   return {
     onLocalChange: schedulePush,   // Store.save() calls this through Store.onChange (below)
     manage: manage,
+    canOfferSetup: () => !!SYNC_URL && canFetch && !code(),
     _merge: mergeStates,           // exposed for the checks
     _endpoint: endpoint,           // likewise — proves the /ingles/ key prefix
     _sync: synchronize,

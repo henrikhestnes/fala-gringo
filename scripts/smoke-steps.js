@@ -39,6 +39,18 @@ step('tab strip lists all 14 tabs, captioned by tier', function () {
   return '14 tabs incl. Browse + Daily; captions before Presente, Passado, Subjuntivo';
 });
 
+step('first-card help is dismissible and stays dismissed across mounts', function () {
+  Quiz.mount(topicById('presente'));
+  if (!/id="answerGuide"/.test(registry.cardArea.innerHTML)) throw new Error('missing first-use help');
+  registry.dismissAnswerGuide.fire('click');
+  if (!Store.getPref('answerGuideDismissed', false) || !registry.answerGuide.hidden) throw new Error('dismissal not saved');
+  Quiz.mount(topicById('presente'));
+  if (/id="answerGuide"/.test(registry.cardArea.innerHTML)) throw new Error('dismissed help returned');
+  Store.setPref('answerGuideDismissed', false);
+  Browse.render();
+  return 'fresh learner sees help; dismissal persists';
+});
+
 step('Hard Mode (Modo Raiz) is the default on a fresh profile', function () {
   if (!Mode.hard) throw new Error('Mode.hard was false');
   if (registry.modeBtn.textContent !== 'Modo Raiz')
@@ -1551,4 +1563,68 @@ step('the 500- and 1,000-card milestones apply here (2,464 cards) and only where
   var m500 = Milestones._defs.filter(function (d) { return d.id === 'm500'; })[0];
   if (!m500.applies || !m500.applies()) throw new Error('m500 has no applies() gate');
   return 'm500 + m1000 listed with ' + allQuizCards().length + ' cards';
+});
+
+step('first-run checkpoint offers optional sync once without changing the deck', function () {
+  var originalOffer = Sync.canOfferSetup, originalManage = Sync.manage, managed = 0;
+  try {
+    Store.setPref('foco', false);
+    Store.setPref('firstRunActive', true);
+    Store.setPref('firstRunCorrect', 4);
+    Store.setPref('firstCorrectHint', false);
+    Store.setPref('firstMistakeHint', false);
+    Store.setPref('firstRunSyncDismissed', false);
+    Sync.canOfferSetup = function () { return true; };
+    Sync.manage = function () { managed++; };
+    goTo('#presente');
+    registry.answerInput.value = 'zzzzzzzzzz';
+    registry.actionBtn.fire('click');
+    if (!/this card will come back/.test(registry.feedback.innerHTML)) throw new Error('missing mistake hint');
+    if (Store.getPref('firstRunCorrect', 0) !== 4) throw new Error('mistake counted toward checkpoint');
+    registry.actionBtn.fire('click');
+    registry.answerInput.value = shownCard('presente').answer;
+    registry.actionBtn.fire('click');
+    if (!/Press Enter/.test(registry.feedback.innerHTML)) throw new Error('missing correct hint');
+    if (!/Five correct answers/.test(registry.firstRunNotice.innerHTML)) throw new Error('missing checkpoint');
+    if (!/Set up sync/.test(registry.firstRunNotice.innerHTML) || managed) throw new Error('sync missing or enabled automatically');
+    registry.firstRunSetup.fire('click');
+    if (managed !== 1 || !Store.getPref('firstRunSyncDismissed', false)) throw new Error('setup did not use existing flow');
+    registry.firstRunContinue.fire('click');
+    if (registry.firstRunNotice.innerHTML) throw new Error('checkpoint did not close');
+    registry.answerInput.value = shownCard('presente').answer;
+    registry.actionBtn.fire('click');
+    if (/Five correct answers/.test(registry.firstRunNotice.innerHTML)) throw new Error('checkpoint repeated');
+    return 'miss excluded; fifth hit offers sync; setup is explicit; continuing resumes practice';
+  } finally {
+    Sync.canOfferSetup = originalOffer;
+    Sync.manage = originalManage;
+    Store.setPref('foco', true);
+  }
+});
+
+step('finished Foco can introduce another whole-verb batch without raising the daily limit', function () {
+  var originalLikely = Infer.likelyKnown;
+  try {
+    Infer.likelyKnown = function () { return new Set(); };
+    Store.resetTopic('presente');
+    Store.setPref('foco', true);
+    var cap = Store.newPerDay();
+    goTo('#presente');
+    var first = topicCards(topicById('presente')).filter(function (c) { return Store.introducedOn('presente', c.id) === Store.today(); });
+    first.forEach(function (c) { Store.markMastered('presente', c.id); Store.recordAnswer('presente', c.id, true); });
+    Quiz.mount(topicById('presente'));
+    if (!/id="moreNewBtn"/.test(registry.cardArea.innerHTML)) throw new Error('empty Foco lacks continue button');
+    registry.moreNewBtn.fire('click');
+    var extra = topicCards(topicById('presente')).filter(function (c) {
+      return Store.introducedOn('presente', c.id) === Store.today() && Store.cardState('presente', c.id) === 'new';
+    });
+    if (!extra.length || Store.newPerDay() !== cap || !Store.getPref('foco', false)) throw new Error('extra intake failed or settings changed');
+    var lexemes = new Set(extra.map(function (c) { return c.id.split('|')[0]; }));
+    topicCards(topicById('presente')).forEach(function (c) {
+      if (lexemes.has(c.id.split('|')[0]) && Store.cardState('presente', c.id) === 'new' && !Store.introducedOn('presente', c.id)) throw new Error('split verb');
+    });
+    Quiz.mount(topicById('presente'));
+    if (!/answerInput/.test(registry.cardArea.innerHTML)) throw new Error('extra intake lost after remount');
+    return extra.length + ' extra cards; complete verbs; Foco and daily limit preserved';
+  } finally { Infer.likelyKnown = originalLikely; }
 });

@@ -50,6 +50,7 @@ const QUIZ_STRINGS = Object.assign({
   errorsMade: 'Errors made',
   hardCards: 'Hard Mode cards',
   startOver: 'Start over ↻',
+  moreNew: 'Keep practicing · {n} new cards →',
   answerIs: 'The answer is',
   also: 'also',                       // the card's other synonyms, after the answer
   todayStill: 'Still today:',
@@ -343,8 +344,47 @@ const Quiz = (function () {
     render();
   }
 
+  function nextNewBatch() {
+    if (!topic || !focusOn()) return [];
+    const groups = new Map();
+    topicCards(topic).forEach(c => {
+      if (activeGroups && !activeGroups.has(c.group)) return;
+      if (Store.cardState(topic.id, c.id) !== 'new' || Store.introducedOn(topic.id, c.id)) return;
+      const key = lexeme(c);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(c);
+    });
+    const batch = [];
+    groups.forEach(cards => { if (batch.length < Store.newPerDay()) batch.push(...cards); });
+    return batch;
+  }
+
+  function moreNewHtml() {
+    const batch = nextNewBatch();
+    return batch.length ? '<div class="controls"><button class="btn primary" id="moreNewBtn" type="button">' +
+      escapeHtml(tfill(QUIZ_STRINGS.moreNew, { n: batch.length })) + '</button></div>' : '';
+  }
+
+  function bindMoreNew() {
+    const button = document.getElementById('moreNewBtn');
+    if (button) button.addEventListener('click', () => {
+      // Explicit extra intake, not a permanent change to the daily limit.
+      // Unfinished cards survive a reload and whole verbs stay together.
+      Store.markIntroduced(topic.id, nextNewBatch().map(c => c.id));
+      buildDeck();
+    });
+  }
+
   function mount(t) {
     topic = t;
+    if (!window.APP_LANG && !Store.getPref('firstRunStarted', false)) {
+      const saved = Store.snapshot();
+      const hasAnswers = Object.keys(saved.days).length ||
+        Object.values(saved.strength).some(rows => Object.values(rows).some(r => r.s || r.m || r.a || r.t)) ||
+        Object.values(saved.mastered).some(rows => Object.keys(rows).length);
+      Store.setPref('firstRunStarted', true);
+      Store.setPref('firstRunActive', !hasAnswers);
+    }
     document.getElementById('view').dataset.topic = '';
     rivalCache.clear();
     const groups = topicGroups(topic);
@@ -475,9 +515,10 @@ const Quiz = (function () {
       area.innerHTML = focusOn()
         ? '<div class="card empty"><h2>' + QUIZ_STRINGS.emptyFocoTitle + '</h2>' +
           '<p>' + (waiting ? tfill(QUIZ_STRINGS.emptyFocoWaiting, { n: waiting })
-                           : QUIZ_STRINGS.emptyFocoBody) + '</p>' + todayLineHtml() + '</div>'
+                           : QUIZ_STRINGS.emptyFocoBody) + '</p>' + moreNewHtml() + todayLineHtml() + '</div>'
         : '<div class="card empty"><h2>' + QUIZ_STRINGS.emptyTitle + '</h2>' +
           '<p>' + QUIZ_STRINGS.emptyBody + '</p></div>';
+      bindMoreNew();
       return;
     }
 
@@ -492,7 +533,20 @@ const Quiz = (function () {
     const hint = (!Mode.hard && card.hint)
       ? '<span class="card-hint" lang="' + TARGET_LANG + '">' + escapeHtml(card.hint) + '</span>' : '';
 
+    // First-use help belongs only to the English-speaking Portuguese app.
+    // Existing activity (including synced progress) skips it automatically.
+    const progress = Store.snapshot();
+    const firstCard = !window.APP_LANG && !Store.getPref('answerGuideDismissed', false) &&
+      !Object.keys(progress.days).length &&
+      !Object.values(progress.strength).some(rows => Object.values(rows).some(r => r.s || r.m || r.a || r.t)) &&
+      !Object.keys(progress.mastered).some(id => Object.keys(progress.mastered[id]).length);
+
     area.innerHTML = '' +
+      (firstCard ? '<aside class="answer-guide" id="answerGuide">' +
+        '<strong>Your first card</strong><p id="answerGuideHelp">Read the English below and type its Portuguese translation. ' +
+        'Press Enter or the arrow to check. It’s okay to guess — mistakes come back for another try.</p>' +
+        '<p>Need a clue? Switch Modo Raiz to Modo Nutella at the top for hints.</p>' +
+        '<button class="btn" id="dismissAnswerGuide" type="button">Got it</button></aside>' : '') +
       '<div class="card">' +
         '<div class="card-meta"><span>' + escapeHtml(card.meta) + '</span>' + hint + '</div>' +
         '<div class="card-prompt" id="answerPrompt" lang="' + UI_LANG + '">' + card.prompt + '</div>' +
@@ -500,7 +554,7 @@ const Quiz = (function () {
         '<div class="card-sub">' + escapeHtml(card.sub) + '</div>' +
         '<div class="input-row">' +
           '<label class="sr-only" for="answerInput">' + escapeHtml(QUIZ_STRINGS.answerLabel) + '</label>' +
-          '<input class="answer-input" id="answerInput" aria-describedby="answerPrompt" lang="' + TARGET_LANG + '" type="text" placeholder="' +
+          '<input class="answer-input" id="answerInput" aria-describedby="answerPrompt' + (firstCard ? ' answerGuideHelp' : '') + '" lang="' + TARGET_LANG + '" type="text" placeholder="' +
             escapeHtml(QUIZ_STRINGS.placeholder) + '" ' +
             'autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" ' +
             'enterkeyhint="go" />' +
@@ -508,6 +562,7 @@ const Quiz = (function () {
         '</div>' +
         (micOn() ? '<div class="mic-status" id="micStatus" role="status"></div>' : '') +
         '<div class="feedback" id="feedback" role="status" aria-live="polite" aria-atomic="true"></div>' +
+        '<div id="firstRunNotice"></div>' +
         '<div id="revealArea" lang="' + UI_LANG + '"></div>' +
       '</div>' +
       '<div class="controls">' +
@@ -517,6 +572,12 @@ const Quiz = (function () {
 
     answered = false;
     const input = document.getElementById('answerInput');
+    if (firstCard) document.getElementById('dismissAnswerGuide').addEventListener('click', () => {
+      Store.setPref('answerGuideDismissed', true);
+      document.getElementById('answerGuide').hidden = true;
+      input.setAttribute('aria-describedby', 'answerPrompt');
+      focusAnswerInput(input);
+    });
     document.getElementById('actionBtn').addEventListener('click', handleAction);
     document.getElementById('skipBtn').addEventListener('click', skipCard);
     document.getElementById('restartBtn').addEventListener('click', buildDeck);
@@ -543,13 +604,14 @@ const Quiz = (function () {
           '<div class="result-stat"><div class="result-stat-num accent">' + stats.hardSolved +
             '</div><div class="result-stat-lbl">' + QUIZ_STRINGS.hardCards + '</div></div>' +
         '</div>' +
-        todayLineHtml() +
+        todayLineHtml() + moreNewHtml() +
         '<div class="controls">' +
           '<button class="btn primary" id="againBtn" type="button">' +
             escapeHtml(QUIZ_STRINGS.startOver) + '</button>' +
         '</div>' +
       '</div>';
     document.getElementById('againBtn').addEventListener('click', buildDeck);
+    bindMoreNew();
     if (perfect) launchFireworks();
   }
 
@@ -666,6 +728,47 @@ const Quiz = (function () {
     checkAnswer();
   }
 
+  // Small, contextual nudges: no special deck and no changes to review scoring.
+  function firstRunFeedback(ok, near, feedback) {
+    if (window.APP_LANG || !Store.getPref('firstRunActive', false)) return false;
+    const key = ok ? 'firstCorrectHint' : 'firstMistakeHint';
+    if (!near && !Store.getPref(key, false)) {
+      Store.setPref(key, true);
+      feedback.innerHTML += '<p class="first-run-hint">' + (ok
+        ? 'Boa! Press Enter or tap the arrow for the next card.'
+        : 'No worries — this card will come back. Read the answer, then try again. Use the speaker button to hear it.') + '</p>';
+    }
+    if (!ok || near) return false;
+    const hits = Math.min(5, Store.getPref('firstRunCorrect', 0) + 1);
+    Store.setPref('firstRunCorrect', hits);
+    if (hits < 5) return false;
+    Store.setPref('firstRunActive', false);
+    const offerSync = typeof Sync !== 'undefined' && Sync.canOfferSetup() && !Store.getPref('firstRunSyncDismissed', false);
+    const notice = document.getElementById('firstRunNotice');
+    notice.innerHTML = '<aside class="answer-guide first-run-checkpoint" aria-label="Your first practice milestone">' +
+      '<strong>Boa! Five correct answers.</strong><p>You can stop here or keep going. Foco brings back cards when they need practice.</p>' +
+      '<div class="controls"><button class="btn primary" id="firstRunContinue">Keep practicing</button>' +
+      '<button class="btn" data-tab="browse">Back to Browse</button></div>' +
+      (offerSync ? '<div class="first-run-sync" id="firstRunSync"><strong>Keep your progress on another device</strong>' +
+        '<p>Your progress already saves on this device. Connect your phone and computer with a private sync code.</p>' +
+        '<button class="btn" id="firstRunSetup">Set up sync</button> <button class="btn" id="firstRunNotNow">Not now</button></div>' : '') + '</aside>';
+    document.getElementById('firstRunContinue').addEventListener('click', () => { notice.innerHTML = ''; advance(); });
+    if (offerSync) {
+      const dismissSync = () => {
+        Store.setPref('firstRunSyncDismissed', true);
+        Store.setPref('syncNudge', 4); // respect this choice in the older visit-based nudge too
+        document.getElementById('firstRunSync').hidden = true;
+        document.getElementById('firstRunContinue').focus();
+      };
+      document.getElementById('firstRunNotNow').addEventListener('click', dismissSync);
+      document.getElementById('firstRunSetup').addEventListener('click', () => {
+        if (Sync.canOfferSetup()) Sync.manage();
+        dismissSync();
+      });
+    }
+    return true;
+  }
+
   function checkAnswer() {
     const card = deck[current];
     const input = document.getElementById('answerInput');
@@ -732,13 +835,14 @@ const Quiz = (function () {
       updateStats();   // the chip now shows this card as shaky
     }
 
+    const checkpoint = firstRunFeedback(ok, ok && res.grade === 'near', feedback);
     requestAnimationFrame(() => {
       const t = document.querySelector('.conj-table-wrapper');
       if (t) t.classList.add('visible');
     });
-    setTimeout(() => btn.focus(), 0);
+    setTimeout(() => (checkpoint ? document.getElementById('firstRunContinue') : btn).focus(), 0);
 
-    if (micOn()) {
+    if (micOn() && !checkpoint) {
       setMicStatus('');
       // hands-free: read the answer out, then move on by itself
       const gen = micGen;

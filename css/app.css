@@ -1227,3 +1227,43 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .pron-legend summary { cursor: pointer; }
 .verb-text button.verb-pt { color: var(--text); font-size: 1rem; }
 .verb-text button.hidden { color: transparent; background: var(--surface-3); border: 1px dashed var(--border-strong); }
+
+/* Coastal draft: scoped to the Brazilian app; the sister apps keep their identity. */
+html.coastal {
+  --rio-ocean: var(--blue-ink);
+  --rio-sea: #659caf;
+  --rio-sun: #ffdf00;
+  --rio-coral: #009c3b;
+  --rio-mountain: #399568;
+  --rio-mountain-front: #04702e;
+}
+.coastal .topbar::after { height: 12px; background-size: auto 12px; background-color: var(--bg); }
+.rio-welcome { width: 100%; max-width: 880px; margin: 1.7rem auto .5rem; padding: 0 1rem; display: grid; grid-template-columns: 1.3fr 1fr; align-items: center; gap: 1rem; }
+.rio-eyebrow { color: var(--blue-ink); font-size: .6rem; font-weight: 750; letter-spacing: .15em; margin-bottom: .6rem; }
+.rio-welcome h1 { max-width: 26rem; font-family: var(--display); font-size: clamp(1.8rem, 3.5vw, 2.5rem); line-height: 1.06; font-weight: 800; letter-spacing: -.025em; }
+.rio-welcome h1 em { color: var(--blue-ink); }
+.rio-intro { font-size: .8rem; color: var(--text-2); margin-top: .7rem; }
+.rio-start { display: inline-flex; align-items: center; gap: 1rem; margin-top: 1rem; padding: .65rem 1rem; text-decoration: none; }
+.rio-start-note { display: block; margin-top: .45rem; font-size: .7rem; color: var(--text-3); }
+.answer-guide { margin-bottom: 1rem; padding: 1rem 1.1rem; border: 1px solid var(--border); border-left: 3px solid var(--green); border-radius: var(--radius); background: var(--surface); font-size: .82rem; }
+.answer-guide strong { color: var(--green-ink); }
+.answer-guide p { margin: .4rem 0 .65rem; color: var(--text-2); line-height: 1.6; }
+.rio-landscape { display: block; width: 100%; height: auto; }
+.coastal [data-topic="browse"] .view-head { text-align: left; margin-bottom: 1.2rem; }
+.coastal [data-topic="browse"] .view-head h1 { color: var(--rio-ocean); font-size: 1.45rem; }
+.coastal .browse-search { box-shadow: var(--shadow); }
+.coastal .verb-row { box-shadow: 0 2px 5px rgba(36, 70, 66, .025); }
+.coastal .card { box-shadow: var(--shadow); border-radius: 18px; }
+.coastal footer { position: relative; margin-top: 1.5rem; padding-top: 2rem; background: var(--surface-2); }
+.coastal footer::before { content: ""; position: absolute; inset: 0 0 auto; height: 8px; background: var(--calcadao) repeat-x center / auto 8px; opacity: .65; }
+.rio-footer-signoff { font-family: var(--display); font-weight: 700; font-size: 1.2rem; font-style: italic; color: var(--rio-ocean); margin-bottom: .75rem; }
+@media (max-width: 600px) {
+  .rio-welcome { grid-template-columns: 1fr; margin-top: 1.25rem; gap: .2rem; }
+  .rio-welcome h1 { max-width: 22rem; }
+  .rio-landscape { width: 210px; justify-self: end; margin-top: -.25rem; }
+  .rio-eyebrow { font-size: .53rem; }
+}
+.first-run-hint { margin-top: .8rem; font-size: .82rem; font-weight: 400; color: var(--text-2); }
+.first-run-checkpoint { margin: 1rem 0; }
+.first-run-checkpoint .controls { justify-content: flex-start; }
+.first-run-sync { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }

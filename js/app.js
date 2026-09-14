@@ -479,6 +479,8 @@
 
   function route() {
     const topic = topicById(currentTopicId());
+    const welcome = document.getElementById('rioWelcome');
+    if (welcome) welcome.hidden = topic.kind !== 'browse';
     Quiz.stopVoice();   // leaving a drill must stop the mic + pending auto-advance
     if (topic.kind !== 'quiz') Quiz.unmount();   // Browse and the Daily: no drill deck may linger behind them
     // a tab link on the sheet lands on the tab, not behind the sheet — and
