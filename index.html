@@ -2,7 +2,7 @@
 <!-- The chrome is English (an English speaker learns here); the Portuguese
      fragments — answers, examples, conjugation tables — carry lang="pt-BR" of
      their own, so screen readers switch voice where the language does. -->
-<html lang="en">
+<html lang="en" class="coastal">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -53,11 +53,37 @@
   <nav class="tabs" id="tabs" role="tablist" aria-label="Study topics"></nav>
 </header>
 
+<section class="rio-welcome" id="rioWelcome" aria-label="Welcome to Fala Gringo" hidden>
+  <div class="rio-welcome-copy">
+    <p class="rio-eyebrow">PORTUGUÊS DO RIO · BRASIL</p>
+    <h1>Portuguese with a little <em lang="pt-BR">ginga.</em></h1>
+    <p class="rio-intro">See the English. Type the Portuguese. Get feedback.</p>
+    <a class="btn primary rio-start" href="#presente">Start practicing <span aria-hidden="true">→</span></a>
+    <span class="rio-start-note">Begin with present-tense verbs, or browse below.</span>
+  </div>
+  <svg class="rio-landscape" viewBox="0 0 420 170" fill="none" aria-hidden="true">
+    <circle cx="310" cy="46" r="29" fill="var(--rio-sun)"/>
+    <path d="M0 123 37 106 78 71 101 65 130 90 164 109 198 124Z" fill="var(--rio-mountain)"/>
+    <g fill="var(--rio-mountain-front)">
+      <circle cx="94" cy="43" r="3"/>
+      <path d="M90 48h8l2 18H88Zm-15 0h38v4H75Z"/>
+      <path d="M155 126q28-8 39-42 7-21 20-22 15 0 20 23 5 27 37 41Z"/>
+    </g>
+    <path d="M0 122Q90 108 174 125T420 119V170H0Z" fill="var(--rio-sea)"/>
+    <path d="M36 137q36-9 70 0m56 6q48-10 91-1m41-8q34-7 68-1" stroke="var(--surface)" stroke-width="2" stroke-linecap="round" opacity=".7"/>
+    <path d="M0 154Q136 133 245 155T420 153V170H0Z" fill="var(--bg)"/>
+    <path d="M333 154v-43" stroke="var(--rio-ocean)" stroke-width="3"/>
+    <path d="M302 115q31-44 62 0Z" fill="var(--rio-coral)"/>
+    <path d="M321 115q12-44 24 0Z" fill="var(--rio-sun)"/>
+  </svg>
+</section>
+
 <p class="storage-warning" id="storageWarning" role="alert" hidden>Your progress isn’t being saved on this device. Open settings and export a backup before leaving.</p>
 <p class="voice-warning" id="voiceWarning" role="status" hidden></p>
 <main><div id="view" role="tabpanel" tabindex="-1"></div></main>
 
 <footer>
+  <p class="rio-footer-signoff" lang="pt-BR">Um pouquinho de Rio, todo dia.</p>
   Brazilian Portuguese, Rio register &mdash; browse and drill.<br>
   <span lang="pt-BR">Aqui é <s>autocarro</s> ônibus e <s>pequeno-almoço</s> café da manhã.</span> 🇧🇷<br>
   <details class="pron-legend"><summary>How to read pronunciation hints</summary><p>CAPS mark stress; sh is the Rio s before a pause or a voiceless consonant; gh is hard g; ny is nh. Nasal hints such as ng describe a nasal vowel, not a pronounced final g. These are approximate English-based hints — use the Brazilian audio too.</p></details>
