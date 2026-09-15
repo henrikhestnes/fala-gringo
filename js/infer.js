@@ -12,7 +12,7 @@
 // An unseen form whose own shape is regular (the oracle in js/conjugate.js
 // agrees with the stored form — irregular forms never qualify, but the regular
 // forms of a mostly irregular verb do) goes into the "verify" tier when both
-// hold. It is asked once, uncapped; a hit starts at review level 2 (quiz.js
+// hold. It shares the new-card allowance; a hit starts at review level 2 (quiz.js
 // VERIFY_LEVEL), a miss makes it shaky like any other card — and lowers the
 // pattern's solid share, so an over-generous guess corrects itself.
 //

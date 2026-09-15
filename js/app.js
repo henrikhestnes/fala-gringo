@@ -41,7 +41,7 @@
     streakNone: 'no streak yet — today starts one',
     // the settings sheet (⚙): goals, backup, and the tooltips of the top-bar buttons
     settingsTitle: 'Settings and backup',
-    settingsHelp: 'Your daily goal combines reviews and new cards. The Foco deck can offer more; you can stop when you reach your goal. Verbs arrive as whole conjugations.',
+    settingsHelp: 'Your daily goal combines reviews and new cards. Each Foco session is limited to your daily goal size. Confirmations count toward the new-card limit. Verbs arrive as whole conjugations.',
     settingGoalMax: 'Total daily goal',
     settingGoalNew: 'New cards in your goal',
     settingNewPerDay: 'New cards per topic',
@@ -460,7 +460,7 @@
 
   function updateModeButton() {
     const btn = document.getElementById('modeBtn');
-    // aria-pressed reflects Hard Mode, which is the default state.
+    // aria-pressed reflects Hard Mode; new profiles start with hints.
     // "Raiz vs Nutella" is Brazil's own meme for hardcore vs soft.
     btn.setAttribute('aria-pressed', Mode.hard ? 'true' : 'false');
     btn.textContent = Mode.hard ? 'Modo Raiz' : 'Modo Nutella';

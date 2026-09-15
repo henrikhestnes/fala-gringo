@@ -51,11 +51,11 @@ step('first-card help is dismissible and stays dismissed across mounts', functio
   return 'fresh learner sees help; dismissal persists';
 });
 
-step('Hard Mode (Modo Raiz) is the default on a fresh profile', function () {
-  if (!Mode.hard) throw new Error('Mode.hard was false');
-  if (registry.modeBtn.textContent !== 'Modo Raiz')
+step('Modo Nutella is the default on a fresh profile', function () {
+  if (Mode.hard) throw new Error('fresh profile started without hints');
+  if (registry.modeBtn.textContent !== 'Modo Nutella')
     throw new Error('button reads "' + registry.modeBtn.textContent + '"');
-  return 'Mode.hard = true, button reads "Modo Raiz"';
+  return 'Mode.hard = false, button reads "Modo Nutella"';
 });
 
 function goTo(hash) {
@@ -86,6 +86,7 @@ step('every quiz tab renders a usable card', function () {
 });
 
 step('Hard Mode hides the hint, Easy Mode shows it, and the pref persists', function () {
+  Mode.hard = true;
   goTo('#presente');
   if (/card-hint/.test(registry.cardArea.innerHTML)) throw new Error('hint leaked in Hard Mode');
   registry.modeBtn.fire('click');
@@ -418,21 +419,21 @@ step('review level grows only across distinct days and climbs the interval ladde
   Store.recordAnswer('adverbs', id, true);
   if (Store.reviewLevel('adverbs', id) !== 1) throw new Error('same-day repeats raised the level');
   if (Store.cardState('adverbs', id) !== 'ok') throw new Error('fresh card reads ' + Store.cardState('adverbs', id));
-  advanceDays(REVIEW_INTERVALS[0]);                 // 7 days -> first review due
+  advanceDays(REVIEW_INTERVALS[0]);                 // first review interval elapsed
   if (Store.cardState('adverbs', id) !== 'due') throw new Error('not due after ' + REVIEW_INTERVALS[0] + ' days');
   Store.recordAnswer('adverbs', id, true);          // confirmed on a later day -> level 2
   if (Store.reviewLevel('adverbs', id) !== 2) throw new Error('level after a distinct-day confirm is ' + Store.reviewLevel('adverbs', id));
-  advanceDays(REVIEW_INTERVALS[0]);                 // 7 more days: level 2 waits 14
-  if (Store.cardState('adverbs', id) !== 'ok') throw new Error('level-2 card came back after only 7 days');
+  advanceDays(REVIEW_INTERVALS[0]);                 // level 2 waits longer than level 1
+  if (Store.cardState('adverbs', id) !== 'ok') throw new Error('level-2 card came back before its interval');
   advanceDays(REVIEW_INTERVALS[1] - REVIEW_INTERVALS[0]);
-  if (Store.cardState('adverbs', id) !== 'due') throw new Error('level-2 card not due after 14 days');
+  if (Store.cardState('adverbs', id) !== 'due') throw new Error('level-2 card not due after its interval');
   if (Store.overdue('adverbs', id) !== 0) throw new Error('overdue on the due day should be 0, got ' + Store.overdue('adverbs', id));
   Store.recordAnswer('adverbs', id, false);         // a miss restarts the ladder
   if (Store.reviewLevel('adverbs', id) !== 0 || Store.cardState('adverbs', id) !== 'shaky')
     throw new Error('miss did not reset: level ' + Store.reviewLevel('adverbs', id) + ', ' + Store.cardState('adverbs', id));
   // a pre-1.12 record (no `l`) with a last-correct day counts as level 1
   var snap = Store.snapshot();
-  snap.strength.adverbs[id] = { s: 3, m: 0, t: Store.today() - 8 };
+  snap.strength.adverbs[id] = { s: 3, m: 0, t: Store.today() - REVIEW_INTERVALS[0] - 1 };
   seedState(snap);
   if (Store.reviewLevel('adverbs', id) !== 1 || Store.cardState('adverbs', id) !== 'due')
     throw new Error('legacy record: level ' + Store.reviewLevel('adverbs', id) + ', ' + Store.cardState('adverbs', id));
@@ -699,16 +700,18 @@ step('implied reviews: one form of a known-pattern verb is asked, a clean hit co
   snap.mastered.presente = {}; snap.strength.presente = {};
   cards.forEach(function (c) {                       // the whole tab mastered a week+ ago: all due
     snap.mastered.presente[c.id] = 1;
-    snap.strength.presente[c.id] = { s: 1, m: c.id === 'falar|2' ? 2 : 0, l: 1, t: today - REVIEW_INTERVALS[0] - 1 };
+    snap.strength.presente[c.id] = { s: 1, m: c.id === 'falar|2' ? 2 : 0, l: 1, t: today - REVIEW_INTERVALS[0] - (c.id.indexOf('falar|') === 0 ? 2 : 1) };
   });
   seedState(snap);
   goTo('#browse'); goTo('#presente');
   var counts = Quiz._counts();
   var regular = cards.filter(function (c) { return c.infer && c.infer.regular; }).length;
   var irregular = cards.length - regular;
-  if (counts.due + counts.implied !== cards.length) throw new Error('due + implied = ' + (counts.due + counts.implied) + ', not the whole tab');
-  if (!(counts.implied > regular / 2)) throw new Error('only ' + counts.implied + ' of ' + regular + ' regular forms implied');
-  if (counts.due < irregular) throw new Error('irregular forms (' + irregular + ') must all be asked, due is ' + counts.due);
+  var full = Infer.implyDue('presente', cards, cards);
+  var impliedTotal = 0; full.implied.forEach(function (ids) { impliedTotal += ids.length; });
+  if (full.ask.length + impliedTotal !== cards.length) throw new Error('inference lost forms');
+  if (!(impliedTotal > regular / 2) || full.ask.length < irregular) throw new Error('inference coverage changed');
+  if (counts.due !== Store.goalMax()) throw new Error('session not bounded: ' + counts.due);
   if (!/· \d+ due · \d+ implied$/.test(registry.focoChip.innerHTML)) throw new Error('chip reads "' + registry.focoChip.innerHTML + '"');
   // falar: the most-missed form leads, its three siblings ride along
   var falarAsked = cards.filter(function (c) { return c.infer && c.infer.lexeme === 'falar' && Quiz._tierOf(c.id) === 'due'; });
@@ -767,7 +770,7 @@ step('a miss makes only that form shaky; one right answer clears it', function (
   return 'miss -> 1 shaky card (fresh siblings left alone); one hit -> level 1, deck empty';
 });
 
-step('a shaky form drags its UNSEEN siblings in, cap or no cap', function () {
+step('a missed form does not label its unseen siblings shaky', function () {
   var cards = topicCards(topicById('imperfeito'));
   var missed = cards[0];
   var lex = String(missed.id).split('|')[0];
@@ -776,20 +779,20 @@ step('a shaky form drags its UNSEEN siblings in, cap or no cap', function () {
   var snap = Store.snapshot();
   siblings.forEach(function (c) { delete snap.mastered.imperfeito[c.id]; delete snap.strength.imperfeito[c.id]; });
   seedState(snap);
-  Store.setPref('newPerDay', 1);                      // a cap the drag must ignore
+  Store.setPref('newPerDay', 1);                      // intake rounds up to finish the verb
   Store.recordAnswer('imperfeito', missed.id, false);
   goTo('#browse'); goTo('#imperfeito');
   var total = parseInt(registry.statTotal.textContent, 10);
   if (total !== 1 + siblings.length)
     throw new Error('deck has ' + total + ' cards, expected the missed form + its ' + siblings.length + ' unseen siblings');
   siblings.forEach(function (c) {
-    if (Quiz._tierOf(c.id) !== 'shaky') throw new Error('sibling "' + c.id + '" is in tier ' + Quiz._tierOf(c.id));
+    if (Quiz._tierOf(c.id) !== 'new') throw new Error('sibling "' + c.id + '" is in tier ' + Quiz._tierOf(c.id));
   });
-  if (Quiz._counts().new !== 0) throw new Error('unseen siblings leaked into the new tier: ' + JSON.stringify(Quiz._counts()));
+  if (Quiz._counts().shaky !== 1 || Quiz._counts().new !== siblings.length) throw new Error('unseen siblings mislabeled: ' + JSON.stringify(Quiz._counts()));
   Store.setPref('newPerDay', NEW_PER_DAY);
   Store.recordAnswer('imperfeito', missed.id, true);   // tidy up for the steps that follow
   siblings.forEach(function (c) { Store.markMastered('imperfeito', c.id); Store.recordAnswer('imperfeito', c.id, true); });
-  return 'miss -> the form + ' + siblings.length + ' unseen forms of "' + lex + '" in the shaky tier, past a cap of 1';
+  return 'miss -> the form + ' + siblings.length + ' unseen forms of "' + lex + '" as new, rounded to a whole verb';
 });
 
 step('a mastered card comes back for review once it goes stale', function () {
@@ -1127,7 +1130,7 @@ step('today\'s goal is the reviews owed plus at most GOAL_NEW new cards in total
   snap = Store.snapshot();
   snap.mastered.nouns = {}; snap.strength.nouns = {};
   topicCards(topicById('nouns')).slice(0, 3).forEach(function (c) {
-    snap.mastered.nouns[c.id] = 1; snap.strength.nouns[c.id] = { s: 1, m: 0, l: 1, t: d - 8, i: d - 8 };
+    snap.mastered.nouns[c.id] = 1; snap.strength.nouns[c.id] = { s: 1, m: 0, l: 1, t: d - REVIEW_INTERVALS[0] - 1, i: d - REVIEW_INTERVALS[0] - 1 };
   });
   seedState(snap);
   g = Quiz.todayGoal();
@@ -1148,7 +1151,7 @@ step('today\'s goal is the reviews owed plus at most GOAL_NEW new cards in total
   return '6 fresh tabs -> ' + GOAL_NEW + ' new (to presente), not 120; +3 due -> ' + (GOAL_NEW + 3) + '; 4 new done -> ' + (GOAL_NEW - 4) + ' new left; goalNew=0 -> reviews only';
 });
 
-step('a backlog of misses is capped at GOAL_MAX a day and the rest waits; dragged-in siblings count as new', function () {
+step('a backlog of misses is capped at GOAL_MAX a day and the rest waits; unseen siblings count as new', function () {
   Store.resetAll();
   var d = Store.today();
   var cards = topicCards(topicById('presente'));
@@ -1173,7 +1176,7 @@ step('a backlog of misses is capped at GOAL_MAX a day and the rest waits; dragge
   App.refreshGoal();
   if (!/goal-btn done/.test(registry.goalBtn.className)) throw new Error('ring not closed');
   if (!/Daily goal done! 170 reviews still wait/.test(registry.goalBtn.getAttribute('title'))) throw new Error('tooltip: ' + registry.goalBtn.getAttribute('title'));
-  // one missed verb form drags its unseen siblings into the deck's shaky tier — the goal counts them as new
+  // one missed verb form is a review; its unseen siblings count as new in both deck and goal
   Store.resetTopic('presente');
   Store.markDrilled('presente');
   snap = Store.snapshot();
@@ -1186,8 +1189,8 @@ step('a backlog of misses is capped at GOAL_MAX a day and the rest waits; dragge
   if (p.reviews !== 1 || p.fresh !== GOAL_NEW) throw new Error('one miss + siblings: ' + JSON.stringify({ reviews: p.reviews, fresh: p.fresh, left: p.left }));
   goTo('#presente');
   var c = Quiz._counts();
-  if (c.shaky !== ser.length) throw new Error('the deck should still hold the form + its ' + (ser.length - 1) + ' unseen siblings as shaky, got ' + c.shaky);
-  return '200 missed -> goal ' + GOAL_MAX + ', 170 wait; 30 right closes it ("still wait", not Tudo em dia); ser miss = 1 review + siblings as new, deck tier unchanged';
+  if (c.shaky !== 1) throw new Error('only the missed form should be shaky, got ' + c.shaky);
+  return '200 missed -> goal ' + GOAL_MAX + ', 170 wait; 30 right closes it ("still wait", not Tudo em dia); ser miss = 1 review + siblings as new in both deck and goal';
 });
 
 /* ------------------------------------------------ the Daily's own streak (1.20) */
@@ -1627,4 +1630,40 @@ step('finished Foco can introduce another whole-verb batch without raising the d
     if (!/answerInput/.test(registry.cardArea.innerHTML)) throw new Error('extra intake lost after remount');
     return extra.length + ' extra cards; complete verbs; Foco and daily limit preserved';
   } finally { Infer.likelyKnown = originalLikely; }
+});
+
+step('hundreds of inferred confirmations share intake and cannot refill automatically', function () {
+  Store.resetAll();
+  Store.setPref('foco', true); Store.setPref('mic', false);
+  Store.setPref('newPerDay', 20); Store.setPref('goalMax', 30);
+  var t = topicById('presente'), cards = topicCards(t), seed = Store.snapshot(), d = Store.today();
+  seed.mastered.presente = {}; seed.strength.presente = {};
+  var patterns = {}, words = {};
+  cards.forEach(function (c) {
+    if (!c.infer) return;
+    var p = c.infer.pattern;
+    if (!words[c.infer.lexeme] || (c.infer.regular && (patterns[p] || 0) < Infer.PATTERN_MIN)) {
+      words[c.infer.lexeme] = true;
+      if (c.infer.regular) patterns[p] = (patterns[p] || 0) + 1;
+      seed.mastered.presente[c.id] = 1;
+      seed.strength.presente[c.id] = { s: 2, m: 0, l: 2, t: d, i: d - 20, a: d - 1, f: d - 20 };
+    }
+  });
+  seedState(seed);
+  var likely = Infer.likelyKnown(t.id, cards, cards.filter(function (c) { return Store.cardState(t.id, c.id) === 'new'; }));
+  if (likely.size < 100) throw new Error('fixture did not create a large confirmation pool: ' + likely.size);
+  Quiz.mount(t);
+  var n = Number(registry.statTotal.textContent), c = Quiz._counts();
+  if (!c.verify || n > 23 || c.verify + c.new !== n || Store.introducedToday(t.id) !== n) throw new Error('confirmations bypassed intake: ' + JSON.stringify(c));
+  for (var i = 0; i < n; i++) {
+    var card = shownCard(t.id);
+    registry.answerInput.value = card.answer; registry.actionBtn.fire('click'); registry.actionBtn.fire('click');
+  }
+  Quiz.mount(t);
+  if (Number(registry.statTotal.textContent) !== 0 || Store.introducedToday(t.id) !== n) throw new Error('same-day reload silently added confirmations');
+  if (!registry.moreNewBtn) throw new Error('explicit extra practice missing');
+  registry.moreNewBtn.fire('click');
+  if (!Number(registry.statTotal.textContent) || Number(registry.statTotal.textContent) > 30) throw new Error('explicit extra intake did not produce a bounded session');
+  Store.resetAll();
+  return likely.size + ' eligible confirmations → ' + n + ' admitted; reload stays empty; explicit extra intake works';
 });

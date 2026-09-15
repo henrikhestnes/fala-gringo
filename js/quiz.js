@@ -2,8 +2,8 @@
 //
 // Core loop kept from the source flashcards repo (credited in the README): a card answered
 // wrongly is NOT marked known — it stays in the deck and comes back around until
-// you get it right. Batching is gone; a deck is the whole topic minus any group
-// chips you switch off, filtered to the Foco cards while the 🎯 chip is on (the default).
+// you get it right. Foco offers a bounded session; switching it off drills the
+// whole topic minus any group chips you switch off.
 
 /* Every user-facing string in the engine, so a page teaching another language
    can reword the chrome (window.APP_STRINGS, set before this file loads — the
@@ -11,10 +11,10 @@
    tfill(). Card-level text (prompt, sub, tips) comes from the topic builders
    and needs nothing here. */
 const QUIZ_STRINGS = Object.assign({
-  focoTitle: 'The cards needing work, reviews first: due (after 7, 14, 30, 60, then 120 days ' +
+  focoTitle: 'A short session, limited by your daily goal setting. The cards needing work, reviews first: due (after 7, 14, 30, 60, then 120 days ' +
              'of confirmed answers), missed (until answered right again), ' +
              'forms you likely know from the verb and the pattern (one quick confirmation), ' +
-             'and up to {cap} new cards a day. Switch off to drill the whole deck.',
+             'and up to {cap} new cards a day, including confirmations. Switch off to drill the whole deck.',
   focoChip: '🎯 Foco',
   focoDue: '{n} due',
   focoImplied: '{n} implied',
@@ -50,6 +50,7 @@ const QUIZ_STRINGS = Object.assign({
   errorsMade: 'Errors made',
   hardCards: 'Hard Mode cards',
   startOver: 'Start over ↻',
+  morePractice: 'Practice another session →',
   moreNew: 'Keep practicing · {n} new cards →',
   answerIs: 'The answer is',
   also: 'also',                       // the card's other synonyms, after the answer
@@ -152,15 +153,11 @@ const Quiz = (function () {
 
   /* The Foco deck (the default) — the cards needing work, in tiers:
        due     mastered cards whose review interval ran out, most overdue first
-       shaky   missed and not answered right since — plus the UNSEEN forms of
-               the same verb (a shaky form is a reason to meet the rest of the
-               conjugation now, cap or no cap; its fresh, mastered siblings are
-               left alone and its due ones are simply due)
-       verify  unseen forms the learner very likely knows already (js/infer.js:
-               the verb is known and the pattern is known) — asked once, uncapped
-       new     unseen cards, at most Store.newPerDay() introduced per day, taken
-               in data order (the curated "essentials first" order) by whole
-               lexeme so a verb arrives with all its forms
+       shaky   only forms actually missed and not answered right since
+       verify  likely-known unseen forms, sharing the daily new-card allowance
+       new     unseen cards introduced in whole lexemes, in curated data order
+     Each session starts with at most Store.goalMax() cards (30 by default).
+     Failed implied reviews can reclaim their siblings for immediate practice.
      Reviews come before new material so a short session still does what matters.
      Switching the chip off drills the whole topic.
 
@@ -169,34 +166,30 @@ const Quiz = (function () {
      learner today (todayGoal) — and focusDeck() turns the plan for the mounted
      topic into the deck, stamping today's intake. */
   function focoPlan(topicId, cards) {
-    const weak = new Set();
-    cards.forEach(c => { if (Store.isShaky(topicId, c.id)) weak.add(lexeme(c)); });
-
-    const due = [], shaky = [], dragged = [], unseen = [];
+    const due = [], shaky = [], unseen = [];
     cards.forEach(c => {
       const st = Store.cardState(topicId, c.id);
       if (st === 'shaky') shaky.push(c);
       else if (st === 'due') due.push(c);
-      else if (st === 'new') (weak.has(lexeme(c)) ? dragged : unseen).push(c);   // dragged in by a shaky sibling
+      else if (st === 'new') unseen.push(c);
     });
 
-    // inferred-known forms skip the queue (a quick confirmation, not a lesson)
+    // Confirmations are still new material and share the intake allowance.
     const likely = (window.Infer && Infer.likelyKnown) ? Infer.likelyKnown(topicId, cards, unseen) : new Set();
-    const verify = unseen.filter(c => likely.has(c.id));
 
     // today's intake: what was already introduced today comes back for free,
     // then whole lexemes in data order until the cap is reached
     const today = Store.today();
     const fresh = [], intake = [];
     unseen.forEach(c => {
-      if (likely.has(c.id)) return;
       if (Store.introducedOn(topicId, c.id) === today) intake.push(c); else fresh.push(c);
     });
     let room = Store.newPerDay() - Store.introducedToday(topicId);
     let waiting = 0;
     const byLex = new Map();
     fresh.forEach(c => { const k = lexeme(c); if (!byLex.has(k)) byLex.set(k, []); byLex.get(k).push(c); });
-    byLex.forEach(group => {
+    Array.from(byLex.values()).sort((a, b) =>
+      Number(b.some(c => likely.has(c.id))) - Number(a.some(c => likely.has(c.id)))).forEach(group => {
       if (room > 0) { intake.push(...group); room -= group.length; }
       else waiting += group.length;
     });
@@ -208,31 +201,36 @@ const Quiz = (function () {
     // most overdue first; shuffle BEFORE the (stable) sort so equally overdue
     // cards — most of them, on any given day — don't come out in data order
     const dueOrdered = shuffle(thinned.ask).sort((a, b) => Store.overdue(topicId, b.id) - Store.overdue(topicId, a.id));
-    // `shaky` is the missed cards; `dragged` the unseen siblings that ride into
-    // the same tier of the deck — new cards, as far as today's goal is concerned
-    return { due: dueOrdered, implied: thinned.implied, shaky: shuffle(shaky), dragged: shuffle(dragged),
-             verify: shuffle(verify), intake: shuffle(intake), waiting: waiting };
+    return { due: dueOrdered, implied: thinned.implied, shaky: shuffle(shaky),
+             verify: shuffle(intake.filter(c => likely.has(c.id))),
+             intake: shuffle(intake.filter(c => !likely.has(c.id))), waiting: waiting };
   }
 
   function focusDeck(cards) {
     const plan = focoPlan(topic.id, cards);
-    impliedBy = plan.implied;
+    // Keep the backlog in the store; only this session's cards enter the deck.
+    let room = Store.goalMax();
+    ['due', 'shaky', 'verify', 'intake'].forEach(key => {
+      plan[key] = plan[key].slice(0, room);
+      room -= plan[key].length;
+    });
+    impliedBy = new Map();
+    plan.due.forEach(c => {
+      if (plan.implied.has(c.id)) impliedBy.set(c.id, plan.implied.get(c.id));
+    });
     let impliedN = 0;
     impliedBy.forEach(ids => { impliedN += ids.length; });
 
-    const shakyTier = shuffle(plan.shaky.concat(plan.dragged));
-    const tiers = [['due', plan.due], ['shaky', shakyTier], ['verify', plan.verify], ['new', plan.intake]];
+    const tiers = [['due', plan.due], ['shaky', plan.shaky], ['verify', plan.verify], ['new', plan.intake]];
     tierOf = new Map();
     const out = [];
     tiers.forEach(([name, list]) => list.forEach(c => { tierOf.set(c.id, name); out.push(c); }));
-    counts = { due: plan.due.length, implied: impliedN, shaky: shakyTier.length, verify: plan.verify.length,
+    counts = { due: plan.due.length, implied: impliedN, shaky: plan.shaky.length, verify: plan.verify.length,
                new: plan.intake.length, waiting: plan.waiting };
 
-    // stamp every never-seen card that made it into today's deck (new, or dragged
-    // in by a shaky sibling) as introduced today; verify cards are re-inferred on
-    // every rebuild and must not eat into the intake
+    // Only admitted cards spend intake, including inferred confirmations.
     Store.markIntroduced(topic.id, out.filter(c =>
-      tierOf.get(c.id) !== 'verify' && Store.cardState(topic.id, c.id) === 'new').map(c => c.id));
+      Store.cardState(topic.id, c.id) === 'new').map(c => c.id));
     return out;
   }
 
@@ -250,13 +248,12 @@ const Quiz = (function () {
   /* Today's goal, the number on the ring in the top bar, across the tabs the
      learner actually drills (Store.isActiveTopic — the tabs encode a level, so
      a beginner's goal never includes the subjunctive). At most Store.goalMax()
-     cards a day: the REVIEWS Foco owes first (due + missed — the unseen
-     siblings a missed verb form drags into the deck are new cards here), then
-     up to Store.goalNew() NEW cards in total (verify, intake, dragged) if room
+     cards a day: the REVIEWS Foco owes first (due + missed), then
+     up to Store.goalNew() NEW cards in total (verify, intake) if room
      is left. Both allowances are spent by what was already got right today,
      and handed to the tabs in registry order (beginner tabs first). Reviews
      beyond today's ceiling are `waiting`: shown, not owed — a backlog is paid
-     off at the learner's pace, and Foco keeps offering all of it. Computed
+     off at the learner's pace, and Foco offers it in optional sessions. Computed
      from the store alone, so it follows every answer and is the same whichever
      tab is open. */
   function todayGoal() {
@@ -276,7 +273,7 @@ const Quiz = (function () {
     });
     allowance = Math.min(allowance, room);
     plans.forEach(({ plan }, i) => {                          // then new cards, in the room left
-      const pool = plan.verify.length + plan.intake.length + plan.dragged.length;
+      const pool = plan.verify.length + plan.intake.length;
       const take = Math.min(pool, allowance);
       allowance -= take; fresh += take;
       per[i].fresh = take; per[i].left += take;
@@ -360,12 +357,20 @@ const Quiz = (function () {
   }
 
   function moreNewHtml() {
+    if (!topic || !focusOn()) return '';
+    const plan = focoPlan(topic.id, topicCards(topic).filter(c => !activeGroups || activeGroups.has(c.group)));
+    if (plan.due.length || plan.shaky.length || plan.verify.length || plan.intake.length) {
+      return '<div class="controls"><button class="btn primary" id="moreReviewBtn" type="button">' +
+        escapeHtml(QUIZ_STRINGS.morePractice) + '</button></div>';
+    }
     const batch = nextNewBatch();
     return batch.length ? '<div class="controls"><button class="btn primary" id="moreNewBtn" type="button">' +
       escapeHtml(tfill(QUIZ_STRINGS.moreNew, { n: batch.length })) + '</button></div>' : '';
   }
 
   function bindMoreNew() {
+    const review = document.getElementById('moreReviewBtn');
+    if (review) review.addEventListener('click', buildDeck);
     const button = document.getElementById('moreNewBtn');
     if (button) button.addEventListener('click', () => {
       // Explicit extra intake, not a permanent change to the daily limit.
@@ -545,7 +550,7 @@ const Quiz = (function () {
       (firstCard ? '<aside class="answer-guide" id="answerGuide">' +
         '<strong>Your first card</strong><p id="answerGuideHelp">Read the English below and type its Portuguese translation. ' +
         'Press Enter or the arrow to check. It’s okay to guess — mistakes come back for another try.</p>' +
-        '<p>Need a clue? Switch Modo Raiz to Modo Nutella at the top for hints.</p>' +
+        '<p>Modo Nutella shows hints. Try Modo Raiz at the top when you’re ready to answer without them.</p>' +
         '<button class="btn" id="dismissAnswerGuide" type="button">Got it</button></aside>' : '') +
       '<div class="card">' +
         '<div class="card-meta"><span>' + escapeHtml(card.meta) + '</span>' + hint + '</div>' +

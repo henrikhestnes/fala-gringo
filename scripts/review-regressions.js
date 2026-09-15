@@ -197,3 +197,36 @@ step('new local events advance beyond imported reset and Daily clocks', function
   if (Store.snapshot().resets.all <= future) throw new Error('reset failed to advance past the imported clock');
   return 'local Daily replaces the imported one; a reset stamps past an imported future clock';
 });
+
+step('Foco bounds large review backlogs and makes another session an explicit choice', function () {
+  Store.resetAll();
+  Store.setPref('foco', true); Store.setPref('mic', false);
+  Store.setPref('goalMax', 5);
+  const t = TOPICS.filter(t => t.kind === 'quiz').sort((a, b) => topicCards(b).length - topicCards(a).length)[0];
+  const cards = topicCards(t), d = Store.today();
+  const seed = Store.snapshot();
+  seed.mastered[t.id] = {}; seed.strength[t.id] = {};
+  cards.slice(0, 40).forEach((c, i) => {
+    seed.mastered[t.id][c.id] = 1;
+    // Missed cards exercise the backlog without inferred sibling compression.
+    seed.strength[t.id][c.id] = { s: 0, m: 1, l: 0, t: d - 10, i: d - 20 };
+  });
+  seedState(seed);
+  Quiz.mount(t);
+  if (Quiz._counts().shaky !== 5 || Number(registry.statTotal.textContent) !== 5) throw new Error('backlog escaped session limit');
+  if (Store.introducedToday(t.id)) throw new Error('deferred intake spent the daily allowance');
+  const asked = [];
+  for (let i = 0; i < 5; i++) {
+    const c = shownCard(t.id); asked.push(c.id);
+    registry.answerInput.value = c.answer; registry.actionBtn.fire('click'); registry.actionBtn.fire('click');
+  }
+  if (!registry.moreReviewBtn || !/done-screen/.test(registry.cardArea.innerHTML)) throw new Error('session did not finish with optional continuation');
+  if (cards.slice(0, 40).filter(c => Store.cardState(t.id, c.id) === 'shaky').length !== 35) throw new Error('deferred reviews were cleared');
+  registry.moreReviewBtn.fire('click');
+  if (Number(registry.statTotal.textContent) !== 5 || asked.some(id => Quiz._tierOf(id))) throw new Error('next session replayed fresh cards or exceeded limit');
+  Quiz.toggleFocus();
+  if (Number(registry.statTotal.textContent) !== cards.length) throw new Error('Foco off no longer offers whole topic');
+  Store.setPref('goalMax', GOAL_MAX); Store.setPref('foco', true);
+  Store.resetAll();
+  return '40 misses → 5-card session → explicit next 5; deferred cards intact; Foco off offers all';
+});

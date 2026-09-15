@@ -98,7 +98,13 @@
 // 1.24.4: restore solid white surfaces to inactive topic tabs
 // 1.25.0: Rio welcome/footer, first-run guidance and optional sync setup,
 //         plus explicit extra batches of new cards after finishing Foco
-const APP_VERSION = '1.25.0';
+// 1.25.1: bounded Foco sessions; confirmations share intake; misses no longer recruit unseen forms
+// 1.25.2: Modo Nutella by default for new profiles; saved mode choices preserved
+// 1.25.3: longer review intervals and one-level setbacks per unresolved lapse
+// 1.25.4: middle-ground review schedule (10/21/45/90/180 days)
+// 1.25.5: original review intervals restored; gentler mistake penalties retained
+// 1.25.6: original mistake penalty restored; session and mode changes retained
+const APP_VERSION = '1.25.6';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

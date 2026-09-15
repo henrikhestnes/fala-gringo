@@ -158,6 +158,8 @@ step('the phrases tab drills with theme chips and accepts an alternative phrase'
 });
 
 step('Modo Raiz hides the hint; Modo Nutella shows the infinitive', function () {
+  if (Mode.hard) throw new Error('fresh profile started without hints');
+  Mode.hard = true;
   goTo('#verbos');
   if (/card-hint/.test(registry.cardArea.innerHTML)) throw new Error('hint leaked in Modo Raiz');
   registry.modeBtn.fire('click');
@@ -166,7 +168,7 @@ step('Modo Raiz hides the hint; Modo Nutella shows the infinitive', function () 
   var card = shownCard('verbos');
   if (m[1] !== escapeHtml(card.hint)) throw new Error('hint is "' + m[1] + '"');
   if (!/^å /.test(card.hint)) throw new Error('hint is not an infinitive: ' + card.hint);
-  registry.modeBtn.fire('click');                            // back to the default
+  registry.modeBtn.fire('click');                            // saved Hard Mode choice
   return 'hint "' + m[1] + '" only in Modo Nutella';
 });
 

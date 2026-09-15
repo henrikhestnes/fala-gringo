@@ -49,8 +49,8 @@ const GOAL_NEW = 10;
    backlog of 200 missed forms is weeks of lapses — a daily goal that only
    closes when the whole debt is paid is the opposite of a habit), then the new
    cards up to GOAL_NEW if there is room. Once this many are right today the
-   ring closes; whatever still waits is shown, not owed. Foco itself keeps
-   offering everything. The `goalMax` pref overrides it on a device. */
+   ring closes; whatever still waits is shown, not owed. Foco offers optional
+   sessions of this size. The `goalMax` pref overrides it on a device. */
 const GOAL_MAX = 30;
 
 /* A tab counts as one of the learner's own — part of today's goal in the top
@@ -230,13 +230,13 @@ const Store = (function () {
             and does not move `t` — a miss resets it to 0
          i  the day Foco first introduced the card     a  the day of the last
             direct correct answer (today's goal)        f  the day of the FIRST
-            direct correct answer (the new-card allowance — a verify card is
-            never "introduced", so `i` alone would let it slip past the cap)
+            direct correct answer (the new-card allowance; older verify records
+            may have no introduction day)
          u  event stamp (for the reset generations in the merge)
        A single correct answer proves little, so a card stays "shaky" from its
        first miss until it has been answered correctly FOCUS_STREAK times in a
        row. Records written before 1.12 have no `l`: a card with a last-correct
-       day counts as level 1, i.e. exactly the old fixed 7-day review. --- */
+       day counts as level 1 on the current schedule. --- */
     recordAnswer(topicId, cardId, correct, minLevel, near, implied) {
       if (!state.strength[topicId]) state.strength[topicId] = {};
       const s = state.strength[topicId][cardId] || { s: 0, m: 0 };
@@ -543,11 +543,10 @@ const Store = (function () {
   return api;
 })();
 
-/* Difficulty. Hard Mode is the DEFAULT: the Portuguese infinitive (or other
-   answer-revealing hint) is withheld, so the English prompt alone must identify
-   the answer. Easy Mode shows the hint. */
+/* Difficulty. New profiles start in Modo Nutella with hints. A saved choice
+   always wins. Modo Raiz hides hints, so prompts must still identify the answer. */
 const Mode = {
-  get hard() { return Store.getPref('hardMode', true) !== false; },
+  get hard() { return Store.getPref('hardMode', false) !== false; },
   set hard(v) { Store.setPref('hardMode', !!v); },
   toggle() { this.hard = !this.hard; return this.hard; }
 };

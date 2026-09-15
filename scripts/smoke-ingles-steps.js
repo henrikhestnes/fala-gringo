@@ -121,6 +121,8 @@ step('the phrasal tab drills with theme chips and a tip reveal', function () {
 });
 
 step('Modo Raiz hides the English hint; Modo Nutella shows the base verb', function () {
+  if (Mode.hard) throw new Error('fresh profile started without hints');
+  Mode.hard = true;
   goTo('#irregulares');
   if (/card-hint/.test(registry.cardArea.innerHTML)) throw new Error('hint leaked in Modo Raiz');
   registry.modeBtn.fire('click');
@@ -128,7 +130,7 @@ step('Modo Raiz hides the English hint; Modo Nutella shows the base verb', funct
   if (!m) throw new Error('no hint in Modo Nutella');
   var card = shownCard('irregulares');
   if (m[1] !== escapeHtml(card.hint)) throw new Error('hint is "' + m[1] + '"');
-  registry.modeBtn.fire('click');                            // back to the default
+  registry.modeBtn.fire('click');                            // saved Hard Mode choice
   return 'hint "' + m[1] + '" only in Modo Nutella';
 });
 
