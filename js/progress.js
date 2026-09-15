@@ -49,8 +49,8 @@ const GOAL_NEW = 10;
    backlog of 200 missed forms is weeks of lapses — a daily goal that only
    closes when the whole debt is paid is the opposite of a habit), then the new
    cards up to GOAL_NEW if there is room. Once this many are right today the
-   ring closes; whatever still waits is shown, not owed. Foco offers optional
-   sessions of this size. The `goalMax` pref overrides it on a device. */
+   ring closes; whatever still waits is shown, not owed. Foco itself keeps
+   offering everything. The `goalMax` pref overrides it on a device. */
 const GOAL_MAX = 30;
 
 /* A tab counts as one of the learner's own — part of today's goal in the top
