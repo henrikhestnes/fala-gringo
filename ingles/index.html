@@ -29,7 +29,7 @@
       <span aria-hidden="true" style="font-style:normal;font-size:1.25em;line-height:1">🇺🇸</span>
       Fala Como Gringo</a>
     <button class="goal-btn" id="goalBtn" type="button" hidden aria-label="Meta de hoje e sequência"></button>
-    <button class="mode-btn" id="modeBtn" type="button" aria-pressed="true">Modo Raiz</button>
+    <button class="mode-btn" id="modeBtn" type="button" aria-pressed="false">Modo Nutella</button>
     <button class="icon-btn" id="syncBtn" type="button" aria-label="Sincronizar o progresso entre aparelhos" title="Sincronizar o progresso entre aparelhos">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M8 3v14m0 0-4-4m4 4 4-4"></path>
@@ -77,9 +77,9 @@ window.APP_STRINGS = {
   answerLabel: "Sua resposta em inglês",
   checkLabel: "Conferir resposta",
   nextLabel: "Próximo cartão",
-  focoTitle: 'As cartas que precisam de atenção, revisões primeiro: vencidas (após 7, 14, 30, 60 ' +
+  focoTitle: 'Uma sessão curta, limitada pelo tamanho da sua meta diária. As cartas que precisam de atenção, revisões primeiro: vencidas (após 7, 14, 30, 60 ' +
              'e depois 120 dias de acertos confirmados), erradas (até acertar de novo) ' +
-             'e até {cap} cartas novas por dia. Desligue para treinar o baralho inteiro.',
+             'e até {cap} cartas novas por dia, incluindo confirmações. Desligue para treinar o baralho inteiro.',
   focoChip: '🎯 Foco',
   focoDue: '{n} p/ revisar',
   focoImplied: '{n} implícitas',
@@ -98,6 +98,7 @@ window.APP_STRINGS = {
   emptyFocoTitle: 'Tudo em dia! 🎯',
   emptyFocoBody: 'Todas as cartas daqui estão dominadas e frescas. As revisões voltam num ritmo ' +
                  'crescente (7, 14, 30… dias) — ou desligue o Foco para treinar tudo agora.',
+  morePractice: 'Praticar mais uma sessão →',
   moreNew: 'Continuar praticando · {n} cartões novos →',
   emptyFocoWaiting: 'Nada vencido e as novas de hoje já foram — {n} esperam por amanhã. ' +
                     'Desligue o Foco para treinar tudo agora.',
@@ -160,7 +161,7 @@ window.APP_STRINGS = {
   streakNone: 'sem sequência ainda — hoje começa uma',
   // configurações e backup (⚙, js/app.js)
   settingsTitle: 'Configurações e backup',
-  settingsHelp: 'A meta diária soma suas revisões e cartas novas. O baralho Foco pode oferecer mais cartas; você pode parar quando bater a meta. Verbos entram com a conjugação inteira.',
+  settingsHelp: 'A meta diária soma suas revisões e cartas novas. Cada sessão do Foco tem no máximo o tamanho da meta diária. Confirmações contam no limite de cartas novas. Verbos entram com a conjugação inteira.',
   settingGoalMax: 'Meta diária total',
   settingGoalNew: 'Cartas novas na meta',
   settingNewPerDay: 'Cartas novas por aba',

@@ -296,7 +296,7 @@ function runChecks() {
   });
 
   /* --------------------------------------------------------- answerable --- */
-  /* The load-bearing guarantee: Hard Mode is the default, so the prompt is all the
+  /* The load-bearing guarantee: Hard Mode hides hints, so the prompt is all the
      learner sees. No prompt may be satisfied by two different answers. */
 
   const stripTags = s => String(s == null ? '' : s).replace(/<[^>]*>/g, '');
@@ -304,7 +304,7 @@ function runChecks() {
   /* Everything the learner can see before answering. For the connecting-words
      topic that includes the blanked Portuguese line, which is what distinguishes
      two cards built from the same English sentence. The Easy Mode hint is
-     deliberately excluded — Hard Mode is the default and must be answerable. */
+     deliberately excluded — Hard Mode must be answerable without it. */
   const visible = c => stripTags(c.prompt) + ' ' + stripTags(c.target);
 
   const strictKey = c => normalize(visible(c));
