@@ -135,8 +135,9 @@ const THEME_JS = "try{var p=JSON.parse(localStorage.getItem('pvs:v1')||'{}').pre
   "if(p.theme==='light'||p.theme==='dark')document.documentElement.setAttribute('data-theme',p.theme);}catch(e){}";
 
 function page(opts) {
-  return '<!DOCTYPE html>\n<html lang="en">\n<head>\n' +
+  return '<!DOCTYPE html>\n<html lang="en" translate="no">\n<head>\n' +
     '<meta charset="UTF-8">\n' +
+    '<meta name="google" content="notranslate">\n' +
     '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n' +
     '<meta name="theme-color" content="#009c3b">\n' +
     '<title>' + esc(opts.title) + '</title>\n' +
