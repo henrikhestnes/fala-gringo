@@ -2,8 +2,8 @@
 //
 // Core loop kept from the source flashcards repo (credited in the README): a card answered
 // wrongly is NOT marked known — it stays in the deck and comes back around until
-// you get it right. Foco offers a bounded session; switching it off drills the
-// whole topic minus any group chips you switch off.
+// you get it right. Foco offers the full eligible queue; switching it off drills
+// the whole topic minus any group chips you switch off.
 
 /* Every user-facing string in the engine, so a page teaching another language
    can reword the chrome (window.APP_STRINGS, set before this file loads — the
@@ -11,7 +11,7 @@
    tfill(). Card-level text (prompt, sub, tips) comes from the topic builders
    and needs nothing here. */
 const QUIZ_STRINGS = Object.assign({
-  focoTitle: 'A short session, limited by your daily goal setting. The cards needing work, reviews first: due (after 7, 14, 30, 60, then 120 days ' +
+  focoTitle: 'The cards needing work, reviews first: due (after 7, 14, 30, 60, then 120 days ' +
              'of confirmed answers), missed (until answered right again), ' +
              'forms you likely know from the verb and the pattern (one quick confirmation), ' +
              'and up to {cap} new cards a day, including confirmations. Switch off to drill the whole deck.',
@@ -50,7 +50,6 @@ const QUIZ_STRINGS = Object.assign({
   errorsMade: 'Errors made',
   hardCards: 'Hard Mode cards',
   startOver: 'Start over ↻',
-  morePractice: 'Practice another session →',
   moreNew: 'Keep practicing · {n} new cards →',
   answerIs: 'The answer is',
   also: 'also',                       // the card's other synonyms, after the answer
@@ -156,7 +155,7 @@ const Quiz = (function () {
        shaky   only forms actually missed and not answered right since
        verify  likely-known unseen forms, sharing the daily new-card allowance
        new     unseen cards introduced in whole lexemes, in curated data order
-     Each session starts with at most Store.goalMax() cards (30 by default).
+     All eligible reviews are included; the daily goal does not limit the deck.
      Failed implied reviews can reclaim their siblings for immediate practice.
      Reviews come before new material so a short session still does what matters.
      Switching the chip off drills the whole topic.
@@ -208,16 +207,7 @@ const Quiz = (function () {
 
   function focusDeck(cards) {
     const plan = focoPlan(topic.id, cards);
-    // Keep the backlog in the store; only this session's cards enter the deck.
-    let room = Store.goalMax();
-    ['due', 'shaky', 'verify', 'intake'].forEach(key => {
-      plan[key] = plan[key].slice(0, room);
-      room -= plan[key].length;
-    });
-    impliedBy = new Map();
-    plan.due.forEach(c => {
-      if (plan.implied.has(c.id)) impliedBy.set(c.id, plan.implied.get(c.id));
-    });
+    impliedBy = plan.implied;
     let impliedN = 0;
     impliedBy.forEach(ids => { impliedN += ids.length; });
 
@@ -253,7 +243,7 @@ const Quiz = (function () {
      is left. Both allowances are spent by what was already got right today,
      and handed to the tabs in registry order (beginner tabs first). Reviews
      beyond today's ceiling are `waiting`: shown, not owed — a backlog is paid
-     off at the learner's pace, and Foco offers it in optional sessions. Computed
+     off at the learner's pace, and Foco keeps offering all of it. Computed
      from the store alone, so it follows every answer and is the same whichever
      tab is open. */
   function todayGoal() {
@@ -358,19 +348,12 @@ const Quiz = (function () {
 
   function moreNewHtml() {
     if (!topic || !focusOn()) return '';
-    const plan = focoPlan(topic.id, topicCards(topic).filter(c => !activeGroups || activeGroups.has(c.group)));
-    if (plan.due.length || plan.shaky.length || plan.verify.length || plan.intake.length) {
-      return '<div class="controls"><button class="btn primary" id="moreReviewBtn" type="button">' +
-        escapeHtml(QUIZ_STRINGS.morePractice) + '</button></div>';
-    }
     const batch = nextNewBatch();
     return batch.length ? '<div class="controls"><button class="btn primary" id="moreNewBtn" type="button">' +
       escapeHtml(tfill(QUIZ_STRINGS.moreNew, { n: batch.length })) + '</button></div>' : '';
   }
 
   function bindMoreNew() {
-    const review = document.getElementById('moreReviewBtn');
-    if (review) review.addEventListener('click', buildDeck);
     const button = document.getElementById('moreNewBtn');
     if (button) button.addEventListener('click', () => {
       // Explicit extra intake, not a permanent change to the daily limit.

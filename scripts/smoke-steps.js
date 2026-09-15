@@ -711,7 +711,7 @@ step('implied reviews: one form of a known-pattern verb is asked, a clean hit co
   var impliedTotal = 0; full.implied.forEach(function (ids) { impliedTotal += ids.length; });
   if (full.ask.length + impliedTotal !== cards.length) throw new Error('inference lost forms');
   if (!(impliedTotal > regular / 2) || full.ask.length < irregular) throw new Error('inference coverage changed');
-  if (counts.due !== Store.goalMax()) throw new Error('session not bounded: ' + counts.due);
+  if (counts.due + counts.implied !== cards.length) throw new Error('Foco omitted eligible due reviews');
   if (!/· \d+ due · \d+ implied$/.test(registry.focoChip.innerHTML)) throw new Error('chip reads "' + registry.focoChip.innerHTML + '"');
   // falar: the most-missed form leads, its three siblings ride along
   var falarAsked = cards.filter(function (c) { return c.infer && c.infer.lexeme === 'falar' && Quiz._tierOf(c.id) === 'due'; });

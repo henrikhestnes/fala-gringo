@@ -41,7 +41,7 @@
     streakNone: 'no streak yet — today starts one',
     // the settings sheet (⚙): goals, backup, and the tooltips of the top-bar buttons
     settingsTitle: 'Settings and backup',
-    settingsHelp: 'Your daily goal combines reviews and new cards. Each Foco session is limited to your daily goal size. Confirmations count toward the new-card limit. Verbs arrive as whole conjugations.',
+    settingsHelp: 'Your daily goal combines reviews and new cards. Foco offers the full review queue; you can stop when you reach your goal. Confirmations count toward the new-card limit. Verbs arrive as whole conjugations.',
     settingGoalMax: 'Total daily goal',
     settingGoalNew: 'New cards in your goal',
     settingNewPerDay: 'New cards per topic',

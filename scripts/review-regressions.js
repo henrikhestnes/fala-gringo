@@ -198,7 +198,7 @@ step('new local events advance beyond imported reset and Daily clocks', function
   return 'local Daily replaces the imported one; a reset stamps past an imported future clock';
 });
 
-step('Foco bounds large review backlogs and makes another session an explicit choice', function () {
+step('Foco offers every eligible review regardless of the daily goal size', function () {
   Store.resetAll();
   Store.setPref('foco', true); Store.setPref('mic', false);
   Store.setPref('goalMax', 5);
@@ -213,20 +213,14 @@ step('Foco bounds large review backlogs and makes another session an explicit ch
   });
   seedState(seed);
   Quiz.mount(t);
-  if (Quiz._counts().shaky !== 5 || Number(registry.statTotal.textContent) !== 5) throw new Error('backlog escaped session limit');
-  if (Store.introducedToday(t.id)) throw new Error('deferred intake spent the daily allowance');
-  const asked = [];
-  for (let i = 0; i < 5; i++) {
-    const c = shownCard(t.id); asked.push(c.id);
-    registry.answerInput.value = c.answer; registry.actionBtn.fire('click'); registry.actionBtn.fire('click');
-  }
-  if (!registry.moreReviewBtn || !/done-screen/.test(registry.cardArea.innerHTML)) throw new Error('session did not finish with optional continuation');
-  if (cards.slice(0, 40).filter(c => Store.cardState(t.id, c.id) === 'shaky').length !== 35) throw new Error('deferred reviews were cleared');
-  registry.moreReviewBtn.fire('click');
-  if (Number(registry.statTotal.textContent) !== 5 || asked.some(id => Quiz._tierOf(id))) throw new Error('next session replayed fresh cards or exceeded limit');
+  if (Quiz._counts().shaky !== 40 || Number(registry.statTotal.textContent) < 40) throw new Error('daily goal capped the review queue');
+  if (Store.introducedToday(t.id) !== Quiz._counts().new + Quiz._counts().verify) throw new Error('intake was not recorded');
+  const c = shownCard(t.id);
+  registry.answerInput.value = c.answer; registry.actionBtn.fire('click'); registry.actionBtn.fire('click');
+  if (!registry.answerInput || /done-screen/.test(registry.cardArea.innerHTML)) throw new Error('review queue ended early');
   Quiz.toggleFocus();
   if (Number(registry.statTotal.textContent) !== cards.length) throw new Error('Foco off no longer offers whole topic');
   Store.setPref('goalMax', GOAL_MAX); Store.setPref('foco', true);
   Store.resetAll();
-  return '40 misses → 5-card session → explicit next 5; deferred cards intact; Foco off offers all';
+  return '40 misses all included with a daily goal of 5; Foco off offers all';
 });
