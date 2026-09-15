@@ -10,7 +10,7 @@ Browse 146 verbs with their conjugations across three indicative tenses — plus
 imperfect subjunctive on a 58-verb core — or drill any of twelve topics by typing
 the answer.
 
-**Static site, no build step, no dependencies, no network requests.** Open
+**Static site, no build step, no required dependencies.** Optional sync and production-only usage analytics run separately from lessons. Open
 `index.html` directly from disk or serve the repository root from GitHub Pages.
 
 ## Tabs
@@ -161,3 +161,7 @@ Search Browse in Portuguese or English; expand a verb to load its conjugations. 
 Review levels now advance only when a review is due; extra practice neither climbs nor postpones the next review. Inferred sibling reviews update their clocks without counting as answers. A reset on one device is not undone by another device's stale snapshot.
 
 The [review notes](docs/review-improvements.md) list every change with its reason, including what was rolled back in 1.24.1. The [pronunciation audit](docs/pronunciation-audit.md) records the corrected hints. The six JXA suites remain dependency-free; `node --test scripts/check-sync.mjs` runs the sync worker and client together with no packages.
+
+## Launch analytics
+
+PostHog measures visits, submitted answers, practice days and return visits across the three languages. The footer offers a browser opt-out. Local development is excluded, and answers/audio/sync codes are never included. See [analytics setup and dashboard definitions](docs/analytics.md).

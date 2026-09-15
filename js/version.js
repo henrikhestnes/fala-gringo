@@ -105,7 +105,8 @@
 // 1.25.5: original review intervals restored; gentler mistake penalties retained
 // 1.25.6: original mistake penalty restored; session and mode changes retained
 // 1.25.7: remove the Foco session cap; keep the separate daily goal
-const APP_VERSION = '1.25.7';
+// 1.26.0: optional PostHog practice and acquisition analytics, with browser opt-out
+const APP_VERSION = '1.26.0';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

@@ -93,14 +93,17 @@
   🇳🇴 <a href="noruegues/" lang="pt-BR">Fala Viking — norueguês para brasileiros</a><br>
   <span lang="pt-BR">Feito no Rio</span> ☕ <a href="https://buymeacoffee.com/henrikhestnes" target="_blank" rel="noopener">Buy me a cafezinho</a>
   <span class="build-info" id="buildInfo"></span>
+  <p id="analyticsControl" hidden><small id="analyticsNote"></small><br><button type="button" class="link-btn" id="analyticsToggle"></button></p>
 </footer>
 
 <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 <div class="sheet" id="sheet" hidden></div>
 
 <!-- Classic scripts, no ES modules: the app works opened as a local file and on
-     any static host alike, with no build step. The only network requests are the
-     optional progress sync (js/lib/sync.js), off until SYNC_URL is set there. -->
+     any static host alike, with no build step. Sync and configured production-only
+     analytics are optional; neither is required for lessons. -->
+<script src="js/analytics-config.js"></script>
+<script src="js/lib/analytics.js"></script>
 <script src="js/lib/text.js"></script>
 <script src="js/lib/tts.js"></script>
 <script src="js/lib/stt.js"></script>
