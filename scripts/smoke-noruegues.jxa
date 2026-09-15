@@ -28,6 +28,7 @@ const CONFIG =
 
 const FILES = [
   'scripts/dom-stub.js',
+  'js/analytics-config.js', 'js/lib/analytics.js',
   null,  // CONFIG slots in here, after the stub creates `window`
   'js/lib/text.js', 'js/lib/tts.js', 'js/lib/stt.js', 'js/lib/fx.js', 'js/lib/state.js', 'js/progress.js',
   'noruegues/js/data/verbos.js', 'noruegues/js/data/substantivos.js', 'noruegues/js/data/frases.js',

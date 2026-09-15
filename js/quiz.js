@@ -640,7 +640,7 @@ const Quiz = (function () {
         const match = micAnswer(card, alts, rivalsFor(card));
         input.value = match !== null ? match : alts[0] || '';
         if (!input.value.trim() && !card.allowEmpty) { startMic(); return; }
-        checkAnswer();
+        checkAnswer(true);
       },
       onError: code => {
         if (gen !== micGen || answered) return;
@@ -757,7 +757,7 @@ const Quiz = (function () {
     return true;
   }
 
-  function checkAnswer() {
+  function checkAnswer(spoken) {
     const card = deck[current];
     const input = document.getElementById('answerInput');
     const feedback = document.getElementById('feedback');
@@ -775,6 +775,8 @@ const Quiz = (function () {
 
     const res = gradeTyped(card, input.value);
     const ok = !!res;
+    if (window.Analytics) Analytics.answer(topic.id, 'drill',
+      spoken === true ? 'spoken' : 'typed', ok ? (res.grade === 'near' ? 'near' : 'correct') : 'wrong');
     // the synonym the learner reached for (coloco for ponho) shows its own answer,
     // pronunciation and table — on a miss too, judged by how the typed text starts;
     // the other synonyms follow in an "also" line

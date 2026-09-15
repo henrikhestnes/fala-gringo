@@ -13,6 +13,7 @@ const CACHE = 'fala-gringo-' + APP_VERSION;
 // handed to a navigation (Chrome fails the load with ERR_FAILED) — see clean().
 const CORE = [
   './', 'css/app.css', 'manifest.json', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png',
+  'js/analytics-config.js', 'js/lib/analytics.js',
   'js/lib/text.js', 'js/lib/tts.js', 'js/lib/stt.js', 'js/lib/fx.js',
   'js/lib/state.js', 'js/progress.js', 'js/conjugate.js',
   'js/data/verbs.js', 'js/data/pronominal.js', 'js/data/nouns.js',

@@ -163,7 +163,10 @@ function page(opts) {
     '<footer>Part of <a href="' + HOME + '">Fala Gringo</a> &mdash; a free study tool ' +
     'for spoken Brazilian Portuguese, Rio register. No sign-up, works offline.<br>' +
     'Feito no Rio ☕ <a href="https://buymeacoffee.com/henrikhestnes" target="_blank" ' +
-    'rel="noopener">Buy me a cafezinho</a></footer>\n' +
+    'rel="noopener">Buy me a cafezinho</a>' +
+    '<p id="analyticsControl" hidden><small id="analyticsNote"></small><br><button type="button" class="link-btn" id="analyticsToggle"></button></p></footer>\n' +
+    '<script src="../js/analytics-config.js"></script>\n' +
+    '<script src="../js/lib/analytics.js"></script>\n' +
     '</body>\n</html>\n';
 }
 

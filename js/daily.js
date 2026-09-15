@@ -288,6 +288,7 @@ const Daily = (function () {
     attempts[current]++;
     typed[current] = input.value.trim();
     const ok = accepted(card).has(normalize(input.value));
+    if (window.Analytics) Analytics.answer(card.topic, 'daily', 'typed', ok ? 'correct' : 'wrong');
 
     if (ok) {
       solved[current] = true;
