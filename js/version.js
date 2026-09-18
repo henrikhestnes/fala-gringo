@@ -117,7 +117,10 @@
 //         heatmap, longest run and a month-by-month table with the share answered right (the day log now also
 //         keeps correct answers per day, `right`, synced like `days`); the Daily's history; card-by-card grids for
 //         lexeme|form topics (verbs by person); every leech; the milestones earned; record count and blob size
-const APP_VERSION = '1.28.0';
+// 1.28.1: fix: the statistics page shared a class name with the drill header's stat chips and rendered as a row of
+//         slivers; the tally counts misses since it began (`w`, beside the lifetime `m`) so historical misses no
+//         longer read as "0% right of 137" and no longer make every long-missed card a leech
+const APP_VERSION = '1.28.1';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

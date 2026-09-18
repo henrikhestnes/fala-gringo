@@ -15,7 +15,7 @@
 // Classic script: sets a global, no exports (the app runs from file://).
 (typeof window !== 'undefined' ? window : globalThis).ProgressState = (function () {
   const SECTIONS = ['mastered', 'daily', 'dailyDone', 'prefs', 'prefTimes', 'strength', 'days', 'right', 'drilled', 'graduated', 'milestones', 'resets'];
-  const RECORD_KEYS = ['s', 'm', 't', 'l', 'i', 'u', 'a', 'f', 'c'];   // see js/progress.js recordAnswer
+  const RECORD_KEYS = ['s', 'm', 't', 'l', 'i', 'u', 'a', 'f', 'c', 'w'];   // see js/progress.js recordAnswer
   const BAD_KEYS = ['__proto__', 'constructor', 'prototype'];
 
   const isObj = v => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -195,9 +195,9 @@
         if (sa.t || sb.t) merged.t = Math.max(sa.t || 0, sb.t || 0);   // a card never confirmed has no clock
         if (sa.i || sb.i) merged.i = Math.min(sa.i || Infinity, sb.i || Infinity);
         if (sa.f || sb.f) merged.f = Math.min(sa.f || Infinity, sb.f || Infinity);
-        // lifetime corrects `c` merge like misses: the higher count (two devices
+        // the tally counters `c` and `w` merge like misses: the higher count (two devices
         // practising offline undercount, never double-count)
-        ['u', 'a', 'c'].forEach(k => { if (sa[k] !== undefined || sb[k] !== undefined) merged[k] = Math.max(sa[k] || 0, sb[k] || 0); });
+        ['u', 'a', 'c', 'w'].forEach(k => { if (sa[k] !== undefined || sb[k] !== undefined) merged[k] = Math.max(sa[k] || 0, sb[k] || 0); });
         t[card] = merged;
       });
     });

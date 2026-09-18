@@ -48,7 +48,7 @@ step('a leftover per-tab journal is folded in and removed', function () {
   return 'journal merged, key gone';
 });
 
-step('an answer record stays small: nine numeric fields at most, no per-device bookkeeping', function () {
+step('an answer record stays small: ten numeric fields at most, no per-device bookkeeping', function () {
   Store.resetAll();
   var q = firstQuizCards();
   Store.recordAnswer(q.topic.id, q.cards[0].id, true);
@@ -56,7 +56,7 @@ step('an answer record stays small: nine numeric fields at most, no per-device b
   var rec = Store.snapshot().strength[q.topic.id][q.cards[0].id];
   var keys = Object.keys(rec).sort().join(',');
   if (Object.values(rec).some(function (v) { return typeof v !== 'number'; })) throw new Error('non-numeric field: ' + JSON.stringify(rec));
-  if (Object.keys(rec).length > 9) throw new Error('record has ' + Object.keys(rec).length + ' fields: ' + keys);
+  if (Object.keys(rec).length > 10) throw new Error('record has ' + Object.keys(rec).length + ' fields: ' + keys);
   return keys + '; ' + JSON.stringify(rec).length + ' bytes';
 });
 
@@ -179,8 +179,9 @@ step('lifetime tally (1.27): hits and near-misses count, implied confirmations d
   for (k = 0; k < 5; k++) Store.recordAnswer(t, id, true);        // 4 of 11 = 36%
   if (Store.isLeech(t, id)) throw new Error('36% missed is still a leech');
   if (Store.attempts(t, 'never-seen').total !== 0 || Store.isLeech(t, 'never-seen')) throw new Error('unseen card has a tally');
-  var x = { strength: { tp: { c: { s: 1, m: 1, c: 5, u: 2 } } } }, y = { strength: { tp: { c: { s: 1, m: 1, c: 3, u: 1 } } } };
-  if (ProgressState.merge(x, y).strength.tp.c.c !== 5 || ProgressState.merge(y, x).strength.tp.c.c !== 5) throw new Error('c did not merge by max');
+  var x = { strength: { tp: { c: { s: 1, m: 1, w: 1, c: 5, u: 2 } } } }, y = { strength: { tp: { c: { s: 1, m: 2, w: 2, c: 3, u: 1 } } } };
+  var mx = ProgressState.merge(x, y).strength.tp.c, my = ProgressState.merge(y, x).strength.tp.c;
+  if (mx.c !== 5 || my.c !== 5 || mx.w !== 2 || my.w !== 2) throw new Error('c/w did not merge by max: ' + JSON.stringify(mx));
   return '2 right / 1 wrong after 4 events; leech at 4 of 6, not at 4 of 11; c merges by max';
 });
 

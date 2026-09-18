@@ -514,7 +514,7 @@
       window.scrollTo(0, 0);
       Stats.render();
       view().removeAttribute('aria-labelledby');
-      const heading = document.querySelector('.stats h2');
+      const heading = document.querySelector('.stats-page h2');
       if (heading && typeof heading.focus === 'function') { heading.tabIndex = -1; heading.focus(); }
       renderGoal();
       return;
