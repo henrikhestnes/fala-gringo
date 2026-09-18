@@ -14,8 +14,8 @@
 //
 // Classic script: sets a global, no exports (the app runs from file://).
 (typeof window !== 'undefined' ? window : globalThis).ProgressState = (function () {
-  const SECTIONS = ['mastered', 'daily', 'dailyDone', 'prefs', 'prefTimes', 'strength', 'days', 'drilled', 'graduated', 'milestones', 'resets'];
-  const RECORD_KEYS = ['s', 'm', 't', 'l', 'i', 'u', 'a', 'f'];   // see js/progress.js recordAnswer
+  const SECTIONS = ['mastered', 'daily', 'dailyDone', 'prefs', 'prefTimes', 'strength', 'days', 'right', 'drilled', 'graduated', 'milestones', 'resets'];
+  const RECORD_KEYS = ['s', 'm', 't', 'l', 'i', 'u', 'a', 'f', 'c'];   // see js/progress.js recordAnswer
   const BAD_KEYS = ['__proto__', 'constructor', 'prototype'];
 
   const isObj = v => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -72,7 +72,7 @@
       keysOf(src.strength[topic]).forEach(id => { const r = cleanRecord(src.strength[topic][id]); if (r) t[id] = r; });
     });
     keysOf(src.daily).forEach(day => { const d = cleanDaily(src.daily[day]); if (d) out.daily[day] = d; });
-    ['dailyDone', 'days', 'drilled', 'graduated', 'milestones', 'resets', 'prefTimes'].forEach(k => { out[k] = cleanNumbers(src[k]); });
+    ['dailyDone', 'days', 'right', 'drilled', 'graduated', 'milestones', 'resets', 'prefTimes'].forEach(k => { out[k] = cleanNumbers(src[k]); });
     if (isObj(src.prefs)) {
       // preferences are free-form but must survive JSON; prototype keys are dropped
       keysOf(src.prefs).forEach(k => {
@@ -97,7 +97,7 @@
     const all = (o, fn) => Object.values(o || {}).every(fn);
     if (!all(value.mastered, t => isObj(t) && all(t, n => n === 1 || n === true))) return false;
     if (!all(value.strength, t => isObj(t) && all(t, e => isObj(e) && Object.keys(e).every(k => RECORD_KEYS.includes(k) && num(e[k]))))) return false;
-    if (['days', 'drilled', 'graduated', 'milestones', 'dailyDone', 'resets', 'prefTimes'].some(k => !all(value[k], num))) return false;
+    if (['days', 'right', 'drilled', 'graduated', 'milestones', 'dailyDone', 'resets', 'prefTimes'].some(k => !all(value[k], num))) return false;
     if (!all(value.prefs, v => v === null || ['string', 'number', 'boolean'].includes(typeof v))) return false;
     const bools = (d, k) => d[k] === undefined || (Array.isArray(d[k]) && d[k].length === d.attempts.length && d[k].every(v => typeof v === 'boolean'));
     if (!all(value.daily, d => isObj(d) && Array.isArray(d.attempts) && d.attempts.length <= 100 &&
@@ -156,7 +156,7 @@
     if ((s.resets.all || 0) < all) {
       // a whole-profile reset: the day log, the Daily history and the markers
       // carry no event stamps, so they go with the old generation
-      ['daily', 'dailyDone', 'days', 'milestones'].forEach(k => { s[k] = {}; });
+      ['daily', 'dailyDone', 'days', 'right', 'milestones'].forEach(k => { s[k] = {}; });
     }
   }
 
@@ -165,7 +165,7 @@
     const resets = {};
     eachKey(x.resets, y.resets, (k, a, b) => { resets[k] = Math.max(a || 0, b || 0); });
     [x, y].forEach(s => applyResets(s, resets));
-    const out = { mastered: {}, strength: {}, daily: {}, dailyDone: {}, days: {}, drilled: {}, graduated: {}, milestones: {}, resets: resets, prefs: {}, prefTimes: {} };
+    const out = { mastered: {}, strength: {}, daily: {}, dailyDone: {}, days: {}, right: {}, drilled: {}, graduated: {}, milestones: {}, resets: resets, prefs: {}, prefTimes: {} };
 
     eachKey(x.mastered, y.mastered, (topic, a, b) => {
       out.mastered[topic] = Object.assign({}, a || {}, b || {});
@@ -178,15 +178,26 @@
         // never shrink, the streak and level are the lower ones (a card is
         // never pushed further out than either device believes), the review
         // clock the newer, "introduced" and "first correct" the earliest. A
-        // shaky card can therefore never graduate out of Foco by syncing; the
-        // price is that a miss seen on one device stays until it is answered
-        // right again anywhere, which is the safe side to err on.
+        // shaky card can therefore never graduate out of Foco by syncing.
+        // One exception keeps "shaky" meaning what it says (missed and not
+        // answered right SINCE): the record with the newer event stamp saw the
+        // card's latest answer, and if that answer was a hit, the miss the
+        // other side holds is older and has been answered — the card is back
+        // on rung one, exactly as one device would have recorded it. Without
+        // this the min took the streak of the copy that still held the miss,
+        // and a correctly answered card came back shaky on every sync round,
+        // for ever (1.26.2). Records without stamps (pre-1.24) keep the
+        // pessimistic view.
         if (!sa || !sb) { t[card] = sa || sb; return; }
         const merged = { s: Math.min(sa.s || 0, sb.s || 0), m: Math.max(sa.m || 0, sb.m || 0), l: Math.min(lvl(sa), lvl(sb)) };
+        const newer = (sa.u || 0) > (sb.u || 0) ? sa : (sb.u || 0) > (sa.u || 0) ? sb : null;
+        if (newer && (newer.s || 0) > 0) { merged.s = Math.max(merged.s, 1); merged.l = Math.max(merged.l, 1); }
         if (sa.t || sb.t) merged.t = Math.max(sa.t || 0, sb.t || 0);   // a card never confirmed has no clock
         if (sa.i || sb.i) merged.i = Math.min(sa.i || Infinity, sb.i || Infinity);
         if (sa.f || sb.f) merged.f = Math.min(sa.f || Infinity, sb.f || Infinity);
-        ['u', 'a'].forEach(k => { if (sa[k] !== undefined || sb[k] !== undefined) merged[k] = Math.max(sa[k] || 0, sb[k] || 0); });
+        // lifetime corrects `c` merge like misses: the higher count (two devices
+        // practising offline undercount, never double-count)
+        ['u', 'a', 'c'].forEach(k => { if (sa[k] !== undefined || sb[k] !== undefined) merged[k] = Math.max(sa[k] || 0, sb[k] || 0); });
         t[card] = merged;
       });
     });
@@ -219,6 +230,7 @@
     // the day log and the drilled-tab stamps: a day practised anywhere counts
     // (answers = the higher count), a tab drilled anywhere is active (newest day)
     eachKey(x.days, y.days, (day, a, b) => { out.days[day] = Math.max(a || 0, b || 0); });
+    eachKey(x.right, y.right, (day, a, b) => { out.right[day] = Math.max(a || 0, b || 0); });   // correct answers per day (1.28), same rule
     eachKey(x.drilled, y.drilled, (topic, a, b) => { out.drilled[topic] = Math.max(a || 0, b || 0); });
     // a finished Daily counts wherever it was finished; the better first-try count stands
     eachKey(x.dailyDone, y.dailyDone, (day, a, b) => { out.dailyDone[day] = Math.max(a || 0, b || 0); });

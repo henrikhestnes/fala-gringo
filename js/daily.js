@@ -272,6 +272,7 @@ const Daily = (function () {
     return '<strong lang="pt-BR">' + escapeHtml(face.answer) + '</strong>' +
       (face.pron ? '<span class="pron-tag" lang="en">' + escapeHtml(face.pron) + '</span>' : '') +
       (face.flag ? '<span class="pron-tag flag-tag">' + escapeHtml(face.flag) + '</span>' : '') +
+      tallyTags(card.topic, card.id) +
       (face.speak ? speakButton(face.speak, face.answer) : '') +
       (others.length ? '<span class="also-tag">also ' +
         others.map(a => '<b lang="pt-BR">' + escapeHtml(a) + '</b>').join(' · ') + '</span>' : '');
@@ -297,11 +298,11 @@ const Daily = (function () {
       input.classList.add('correct');
       document.getElementById('actionBtn').classList.add('go-green');
       document.getElementById('actionBtn').setAttribute('aria-label', 'Next card');
+      Store.markMastered(card.topic, card.id);
+      Store.recordAnswer(card.topic, card.id, true);   // first, so the answer line's tally counts this answer
       feedback.className = 'feedback ok';
       feedback.innerHTML = '✓ ' + praiseWord() + ' ' + answerHtml(card, input.value);
       document.getElementById('revealArea').innerHTML = revealHtml(card, input.value);
-      Store.markMastered(card.topic, card.id);
-      Store.recordAnswer(card.topic, card.id, true);
       if (window.App && App.updateTabPct) App.updateTabPct(card.topic);   // that topic's tab % follows
       if (window.App && App.refreshGoal) App.refreshGoal();               // and the streak / ring
       save();

@@ -146,6 +146,8 @@ window.APP_STRINGS = {
   startOver: 'De novo ↻',
   answerIs: 'A resposta é',
   nearIs: 'Quase! Você escreveu “{typed}” — a resposta é',
+  accuracy: '{right} de {total} certas',   // a contagem da carta, depois da resposta
+  leechTag: 'osso duro',                   // carta que você erra muito (Store.isLeech)
   // a voz do app (js/lib/text.js): elogios para um brasileiro, não para um gringo
   praise: ['Mandou bem!', 'Aí sim!', 'Show!', 'É isso aí!', 'Boa!', 'Arrasou!'],
   miss: ['Quase!', 'Não foi dessa vez…', 'Relaxa, acontece.', 'Eita…'],
@@ -178,6 +180,9 @@ window.APP_STRINGS = {
   sheetToday: 'Hoje',
   sheetMilestones: 'Marcos',
   sheetActivity: 'Atividade',
+  sheetLeeches: 'Cartas osso duro',
+  sheetStats: 'Estatísticas completas',
+  sheetLeechNone: 'Nenhuma ainda — nenhuma carta te venceu quatro vezes.',
   heatSummary: '{n} de {total} dias praticados · {answers} respostas',
   heatDay: '{date} · {n} respostas',
   heatDayOne: '{date} · 1 resposta',
@@ -211,6 +216,36 @@ window.APP_STRINGS = {
   themeLight: 'Tema: claro. Toque para usar o escuro.',
   themeDark: 'Tema: escuro. Toque para seguir o aparelho.',
   updateReady: 'Nova versão pronta — toque para recarregar.',
+  // a página de estatísticas (#stats, js/stats.js)
+  stats: {
+    title: 'Estatísticas',
+    intro: 'Tudo o que o seu progresso guarda, lido neste aparelho — os outros aparelhos entram pela sincronização. ' +
+           'Primeiro as abas, depois o que vem a vencer, a sua atividade e as cartas que resistem.',
+    secTabs: 'Abas', secForecast: 'Revisões pela frente', secActivity: 'Atividade', secMonths: 'Mês a mês',
+    secDaily: 'Desafio diário', secGrid: 'Carta por carta', secLeeches: 'Cartas osso duro', secMilestones: 'Marcos', secData: 'Dados',
+    buckets: ['nunca vista', 'balançando', '7 dias', '14 dias', '30 dias', '60 dias', '120 dias'],
+    bucketsLong: ['nunca respondida', 'errada e ainda não acertada de novo', 'revisão a cada 7 dias',
+                  'a cada 14 dias', 'a cada 30 dias', 'a cada 60 dias', 'a cada 120 dias'],
+    tabLine: '{mastered} de {total} dominadas · {seen} vistas · {acc}',
+    accuracy: '{pct}% certas de {n}',
+    accuracyNone: 'ainda sem respostas',
+    graduated: '🎓 formada',
+    gradShare: '{pct}% em 30 dias ou mais',
+    now: 'agora', tomorrow: 'amanhã', later: 'depois',
+    forecastLine: '{now} para revisar agora · mais {week} nos próximos 7 dias · {month} em 30',
+    forecastNone: 'Nada agendado ainda — as cartas dominadas voltam pela escada de revisão.',
+    streakLine: '🔥 {n} dias seguidos · maior sequência: {best} dias',
+    activityLine: '{days} dias praticados · {answers} respostas · {acc}',
+    monthHead: ['Mês', 'Dias', 'Respostas', 'Certas'],
+    dailyLine: '{played} jogados · {perfect} perfeitos · {n} dias seguidos',
+    dailyDist: 'acertos de primeira por Daily, de 7 a 0',
+    dailyNone: 'Nenhum Daily terminado ainda.',
+    gridHint: 'Cada célula é uma carta, nas cores das barras acima — passe o mouse para ver a forma e a contagem. Contorno vermelho: carta osso duro.',
+    leechLine: 'Erradas quatro vezes ou mais, em 40% ou mais das respostas.',
+    leechNone: 'Nenhuma — nenhuma carta te venceu quatro vezes.',
+    earned: 'em {date}',
+    dataLine: '{records} registros de cartas · {days} dias no diário · {kb} KB'
+  },
   milestones: {
     first:    ['Primeira carta', 'Sua primeira carta dominada.'],
     m100:     ['100 cartas', '100 cartas dominadas nas suas abas.'],
@@ -279,6 +314,7 @@ window.APP_STRINGS = {
 <script src="js/topics.js"></script>
 <script src="../js/quiz.js"></script>
 <script src="../js/milestones.js"></script>
+<script src="../js/stats.js"></script>
 <script src="../js/app.js"></script>
 <script src="../js/lib/sync.js"></script>
 <script src="../js/version.js"></script>

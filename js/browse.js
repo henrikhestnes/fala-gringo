@@ -27,11 +27,18 @@ const Browse = (function () {
         const who = r.person || V.personsShort[i];
         const span = irregularSpan(r.form, expected && expected[i]);
         if (span) irregular++;
+        // the learner's lifetime tally on this form (the tense key is the drill
+        // topic's id, the card id verb|row — see buildVerbCards in topics.js)
+        const tally = Store.attempts(t.key, verb.pt + '|' + i);
+        const stat = tally.total < 2 ? '' :
+          '<span class="stat' + (Store.isLeech(t.key, verb.pt + '|' + i) ? ' leech' : '') + '" lang="en">' +
+            escapeHtml(tfill(QUIZ_STRINGS.accuracy, { right: tally.right, total: tally.total })) + '</span>';
         return '<div class="conj-line' + (span ? ' is-irregular' : '') + '">' +
           '<span class="who">' + escapeHtml(who) + '</span>' +
           '<button type="button" class="form" lang="pt-BR" data-speak="' + escapeHtml(who + ' ' + r.form) + '">' +
             markIrregular(r.form, span) + '</button>' +
           (r.meaning ? '<span class="gloss" lang="en">' + escapeHtml(r.meaning) + '</span>' : '') +
+          stat +
         '</div>'; }).join('');
       return '<div class="conj-tense"><div class="conj-title">' + escapeHtml(t.label) + '</div>' +
              lines + '</div>';

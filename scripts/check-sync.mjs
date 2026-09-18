@@ -85,6 +85,23 @@ test('a miss on one device keeps the card shaky after the merge', async () => {
   assert.equal(a.run("Store.cardState('nouns','mesa')"), 'shaky');
 });
 
+test('a card answered right after a miss stays cleared through the next sync round (1.26.2)', async () => {
+  const api = backend();
+  const transport = async (_, options = {}) => api.fetch(new Request(url, options));
+  const a = client(transport);
+  a.run("Store.markMastered('nouns','mesa'); Store.recordAnswer('nouns','mesa', true)");
+  assert.equal(await a.sync(), true);
+  a.run("Store.recordAnswer('nouns','mesa', false)");
+  assert.equal(await a.sync(), true);   // the server now holds the miss
+  assert.equal(a.run("Store.cardState('nouns','mesa')"), 'shaky');
+  a.run("Store.recordAnswer('nouns','mesa', true)");
+  assert.equal(a.run("Store.cardState('nouns','mesa')"), 'ok');
+  assert.equal(await a.sync(), true);   // pull → merge with the miss → push: the hit must survive
+  assert.equal(a.run("Store.cardState('nouns','mesa')"), 'ok');
+  const server = JSON.parse(api.store.get(code)).strength.nouns.mesa;
+  assert.equal(server.s, 1); assert.equal(server.m, 1); assert.equal(server.l, 1);
+});
+
 test('a remote blob from a newer client pauses sync — nothing pulled, nothing pushed', async () => {
   let puts = 0;
   const remote = empty();

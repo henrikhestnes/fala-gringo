@@ -1,5 +1,5 @@
 /* Shared regression coverage for the review fixes. Runs in all three app stubs. */
-step('a miss on one device stays shaky after a merge; reset markers reject older snapshots', function () {
+step('a hit AFTER a miss clears shaky through a merge, a miss after a hit keeps it; reset markers reject older snapshots', function () {
   Store.resetAll();
   const topic = TOPICS.find(t => t.kind === 'quiz');
   const card = topicCards(topic)[0];
@@ -8,18 +8,30 @@ step('a miss on one device stays shaky after a merge; reset markers reject older
   Store.markMastered(topic.id, card.id);
   Store.recordAnswer(topic.id, card.id, true);
   const recovered = Store.snapshot();
-  const merged = ProgressState.merge(missed, recovered).strength[topic.id][card.id];
-  if (merged.s !== 0 || merged.l !== 0 || merged.m !== 1) throw new Error('merge graduated a card one device had missed: ' + JSON.stringify(merged));
+  // The server (or another tab) still holds the miss; the newer record is the
+  // correct answer. The merge must not take the older streak — that made a
+  // card answered right come back shaky on every sync round (1.26.2).
+  [ProgressState.merge(missed, recovered), ProgressState.merge(recovered, missed)].forEach(m => {
+    const r = m.strength[topic.id][card.id];
+    if (r.s !== 1 || r.l !== 1 || r.m !== 1) throw new Error('a later correct answer was merged back into shaky: ' + JSON.stringify(r));
+  });
+  // And the other way round: a miss recorded after the hit is the latest event.
+  Store.recordAnswer(topic.id, card.id, false);
+  const missedAgain = Store.snapshot();
+  [ProgressState.merge(recovered, missedAgain), ProgressState.merge(missedAgain, recovered)].forEach(m => {
+    const r = m.strength[topic.id][card.id];
+    if (r.s !== 0 || r.l !== 0 || r.m !== 2) throw new Error('a later miss was merged away: ' + JSON.stringify(r));
+  });
   Store.resetTopic(topic.id);
   Store.applySynced(ProgressState.merge(Store.snapshot(), recovered));
   if (Store.masteredCount(topic.id)) throw new Error('reset resurrected');
   Store.markMastered(topic.id, card.id);
   const afterReset = Store.snapshot();
   if (!ProgressState.merge(recovered, afterReset).mastered[topic.id][card.id]) throw new Error('new progress after reset lost');
-  return 'the miss keeps the card shaky; reset stays reset; new work after reset survives';
+  return 'a later hit clears shaky, a later miss keeps it; reset stays reset; new work after reset survives';
 });
 
-step('the strength merge is conservative: a miss on either device keeps the card shaky, in either order', function () {
+step('the strength merge is conservative WITHOUT event stamps: a miss on either side keeps the card shaky, in either order', function () {
   const d = Store.today();
   const hit = { s: 2, m: 0, l: 2, t: d - 1 };
   const miss = { s: 0, m: 1, l: 0, t: d - 8 };
@@ -223,4 +235,68 @@ step('Foco offers every eligible review regardless of the daily goal size', func
   Store.setPref('goalMax', GOAL_MAX); Store.setPref('foco', true);
   Store.resetAll();
   return '40 misses all included with a daily goal of 5; Foco off offers all';
+});
+
+step('Foco orders due reviews leech first, then most overdue, then worst lifetime ratio; shaky by ratio', function () {
+  Store.resetAll();
+  Store.setPref('foco', true); Store.setPref('mic', false);
+  // cards without an inference pattern, so implyDue cannot thin the due tier
+  const t = TOPICS.filter(t => t.kind === 'quiz').find(t => topicCards(t).filter(c => !c.infer).length >= 5);
+  const [easy, hard, leech, shakyMild, shakyBad] = topicCards(t).filter(c => !c.infer).slice(0, 5);
+  const d = Store.today();
+  const seed = Store.snapshot();
+  seed.mastered[t.id] = {}; seed.strength[t.id] = {};
+  [easy, hard, leech, shakyMild, shakyBad].forEach(c => { seed.mastered[t.id][c.id] = 1; });
+  seed.strength[t.id][easy.id]  = { s: 5, m: 0, c: 5, l: 1, t: d - 9 };   // 2 days overdue, never missed
+  seed.strength[t.id][hard.id]  = { s: 1, m: 2, c: 2, l: 1, t: d - 9 };   // 2 days overdue, half missed
+  seed.strength[t.id][leech.id] = { s: 1, m: 5, c: 3, l: 1, t: d - 8 };   // 1 day overdue, but a leech
+  seed.strength[t.id][shakyMild.id] = { s: 0, m: 1, c: 9, l: 0, t: d - 3 };
+  seed.strength[t.id][shakyBad.id]  = { s: 0, m: 3, c: 3, l: 0, t: d - 3 };
+  seedState(seed);
+  Quiz.mount(t);
+  if (Quiz._counts().due !== 3 || Quiz._counts().shaky !== 2) throw new Error('tiers: ' + JSON.stringify(Quiz._counts()));
+  const order = [];
+  for (let k = 0; k < 5; k++) {
+    const c = shownCard(t.id);
+    order.push(c.id);
+    registry.answerInput.value = c.answer; registry.actionBtn.fire('click');
+    if (k === 0 && !(/tally-tag/.test(registry.feedback.innerHTML) && /leech-tag/.test(registry.feedback.innerHTML)))
+      throw new Error('the leech\'s answer line lacks its tally or tag: ' + registry.feedback.innerHTML);
+    registry.actionBtn.fire('click');
+  }
+  const want = [leech.id, hard.id, easy.id, shakyBad.id, shakyMild.id];
+  if (order.join('\n') !== want.join('\n')) throw new Error('deck order ' + JSON.stringify(order) + ', wanted ' + JSON.stringify(want));
+  return 'leech → half-missed → clean, then the worse shaky card first; tally + tricky tag shown';
+});
+
+step('the statistics page (#stats) renders from the store: forecast and tab summary match the records, one row per tab', function () {
+  Store.resetAll();
+  const t = TOPICS.filter(t => t.kind === 'quiz')[0];
+  const cards = topicCards(t).slice(0, 4), d = Store.today();
+  const seed = Store.snapshot();
+  seed.mastered[t.id] = {}; seed.strength[t.id] = {};
+  cards.forEach(c => { seed.mastered[t.id][c.id] = 1; });
+  seed.strength[t.id][cards[0].id] = { s: 2, m: 0, c: 2, l: 1, t: d - 9 };    // due now
+  seed.strength[t.id][cards[1].id] = { s: 0, m: 1, c: 1, l: 0, t: d - 1 };    // shaky: now
+  seed.strength[t.id][cards[2].id] = { s: 1, m: 0, c: 1, l: 1, t: d - 6 };    // due tomorrow
+  seed.strength[t.id][cards[3].id] = { s: 3, m: 0, c: 3, l: 3, t: d - 10 };   // 30-day rung: due in 20
+  seed.days[d] = 4; seed.right[d] = 3;
+  seedState(seed);
+  const f = Stats.forecast();
+  if (f.now !== 2 || f.days[1] !== 1 || f.later !== 1 || f.week !== 1 || f.month !== 2) throw new Error('forecast ' + JSON.stringify(f));
+  const sum = Stats.tabSummary(t);
+  if (sum.mastered !== 4 || sum.counts[1] !== 1 || sum.counts[2] !== 2 || sum.counts[4] !== 1 || sum.right !== 7 || sum.total !== 8)
+    throw new Error('summary ' + JSON.stringify(sum));
+  window.location.hash = '#stats';
+  App.refresh();
+  const html = document.getElementById('view').innerHTML;
+  [' class="stats"', 'stat-bar', 'fc-col now', 'hm-grid', STATS_STRINGS.secTabs, STATS_STRINGS.secForecast, STATS_STRINGS.secActivity, '88%', '75%']
+    .forEach(s => { if (!html.includes(s)) throw new Error('stats page lacks ' + JSON.stringify(s)); });
+  const rows = (html.match(/class="stat-row"/g) || []).length, tabs = TOPICS.filter(x => x.kind === 'quiz').length;
+  if (rows !== tabs) throw new Error(rows + ' rows for ' + tabs + ' drill tabs');
+  if (document.getElementById('view').dataset.topic !== 'stats') throw new Error('view not marked as the stats page');
+  window.location.hash = '';
+  App.refresh();
+  if (document.getElementById('view').dataset.topic === 'stats') throw new Error('leaving #stats did not re-route');
+  return 'forecast 2 now / 1 tomorrow / 1 later; 88% on the tab, 75% today; ' + rows + ' rows';
 });
