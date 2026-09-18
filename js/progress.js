@@ -251,9 +251,10 @@ const Store = (function () {
             direct correct answer (the new-card allowance; older verify records
             may have no introduction day)
          u  event stamp (for the reset generations in the merge)
-         c  lifetime direct correct answers (near-misses included, implied
-            confirmations not) — with `m` the card's lifetime accuracy, which
-            orders the review tiers and marks leeches; it never schedules
+         c  direct correct answers (near-misses included, implied confirmations
+            not) and  w  misses, both since the tally began (1.27 / 1.28.1) —
+            the card's accuracy, which orders the review tiers and marks
+            leeches; it never schedules. `m` stays lifetime: it decides shaky
        A single correct answer proves little, so a card stays "shaky" from its
        first miss until it has been answered correctly FOCUS_STREAK times in a
        row. Records written before 1.12 have no `l`: a card with a last-correct
@@ -277,6 +278,7 @@ const Store = (function () {
         else s.a = s.a || 0;
       } else {
         s.s = 0; s.m += 1; s.l = 0;
+        s.w = (s.w || 0) + 1;   // the tally's misses (since 1.28.1); `m` is lifetime and decides shaky
       }
       state.strength[topicId][cardId] = s;
       s.u = stamp();
@@ -318,10 +320,12 @@ const Store = (function () {
       const e = state.strength[topicId] && state.strength[topicId][cardId];
       return (e && e.m) || 0;
     },
-    /* Lifetime tally — { right, wrong, total }; zeros for an unseen card. */
+    /* The tally since it began — { right, wrong, total } from `c` and `w`;
+       zeros for an unseen card. Not `m`: that is lifetime, predates the tally,
+       and would make every long-missed card read "0% right" and a leech. */
     attempts(topicId, cardId) {
       const e = state.strength[topicId] && state.strength[topicId][cardId];
-      const right = (e && e.c) || 0, wrong = (e && e.m) || 0;
+      const right = (e && e.c) || 0, wrong = (e && e.w) || 0;
       return { right: right, wrong: wrong, total: right + wrong };
     },
     /* Share of answers missed, 0..1 (0 for an unseen card) — orders the review

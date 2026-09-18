@@ -248,10 +248,10 @@ step('Foco orders due reviews leech first, then most overdue, then worst lifetim
   seed.mastered[t.id] = {}; seed.strength[t.id] = {};
   [easy, hard, leech, shakyMild, shakyBad].forEach(c => { seed.mastered[t.id][c.id] = 1; });
   seed.strength[t.id][easy.id]  = { s: 5, m: 0, c: 5, l: 1, t: d - 9 };   // 2 days overdue, never missed
-  seed.strength[t.id][hard.id]  = { s: 1, m: 2, c: 2, l: 1, t: d - 9 };   // 2 days overdue, half missed
-  seed.strength[t.id][leech.id] = { s: 1, m: 5, c: 3, l: 1, t: d - 8 };   // 1 day overdue, but a leech
-  seed.strength[t.id][shakyMild.id] = { s: 0, m: 1, c: 9, l: 0, t: d - 3 };
-  seed.strength[t.id][shakyBad.id]  = { s: 0, m: 3, c: 3, l: 0, t: d - 3 };
+  seed.strength[t.id][hard.id]  = { s: 1, m: 2, w: 2, c: 2, l: 1, t: d - 9 };   // 2 days overdue, half missed
+  seed.strength[t.id][leech.id] = { s: 1, m: 5, w: 5, c: 3, l: 1, t: d - 8 };   // 1 day overdue, but a leech
+  seed.strength[t.id][shakyMild.id] = { s: 0, m: 1, w: 1, c: 9, l: 0, t: d - 3 };
+  seed.strength[t.id][shakyBad.id]  = { s: 0, m: 3, w: 3, c: 3, l: 0, t: d - 3 };
   seedState(seed);
   Quiz.mount(t);
   if (Quiz._counts().due !== 3 || Quiz._counts().shaky !== 2) throw new Error('tiers: ' + JSON.stringify(Quiz._counts()));
@@ -277,7 +277,7 @@ step('the statistics page (#stats) renders from the store: forecast and tab summ
   seed.mastered[t.id] = {}; seed.strength[t.id] = {};
   cards.forEach(c => { seed.mastered[t.id][c.id] = 1; });
   seed.strength[t.id][cards[0].id] = { s: 2, m: 0, c: 2, l: 1, t: d - 9 };    // due now
-  seed.strength[t.id][cards[1].id] = { s: 0, m: 1, c: 1, l: 0, t: d - 1 };    // shaky: now
+  seed.strength[t.id][cards[1].id] = { s: 0, m: 1, w: 1, c: 1, l: 0, t: d - 1 };    // shaky: now
   seed.strength[t.id][cards[2].id] = { s: 1, m: 0, c: 1, l: 1, t: d - 6 };    // due tomorrow
   seed.strength[t.id][cards[3].id] = { s: 3, m: 0, c: 3, l: 3, t: d - 10 };   // 30-day rung: due in 20
   seed.days[d] = 4; seed.right[d] = 3;
@@ -290,7 +290,7 @@ step('the statistics page (#stats) renders from the store: forecast and tab summ
   window.location.hash = '#stats';
   App.refresh();
   const html = document.getElementById('view').innerHTML;
-  [' class="stats"', 'stat-bar', 'fc-col now', 'hm-grid', STATS_STRINGS.secTabs, STATS_STRINGS.secForecast, STATS_STRINGS.secActivity, '88%', '75%']
+  [' class="stats-page"', 'stat-bar', 'fc-col now', 'hm-grid', STATS_STRINGS.secTabs, STATS_STRINGS.secForecast, STATS_STRINGS.secActivity, '88%', '75%']
     .forEach(s => { if (!html.includes(s)) throw new Error('stats page lacks ' + JSON.stringify(s)); });
   const rows = (html.match(/class="stat-row"/g) || []).length, tabs = TOPICS.filter(x => x.kind === 'quiz').length;
   if (rows !== tabs) throw new Error(rows + ' rows for ' + tabs + ' drill tabs');

@@ -311,7 +311,7 @@ window.Stats = (function () {
   /* -------------------------------------------------------------- render */
 
   function html() {
-    return '<div class="stats" lang="' + UI_LANG + '">' +
+    return '<div class="stats-page" lang="' + UI_LANG + '">' +
       '<h2>' + escapeHtml(S.title) + '</h2><p class="muted">' + escapeHtml(S.intro) + '</p>' +
       tabsHtml() + forecastHtml() + activityHtml() + dailyHtml() + gridsHtml() + leechesHtml() + milestonesHtml() + dataHtml() +
     '</div>';
