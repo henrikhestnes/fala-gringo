@@ -107,7 +107,17 @@
 // 1.25.7: remove the Foco session cap; keep the separate daily goal
 // 1.26.0: optional PostHog practice and acquisition analytics, with browser opt-out
 // 1.26.1: discourage automatic translation so language exercises keep their original text
-const APP_VERSION = '1.26.1';
+// 1.26.2: fix: a card answered right after a miss came back shaky on every sync round — the merge took the
+//         lower streak from the copy still holding the miss; the record with the newer event stamp now decides
+// 1.27.0: lifetime tally per card (`c` corrects beside `m` misses): "7 of 9 right" on the answer card, in Browse
+//         and the Daily; LEECHES (4+ misses at 40%+) wear a "tricky" tag, lead the due tier and are listed
+//         on the progress sheet; due and shaky tiers order by worst lifetime ratio among equals
+// 1.28.0: the statistics page (#stats, js/stats.js, from the progress sheet): per tab a stacked bar of card states
+//         (unseen · shaky · 7/14/30/60/120-day) with accuracy; a review forecast for the next 30 days; a year's
+//         heatmap, longest run and a month-by-month table with the share answered right (the day log now also
+//         keeps correct answers per day, `right`, synced like `days`); the Daily's history; card-by-card grids for
+//         lexeme|form topics (verbs by person); every leech; the milestones earned; record count and blob size
+const APP_VERSION = '1.28.0';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

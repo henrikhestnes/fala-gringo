@@ -48,7 +48,7 @@ step('a leftover per-tab journal is folded in and removed', function () {
   return 'journal merged, key gone';
 });
 
-step('an answer record stays small: eight numeric fields at most, no per-device bookkeeping', function () {
+step('an answer record stays small: nine numeric fields at most, no per-device bookkeeping', function () {
   Store.resetAll();
   var q = firstQuizCards();
   Store.recordAnswer(q.topic.id, q.cards[0].id, true);
@@ -56,7 +56,7 @@ step('an answer record stays small: eight numeric fields at most, no per-device 
   var rec = Store.snapshot().strength[q.topic.id][q.cards[0].id];
   var keys = Object.keys(rec).sort().join(',');
   if (Object.values(rec).some(function (v) { return typeof v !== 'number'; })) throw new Error('non-numeric field: ' + JSON.stringify(rec));
-  if (Object.keys(rec).length > 8) throw new Error('record has ' + Object.keys(rec).length + ' fields: ' + keys);
+  if (Object.keys(rec).length > 9) throw new Error('record has ' + Object.keys(rec).length + ' fields: ' + keys);
   return keys + '; ' + JSON.stringify(rec).length + ' bytes';
 });
 
@@ -153,7 +153,7 @@ step('a backup import merges by default and can RESTORE past an accidental reset
   return 'merge respects the reset; restore re-stamps the records so they outlive it';
 });
 
-step('merge is conservative: a miss anywhere keeps the card shaky, whichever side it is on', function () {
+step('merge is conservative without event stamps: a miss anywhere keeps the card shaky, whichever side it is on', function () {
   var d = Store.today();
   var a = { strength: { topic: { card: { s: 2, m: 0, l: 2, t: d - 1 } } } };
   var b = { strength: { topic: { card: { s: 0, m: 1, l: 0, t: d - 8 } } } };
@@ -161,4 +161,44 @@ step('merge is conservative: a miss anywhere keeps the card shaky, whichever sid
   if (ab.s !== 0 || ab.m !== 1 || ab.l !== 0) throw new Error('miss lost: ' + JSON.stringify(ab));
   if (ProgressState.stable(ab) !== ProgressState.stable(ba)) throw new Error('order-dependent: ' + JSON.stringify(ab) + ' vs ' + JSON.stringify(ba));
   return 's=0 m=1 l=0 in both orders';
+});
+
+step('lifetime tally (1.27): hits and near-misses count, implied confirmations do not; leech = 4+ misses at 40%+; merge keeps the higher count', function () {
+  Store.resetAll();
+  var q = firstQuizCards(), t = q.topic.id, id = q.cards[0].id;
+  Store.recordAnswer(t, id, true);
+  Store.recordAnswer(t, id, true, 0, true);          // a near-miss clears the card: it counts
+  Store.recordAnswer(t, id, true, 0, true, true);    // an implied confirmation is not an answer
+  Store.recordAnswer(t, id, false);
+  var a = Store.attempts(t, id);
+  if (a.right !== 2 || a.wrong !== 1 || a.total !== 3) throw new Error('tally ' + JSON.stringify(a));
+  if (Math.abs(Store.missRatio(t, id) - 1 / 3) > 1e-9) throw new Error('ratio ' + Store.missRatio(t, id));
+  if (Store.isLeech(t, id)) throw new Error('one miss made a leech');
+  for (var k = 0; k < 3; k++) Store.recordAnswer(t, id, false);   // 4 misses of 6 = 67%
+  if (!Store.isLeech(t, id)) throw new Error('4 misses at 67% is not a leech');
+  for (k = 0; k < 5; k++) Store.recordAnswer(t, id, true);        // 4 of 11 = 36%
+  if (Store.isLeech(t, id)) throw new Error('36% missed is still a leech');
+  if (Store.attempts(t, 'never-seen').total !== 0 || Store.isLeech(t, 'never-seen')) throw new Error('unseen card has a tally');
+  var x = { strength: { tp: { c: { s: 1, m: 1, c: 5, u: 2 } } } }, y = { strength: { tp: { c: { s: 1, m: 1, c: 3, u: 1 } } } };
+  if (ProgressState.merge(x, y).strength.tp.c.c !== 5 || ProgressState.merge(y, x).strength.tp.c.c !== 5) throw new Error('c did not merge by max');
+  return '2 right / 1 wrong after 4 events; leech at 4 of 6, not at 4 of 11; c merges by max';
+});
+
+step('the day log (1.28) also counts correct answers per day; merged by max, reset with the rest; dueIn reads the schedule', function () {
+  Store.resetAll();
+  var q = firstQuizCards(), t = q.topic.id, id = q.cards[0].id, d = Store.today();
+  if (Store.rightOn(d) !== undefined) throw new Error('right logged before any answer');
+  Store.recordAnswer(t, id, true);
+  Store.recordAnswer(t, id, false);
+  Store.recordAnswer(t, id, true, 0, true, true);   // implied: not an answer, not logged
+  if (Store.answeredOn(d) !== 2 || Store.rightOn(d) !== 1) throw new Error('day log ' + Store.answeredOn(d) + ' answers / ' + Store.rightOn(d) + ' right');
+  if (Store.dueIn(t, id) !== 7) throw new Error('dueIn on rung one should be 7, got ' + Store.dueIn(t, id));
+  if (Store.dueIn(t, 'never-seen') !== null) throw new Error('dueIn for an unseen card');
+  var a = { right: { 100: 3 }, days: { 100: 5 } }, b = { right: { 100: 4, 101: 0 }, days: { 100: 6, 101: 2 } };
+  var m = ProgressState.merge(a, b);
+  if (m.right[100] !== 4 || m.right[101] !== 0 || m.days[100] !== 6) throw new Error('merge ' + JSON.stringify(m.right));
+  if (!ProgressState.validate(Store.snapshot()) || !('right' in Store.snapshot())) throw new Error('snapshot without a valid right log');
+  Store.resetAll();
+  if (Store.rightOn(d) !== undefined || Store.answeredOn(d)) throw new Error('reset kept the day log');
+  return '1 right of 2 today; implied not counted; merge by max; dueIn 7';
 });

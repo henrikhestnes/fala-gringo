@@ -35,6 +35,9 @@
     heatLess: 'less',
     heatMore: 'more',
     heatWeekdays: ['M', '', 'W', '', 'F', '', ''],   // row labels, Monday first; blanks keep the rows aligned
+    sheetLeeches: 'Tricky cards',
+    sheetStats: 'Full statistics',
+    sheetLeechNone: 'None yet — no card has resisted you four times.',
     sheetEarned: 'earned {date}',
     sheetClose: 'Close',
     sheetNoTitle: 'Drill a tab to take it up',
@@ -149,8 +152,12 @@
      newcomer sees where to start and what comes after without a tooltip. The
      captions are presentational — the tabs themselves carry the level in their
      title, and the learner's own level sits by the flame. */
+  /* The statistics page (js/stats.js) is a route of its own, not a topic: no
+     tab is selected while it is open, and the tabs still lead out of it. */
+  const statsRoute = () => (location.hash || '') === '#stats' && !!window.Stats;
+
   function renderTabs() {
-    const activeId = currentTopicId();
+    const activeId = statsRoute() ? '' : currentTopicId();
     let lastTier = 0;
     document.getElementById('tabs').innerHTML = TOPICS.map(t => {
       let extra = '', title = '', caption = '';
@@ -292,12 +299,13 @@
      cells, so the grid keeps its shape. Read straight from Store.answeredOn. */
   const HEAT_WEEKS = 12;
   function heatLevel(n) { return n === 0 ? 0 : n < 10 ? 1 : n < 30 ? 2 : n < 60 ? 3 : 4; }
-  function heatmapHtml() {
+  function heatmapHtml(weeks) {   // the statistics page asks for a year (52)
+    weeks = weeks || HEAT_WEEKS;
     const today = Store.today();
     const wd = (dayToLocal(today).getDay() + 6) % 7;           // Monday = 0
-    const first = today - wd - (HEAT_WEEKS - 1) * 7;
+    const first = today - wd - (weeks - 1) * 7;
     let cells = '', active = 0, answers = 0, past = 0;
-    for (let day = first; day < first + HEAT_WEEKS * 7; day++) {
+    for (let day = first; day < first + weeks * 7; day++) {
       if (day > today) { cells += '<span class="hm-cell future" aria-hidden="true"></span>'; continue; }
       const n = Store.answeredOn(day);
       past++;
@@ -315,6 +323,22 @@
       '<p class="hm-legend" aria-hidden="true">' + escapeHtml(APP_STR.heatLess) +
         ' <span class="hm-cell" data-l="0"></span><span class="hm-cell" data-l="1"></span><span class="hm-cell" data-l="2"></span>' +
         '<span class="hm-cell" data-l="3"></span><span class="hm-cell" data-l="4"></span> ' + escapeHtml(APP_STR.heatMore) + '</p>';
+  }
+
+  /* The learner's leeches (Stats.leechList: Store.isLeech across every drill
+     tab, worst miss ratio first) — the sheet shows the top LEECH_LIST, each a
+     link to its tab; the statistics page has them all. */
+  const LEECH_LIST = 10;
+  function leechesHtml() {
+    const all = window.Stats ? Stats.leechList() : [];
+    const head = '<h3>' + escapeHtml(APP_STR.sheetLeeches) +
+      (all.length ? ' <span class="sheet-count">' + all.length + '</span>' : '') + '</h3>';
+    if (!all.length) return head + '<p class="sheet-today">' + escapeHtml(APP_STR.sheetLeechNone) + '</p>';
+    return head + '<p class="today-line leech-list">' + all.slice(0, LEECH_LIST).map(l =>
+      '<button class="tab-link" type="button" data-tab="' + escapeHtml(l.topic.id) + '">' +
+        '<b lang="' + TARGET_LANG + '">' + escapeHtml(l.card.answer) + '</b> · ' + escapeHtml(l.topic.label) +
+        ' <small>' + escapeHtml(tfill(QUIZ_STRINGS.accuracy, { right: l.tally.right, total: l.tally.total })) + '</small>' +
+      '</button>').join('') + '</p>';
   }
 
   function renderSheet() {
@@ -348,6 +372,7 @@
         (still.length ? '<p class="today-line">' + still.map(p =>
           '<button class="tab-link" type="button" data-tab="' + escapeHtml(p.topic.id) + '">' +
             escapeHtml(p.topic.label) + ' <b>' + p.left + '</b></button>').join('') + '</p>' : '') +
+        leechesHtml() +
         '<h3>' + escapeHtml(APP_STR.sheetActivity) + '</h3>' +
         heatmapHtml() +
         '<h3>' + escapeHtml(APP_STR.sheetMilestones) + ' <span class="sheet-count">' + earned + ' / ' + ms.length + '</span></h3>' +
@@ -357,6 +382,7 @@
             '<b>' + escapeHtml(m.label) + '</b>' +
             '<small>' + escapeHtml(m.earned ? tfill(APP_STR.sheetEarned, { date: dayToDate(m.earned) }) : m.desc) + '</small>' +
           '</div>').join('') + '</div>' +
+        (window.Stats ? '<p class="sheet-more"><a class="tab-link" href="#stats">📊 ' + escapeHtml(APP_STR.sheetStats) + '</a></p>' : '') +
       '</div>';
   }
 
@@ -478,8 +504,22 @@
   }
 
   function route() {
-    const topic = topicById(currentTopicId());
     const welcome = document.getElementById('rioWelcome');
+    if (statsRoute()) {
+      if (welcome) welcome.hidden = true;
+      Quiz.stopVoice();
+      Quiz.unmount();
+      closeSheet(false);
+      renderTabs();
+      window.scrollTo(0, 0);
+      Stats.render();
+      view().removeAttribute('aria-labelledby');
+      const heading = document.querySelector('.stats h2');
+      if (heading && typeof heading.focus === 'function') { heading.tabIndex = -1; heading.focus(); }
+      renderGoal();
+      return;
+    }
+    const topic = topicById(currentTopicId());
     if (welcome) welcome.hidden = topic.kind !== 'browse';
     Quiz.stopVoice();   // leaving a drill must stop the mic + pending auto-advance
     if (topic.kind !== 'quiz') Quiz.unmount();   // Browse and the Daily: no drill deck may linger behind them
@@ -627,6 +667,6 @@
   }
 
   // sync.js re-renders through this after pulling remote progress
-  const refreshProgress = () => { renderTabs(); renderGoal(); applyTheme(); updateModeButton(); };
-  window.App = { refresh: route, refreshProgress: refreshProgress, updateTabPct: updateTabPct, refreshGoal: renderGoal, openSheet: openSheet, closeSheet: closeSheet };
+  const refreshProgress = () => { renderTabs(); renderGoal(); applyTheme(); updateModeButton(); if (statsRoute()) Stats.render(); };   // a pull re-draws an open stats page
+  window.App = { refresh: route, refreshProgress: refreshProgress, updateTabPct: updateTabPct, refreshGoal: renderGoal, openSheet: openSheet, closeSheet: closeSheet, heatmapHtml: heatmapHtml };
 })();

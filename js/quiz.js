@@ -53,6 +53,8 @@ const QUIZ_STRINGS = Object.assign({
   moreNew: 'Keep practicing · {n} new cards →',
   answerIs: 'The answer is',
   also: 'also',                       // the card's other synonyms, after the answer
+  accuracy: '{right} of {total} right',   // the card's lifetime tally, after the answer
+  leechTag: 'tricky',                 // a leech: missed often (Store.isLeech)
   todayStill: 'Still today:',
   todayCaughtUp: 'Tudo em dia por hoje! Nothing left in your tabs.',
   todayGoalHit: 'Daily goal done! {n} reviews still wait — keep going if you like.',
@@ -79,6 +81,18 @@ const QUIZ_STRINGS = Object.assign({
    screen reader switches voice between the prompt and the answer. */
 const TARGET_LANG = window.APP_LANG || 'pt-BR';
 const UI_LANG = window.APP_LANG ? 'pt-BR' : 'en';
+
+/* The card's lifetime tally as tags for the answer line ("7 of 9 right", and
+   "tricky" for a leech — Store.isLeech), from the second answer on. Shared by
+   the drills, the Daily and Browse. */
+function tallyTags(topicId, cardId) {
+  const a = Store.attempts(topicId, cardId);
+  if (a.total < 2) return '';
+  return '<span class="pron-tag tally-tag" lang="' + UI_LANG + '">' +
+      escapeHtml(tfill(QUIZ_STRINGS.accuracy, { right: a.right, total: a.total })) + '</span>' +
+    (Store.isLeech(topicId, cardId)
+      ? '<span class="pron-tag leech-tag" lang="' + UI_LANG + '">' + escapeHtml(QUIZ_STRINGS.leechTag) + '</span>' : '');
+}
 
 const Quiz = (function () {
   let topic = null;
@@ -197,10 +211,14 @@ const Quiz = (function () {
     // pattern only the weakest is asked, the rest ride on its answer (js/infer.js)
     const thinned = (window.Infer && Infer.implyDue) ? Infer.implyDue(topicId, cards, due) : { ask: due, implied: new Map() };
 
-    // most overdue first; shuffle BEFORE the (stable) sort so equally overdue
-    // cards — most of them, on any given day — don't come out in data order
-    const dueOrdered = shuffle(thinned.ask).sort((a, b) => Store.overdue(topicId, b.id) - Store.overdue(topicId, a.id));
-    return { due: dueOrdered, implied: thinned.implied, shaky: shuffle(shaky),
+    // leeches first, then most overdue, then the worst lifetime miss ratio;
+    // shuffle BEFORE the (stable) sort so cards equal on all three — most of
+    // them, on any given day — don't come out in data order
+    const harder = (a, b) => Store.missRatio(topicId, b.id) - Store.missRatio(topicId, a.id);
+    const dueOrdered = shuffle(thinned.ask).sort((a, b) =>
+      (Number(Store.isLeech(topicId, b.id)) - Number(Store.isLeech(topicId, a.id))) ||
+      (Store.overdue(topicId, b.id) - Store.overdue(topicId, a.id)) || harder(a, b));
+    return { due: dueOrdered, implied: thinned.implied, shaky: shuffle(shaky).sort(harder),
              verify: shuffle(intake.filter(c => likely.has(c.id))),
              intake: shuffle(intake.filter(c => !likely.has(c.id))), waiting: waiting };
   }
@@ -784,14 +802,26 @@ const Quiz = (function () {
     // the answer is in the language being learnt; the pronunciation hint is
     // written for the reader's ear (English-based here, aportuguesado on the
     // subpages), so it keeps the chrome's language
-    const pron = (face.pron ? '<span class="pron-tag" lang="' + UI_LANG + '">' + escapeHtml(face.pron) + '</span>' : '') +
-                 (face.flag ? '<span class="pron-tag flag-tag">' + escapeHtml(face.flag) + '</span>' : '');
-    const say = (face.speak ? speakButton(face.speak, face.answer) : '') + alsoLine(card, face);
     const answerHtml = '<strong lang="' + TARGET_LANG + '">' + escapeHtml(face.answer) + '</strong>';
+    // the record is written first so the tags can read this answer's tally
+    const near = ok && res.grade === 'near';
+    if (ok) {
+      known.add(current);
+      Store.markMastered(topic.id, card.id);
+      // a confirmed inferred-known form skips the first rung of the review ladder
+      Store.recordAnswer(topic.id, card.id, true,
+                         (!near && tierOf.get(card.id) === 'verify') ? VERIFY_LEVEL : 0, near);
+    } else {
+      missed.add(card.id);
+      Store.recordAnswer(topic.id, card.id, false);
+    }
+    const pron = (face.pron ? '<span class="pron-tag" lang="' + UI_LANG + '">' + escapeHtml(face.pron) + '</span>' : '') +
+                 (face.flag ? '<span class="pron-tag flag-tag">' + escapeHtml(face.flag) + '</span>' : '') +
+                 tallyTags(topic.id, card.id);
+    const say = (face.speak ? speakButton(face.speak, face.answer) : '') + alsoLine(card, face);
     if (ok) {
       // a near-miss (one slip, unambiguous) clears the card but earns no review
       // level: it comes back on its current interval instead of a longer one
-      const near = res.grade === 'near';
       if (Mode.hard) stats.hardSolved++;
       input.classList.add('correct');
       btn.classList.add('go-green');
@@ -800,11 +830,6 @@ const Quiz = (function () {
         ? '≈ ' + tfill(QUIZ_STRINGS.nearIs, { typed: escapeHtml(input.value.trim()) }) + ' ' + answerHtml + pron + say
         : '✓ ' + praiseWord() + ' ' + answerHtml + pron + say;
       revealArea.innerHTML = face.reveal || '';
-      known.add(current);
-      Store.markMastered(topic.id, card.id);
-      // a confirmed inferred-known form skips the first rung of the review ladder
-      Store.recordAnswer(topic.id, card.id, true,
-                         (!near && tierOf.get(card.id) === 'verify') ? VERIFY_LEVEL : 0, near);
       // a clean hit on a lead confirms the verb's other due forms by implication
       // (clock reset, no climb); a slip is not evidence enough — ask them after all
       if (near) reclaimImplied(card); else confirmImplied(card);
@@ -812,8 +837,6 @@ const Quiz = (function () {
       updateStats();
     } else {
       stats.errors++;
-      missed.add(card.id);
-      Store.recordAnswer(topic.id, card.id, false);
       reclaimImplied(card);   // the verb is not as known as it looked: ask its other due forms too
       perfect = false;
       input.classList.add('wrong', 'shake');

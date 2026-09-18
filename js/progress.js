@@ -68,6 +68,16 @@ const ACTIVE_DAYS = 30;
 const GRADUATE_LEVEL = 3;
 const GRADUATE_SHARE = 0.8;
 
+/* A LEECH (1.27) is a card that keeps hurting: at least LEECH_MISSES lifetime
+   misses AND misses at LEECH_SHARE or more of its answers. The schedule is
+   still the time-based ladder — a leech is asked no more often than its level
+   allows — but when it is asked it goes to the front of the due tier, wears a
+   tag on the answer card, and the progress sheet lists the worst of them.
+   Lifetime accuracy also orders the due and shaky tiers (worst ratio first
+   among equally overdue cards) instead of a plain shuffle. */
+const LEECH_MISSES = 4;
+const LEECH_SHARE = 0.4;
+
 const Store = (function () {
   let state;
   let listener = null;
@@ -162,14 +172,21 @@ const Store = (function () {
   /* Answers per day, the base of the streak and of "done today". Only the
      newest DAYS_KEPT days are kept: the streak never needs more. */
   const DAYS_KEPT = 730;
-  function logDay() {
-    const d = today();
-    state.days[d] = (state.days[d] || 0) + 1;
-    const keys = Object.keys(state.days);
+  function trimDays(log) {
+    const keys = Object.keys(log);
     if (keys.length > DAYS_KEPT) {
       keys.map(Number).sort((a, b) => a - b).slice(0, keys.length - DAYS_KEPT)
-        .forEach(k => { delete state.days[k]; });
+        .forEach(k => { delete log[k]; });
     }
+  }
+  /* `days` counts every answer of the day; `right` (1.28) the correct ones —
+     the key exists for every logged day, so a day with 0 right is told apart
+     from a day logged before 1.28 (Store.rightOn is undefined for those). */
+  function logDay(correct) {
+    const d = today();
+    state.days[d] = (state.days[d] || 0) + 1;
+    state.right[d] = (state.right[d] || 0) + (correct ? 1 : 0);
+    trimDays(state.days); trimDays(state.right);
   }
   /* Review level of a strength record; pre-1.12 records carry no `l`. */
   function levelOf(e) { return e.l != null ? e.l : (e.t ? 1 : 0); }
@@ -215,6 +232,7 @@ const Store = (function () {
       state.dailyDone = {};
       state.strength = {};
       state.days = {};
+      state.right = {};
       state.drilled = {};
       state.graduated = {};
       state.milestones = {};
@@ -233,15 +251,20 @@ const Store = (function () {
             direct correct answer (the new-card allowance; older verify records
             may have no introduction day)
          u  event stamp (for the reset generations in the merge)
+         c  lifetime direct correct answers (near-misses included, implied
+            confirmations not) — with `m` the card's lifetime accuracy, which
+            orders the review tiers and marks leeches; it never schedules
        A single correct answer proves little, so a card stays "shaky" from its
        first miss until it has been answered correctly FOCUS_STREAK times in a
        row. Records written before 1.12 have no `l`: a card with a last-correct
-       day counts as level 1 on the current schedule. --- */
+       day counts as level 1 on the current schedule; records before 1.27 have
+       no `c` and count their corrects from now on. --- */
     recordAnswer(topicId, cardId, correct, minLevel, near, implied) {
       if (!state.strength[topicId]) state.strength[topicId] = {};
       const s = state.strength[topicId][cardId] || { s: 0, m: 0 };
       if (correct) {
         const day = today();
+        if (!implied) s.c = (s.c || 0) + 1;
         let l = levelOf(s);
         const wasDue = !s.t || l === 0 || day - s.t >= intervalFor(l);
         if (wasDue && !near) l = Math.min(l + 1, REVIEW_INTERVALS.length);     // only a due confirmation advances the ladder
@@ -257,7 +280,7 @@ const Store = (function () {
       }
       state.strength[topicId][cardId] = s;
       s.u = stamp();
-      if (!implied) logDay();   // inferred siblings are scheduling, not learner activity
+      if (!implied) logDay(correct);   // inferred siblings are scheduling, not learner activity
       save();
     },
     isShaky(topicId, cardId) {
@@ -295,6 +318,23 @@ const Store = (function () {
       const e = state.strength[topicId] && state.strength[topicId][cardId];
       return (e && e.m) || 0;
     },
+    /* Lifetime tally — { right, wrong, total }; zeros for an unseen card. */
+    attempts(topicId, cardId) {
+      const e = state.strength[topicId] && state.strength[topicId][cardId];
+      const right = (e && e.c) || 0, wrong = (e && e.m) || 0;
+      return { right: right, wrong: wrong, total: right + wrong };
+    },
+    /* Share of answers missed, 0..1 (0 for an unseen card) — orders the review
+       tiers, worst first. */
+    missRatio(topicId, cardId) {
+      const a = this.attempts(topicId, cardId);
+      return a.total ? a.wrong / a.total : 0;
+    },
+    /* Missed at least LEECH_MISSES times and at LEECH_SHARE or more of its answers. */
+    isLeech(topicId, cardId) {
+      const a = this.attempts(topicId, cardId);
+      return a.wrong >= LEECH_MISSES && a.wrong / a.total >= LEECH_SHARE;
+    },
     /* Lexemes (the part of a card id before "|") with at least one mastered,
        non-shaky form in ANY topic — "the learner knows this word" (js/infer.js). */
     knownLexemes() {
@@ -313,6 +353,17 @@ const Store = (function () {
     /* --- the day log: the streak and today's goal (js/app.js renders both) --- */
     answeredOn(day) {
       return state.days[day] || 0;
+    },
+    /* Correct answers that day — undefined for a day logged before 1.28. */
+    rightOn(day) {
+      return state.right[day];
+    },
+    /* Days until the card's next scheduled review (0 or less: due now); null
+       for a card never confirmed. The statistics page's forecast. */
+    dueIn(topicId, cardId) {
+      const e = state.strength[topicId] && state.strength[topicId][cardId];
+      if (!e || !e.t) return null;
+      return e.t + intervalFor(levelOf(e)) - today();
     },
     /* Consecutive days practised, counted back from today — or from yesterday
        when today is not yet done, so the flame does not go out at midnight.
@@ -439,7 +490,7 @@ const Store = (function () {
     snapshot() {
       return JSON.parse(JSON.stringify({
         mastered: state.mastered, strength: state.strength, daily: state.daily, dailyDone: state.dailyDone,
-        days: state.days, drilled: state.drilled, graduated: state.graduated, milestones: state.milestones, resets: state.resets
+        days: state.days, right: state.right, drilled: state.drilled, graduated: state.graduated, milestones: state.milestones, resets: state.resets
       }));
     },
     applySynced(data) {
