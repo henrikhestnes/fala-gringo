@@ -157,18 +157,54 @@ const Quiz = (function () {
            Store.getPref('mic', false) === true;
   }
 
-  /* Verb card ids are "verb|index" (pronominal: "verb|tense|index"), so the part
-     before the first "|" groups a conjugation; non-verb ids have no "|" and each
-     card stands alone. */
+  /* Related forms share the part before "|": verbs, pronominal verbs and
+     Norwegian nouns. Cards without "|" each stand alone. */
   function lexeme(card) {
     return String(card.id).split('|')[0];
+  }
+
+  /* One new form per word per topic per day: seeing an answer (including its
+     conjugation table) must not prime a sibling's first assessment. Derive the
+     exclusions from saved progress so reloads, filters and extra batches obey
+     the same rule. Reviews still run in full; their unseen siblings wait. */
+  function newIntake(topicId, cards, extra) {
+    const today = Store.today();
+    const records = Store.snapshot().strength[topicId] || {};
+    const blocked = new Set(), reserved = new Map();
+    topicCards(topicById(topicId)).forEach(c => {
+      const key = lexeme(c), record = records[c.id] || {};
+      const state = Store.cardState(topicId, c.id);
+      const answeredToday = (record.a !== undefined ? record.a : record.t) === today;
+      if (state === 'due' || state === 'shaky' || answeredToday ||
+          (record.i === today && state !== 'new')) blocked.add(key);
+      // Older versions admitted whole verbs. Keep only one unfinished form,
+      // chosen in data order, even if several siblings already have a stamp.
+      if (record.i === today && !reserved.has(key)) reserved.set(key, c.id);
+    });
+    const unseen = cards.filter(c => Store.cardState(topicId, c.id) === 'new');
+    const likely = (window.Infer && Infer.likelyKnown) ? Infer.likelyKnown(topicId, cards, unseen) : new Set();
+    let room = extra ? Store.newPerDay() : Store.newPerDay() - Store.introducedToday(topicId);
+    const intake = [];
+    unseen.slice().sort((a, b) =>
+      Number(Store.introducedOn(topicId, b.id) === today) - Number(Store.introducedOn(topicId, a.id) === today) ||
+      Number(likely.has(b.id)) - Number(likely.has(a.id))).forEach(c => {
+      const key = lexeme(c), introduced = Store.introducedOn(topicId, c.id);
+      if (blocked.has(key) || (reserved.has(key) && reserved.get(key) !== c.id)) return;
+      if (extra && introduced) return;
+      const resume = !extra && introduced === today;
+      if (!resume && room <= 0) return;
+      intake.push(c);
+      blocked.add(key);
+      if (!resume) room--;
+    });
+    return { intake: intake, likely: likely, waiting: unseen.length - intake.length };
   }
 
   /* The Foco deck (the default) — the cards needing work, in tiers:
        due     mastered cards whose review interval ran out, most overdue first
        shaky   only forms actually missed and not answered right since
        verify  likely-known unseen forms, sharing the daily new-card allowance
-       new     unseen cards introduced in whole lexemes, in curated data order
+       new     unseen cards, at most one form per word per day, in data order
      All eligible reviews are included; the daily goal does not limit the deck.
      Failed implied reviews can reclaim their siblings for immediate practice.
      Reviews come before new material so a short session still does what matters.
@@ -179,33 +215,14 @@ const Quiz = (function () {
      learner today (todayGoal) — and focusDeck() turns the plan for the mounted
      topic into the deck, stamping today's intake. */
   function focoPlan(topicId, cards) {
-    const due = [], shaky = [], unseen = [];
+    const due = [], shaky = [];
     cards.forEach(c => {
       const st = Store.cardState(topicId, c.id);
       if (st === 'shaky') shaky.push(c);
       else if (st === 'due') due.push(c);
-      else if (st === 'new') unseen.push(c);
     });
 
-    // Confirmations are still new material and share the intake allowance.
-    const likely = (window.Infer && Infer.likelyKnown) ? Infer.likelyKnown(topicId, cards, unseen) : new Set();
-
-    // today's intake: what was already introduced today comes back for free,
-    // then whole lexemes in data order until the cap is reached
-    const today = Store.today();
-    const fresh = [], intake = [];
-    unseen.forEach(c => {
-      if (Store.introducedOn(topicId, c.id) === today) intake.push(c); else fresh.push(c);
-    });
-    let room = Store.newPerDay() - Store.introducedToday(topicId);
-    let waiting = 0;
-    const byLex = new Map();
-    fresh.forEach(c => { const k = lexeme(c); if (!byLex.has(k)) byLex.set(k, []); byLex.get(k).push(c); });
-    Array.from(byLex.values()).sort((a, b) =>
-      Number(b.some(c => likely.has(c.id))) - Number(a.some(c => likely.has(c.id)))).forEach(group => {
-      if (room > 0) { intake.push(...group); room -= group.length; }
-      else waiting += group.length;
-    });
+    const { intake, likely, waiting } = newIntake(topicId, cards, false);
 
     // reviews thinned by evidence: of a verb's due regular forms in a known
     // pattern only the weakest is asked, the rest ride on its answer (js/infer.js)
@@ -351,17 +368,8 @@ const Quiz = (function () {
 
   function nextNewBatch() {
     if (!topic || !focusOn()) return [];
-    const groups = new Map();
-    topicCards(topic).forEach(c => {
-      if (activeGroups && !activeGroups.has(c.group)) return;
-      if (Store.cardState(topic.id, c.id) !== 'new' || Store.introducedOn(topic.id, c.id)) return;
-      const key = lexeme(c);
-      if (!groups.has(key)) groups.set(key, []);
-      groups.get(key).push(c);
-    });
-    const batch = [];
-    groups.forEach(cards => { if (batch.length < Store.newPerDay()) batch.push(...cards); });
-    return batch;
+    const cards = topicCards(topic).filter(c => !activeGroups || activeGroups.has(c.group));
+    return newIntake(topic.id, cards, true).intake;
   }
 
   function moreNewHtml() {
@@ -375,7 +383,7 @@ const Quiz = (function () {
     const button = document.getElementById('moreNewBtn');
     if (button) button.addEventListener('click', () => {
       // Explicit extra intake, not a permanent change to the daily limit.
-      // Unfinished cards survive a reload and whole verbs stay together.
+      // Unfinished cards survive a reload; sibling forms still wait a day.
       Store.markIntroduced(topic.id, nextNewBatch().map(c => c.id));
       buildDeck();
     });

@@ -300,3 +300,93 @@ step('the statistics page (#stats) renders from the store: forecast and tab summ
   if (document.getElementById('view').dataset.topic === 'stats') throw new Error('leaving #stats did not re-route');
   return 'forecast 2 now / 1 tomorrow / 1 later; 88% on the tab, 75% today; ' + rows + ' rows';
 });
+
+step('Foco introduces distinct words and defers siblings across misses, reloads, extra batches and days', function () {
+  const grouped = TOPICS.filter(t => t.kind === 'quiz' && topicCards(t).some(c => c.id.indexOf('|') >= 0));
+  const originalNow = Date.now;
+  try {
+    Store.setPref('foco', true); Store.setPref('mic', false); Store.setPref('newPerDay', 4);
+    grouped.forEach(t => {
+      Store.resetAll();
+      const cards = topicCards(t), key = c => c.id.split('|')[0];
+      const admitted = () => cards.filter(c => Quiz._tierOf(c.id) === 'new' || Quiz._tierOf(c.id) === 'verify');
+      // Mixed topics (Pronominais) begin with independent gap cards; isolate
+      // the related-form pool so tomorrow actually exercises siblings.
+      const seed = Store.snapshot();
+      seed.mastered[t.id] = {}; seed.strength[t.id] = {};
+      cards.filter(c => c.id.indexOf('|') < 0).forEach(c => {
+        seed.mastered[t.id][c.id] = 1;
+        seed.strength[t.id][c.id] = { s: 1, m: 0, l: 3, t: Store.today() - 1 };
+      });
+      seedState(seed);
+      Quiz.mount(t);
+      const first = admitted(), words = new Set(first.map(key));
+      if (first.length !== 4 || words.size !== 4 || Store.introducedToday(t.id) !== 4)
+        throw new Error(t.id + ': four new cards must be four words');
+      if (topicGroups(t).length > 1) {
+        Quiz.toggleGroup(first[0].group);
+        if (admitted().some(c => key(c) === key(first[0]))) throw new Error(t.id + ': filter admitted a reserved sibling');
+        Quiz.toggleGroup(first[0].group);
+        if (admitted().map(c => c.id).join() !== first.map(c => c.id).join()) throw new Error(t.id + ': filters changed intake');
+      }
+      const missed = shownCard(t.id);
+      registry.answerInput.value = 'zzzzzzzzzz'; registry.actionBtn.fire('click'); registry.actionBtn.fire('click');
+      if (key(shownCard(t.id)) === key(missed)) throw new Error(t.id + ': miss immediately cued a sibling');
+      Quiz.mount(t);
+      if (Quiz._tierOf(missed.id) !== 'shaky' || admitted().length !== 3) throw new Error(t.id + ': miss/reload changed intake');
+      cards.forEach(c => {
+        if (c.id !== missed.id && key(c) === key(missed) && Quiz._tierOf(c.id)) throw new Error(t.id + ': missed form recruited a sibling');
+      });
+      first.forEach(c => { Store.markMastered(t.id, c.id); Store.recordAnswer(t.id, c.id, true); });
+      Quiz.mount(t);
+      if (Number(registry.statTotal.textContent) !== 0) throw new Error(t.id + ': finishing refilled intake');
+      registry.moreNewBtn.fire('click');
+      const extra = admitted();
+      if (extra.length !== 4 || new Set(extra.map(key)).size !== 4 || extra.some(c => words.has(key(c))))
+        throw new Error(t.id + ': extra batch repeated a word');
+      Quiz.mount(t);
+      if (admitted().map(c => c.id).join() !== extra.map(c => c.id).join()) throw new Error(t.id + ': reload changed extra intake');
+      Date.now = () => originalNow() + 86400000;
+      Quiz.mount(t);
+      if (!admitted().some(c => words.has(key(c)) && !first.some(f => f.id === c.id)))
+        throw new Error(t.id + ': siblings did not become available tomorrow');
+      if (new Set(admitted().map(key)).size !== admitted().length) throw new Error(t.id + ': tomorrow repeated a word');
+      Date.now = originalNow;
+    });
+    return grouped.length + ' topics: four cards = four words; missed card returns; reload/extra batch preserve separation; siblings unlock tomorrow';
+  } finally {
+    Date.now = originalNow;
+    Store.setPref('newPerDay', NEW_PER_DAY); Store.resetAll();
+  }
+});
+
+step('legacy whole-word intake and reviews cannot cue a new sibling', function () {
+  try {
+    Store.setPref('foco', true); Store.setPref('newPerDay', 4);
+    const t = TOPICS.find(t => t.kind === 'quiz' && topicCards(t).some(c => c.id.indexOf('|') >= 0));
+    const cards = topicCards(t), key = cards[0].id.split('|')[0];
+    const siblings = cards.filter(c => c.id.split('|')[0] === key);
+    Store.resetAll();
+    Store.markIntroduced(t.id, siblings.map(c => c.id));
+    Quiz.mount(t);
+    if (siblings.filter(c => Quiz._tierOf(c.id)).length !== 1) throw new Error('legacy intake still asks several forms');
+    const lead = siblings.find(c => Quiz._tierOf(c.id));
+    Store.recordAnswer(t.id, lead.id, false);
+    Quiz.mount(t);
+    if (siblings.some(c => c.id !== lead.id && Quiz._tierOf(c.id))) throw new Error('legacy sibling admitted after miss');
+    Store.resetAll();
+    const seed = Store.snapshot(), d = Store.today();
+    seed.mastered[t.id] = { [lead.id]: 1 };
+    seed.strength[t.id] = { [lead.id]: { s: 1, m: 0, l: 1, t: d - 8, a: d - 8 } };
+    seedState(seed);
+    Quiz.mount(t);
+    if (Quiz._tierOf(lead.id) !== 'due' || siblings.some(c => c.id !== lead.id && Quiz._tierOf(c.id)))
+      throw new Error('due review admitted an unseen sibling');
+    Store.recordAnswer(t.id, lead.id, true);
+    Quiz.mount(t);
+    if (siblings.some(c => Quiz._tierOf(c.id))) throw new Error('completed review unlocked a sibling today');
+    return 'old whole-word reservations thinned; misses, due reviews and completed reviews defer unseen siblings';
+  } finally {
+    Store.setPref('newPerDay', NEW_PER_DAY); Store.resetAll();
+  }
+});

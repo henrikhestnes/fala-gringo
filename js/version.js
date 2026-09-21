@@ -120,7 +120,9 @@
 // 1.28.1: fix: the statistics page shared a class name with the drill header's stat chips and rendered as a row of
 //         slivers; the tally counts misses since it began (`w`, beside the lifetime `m`) so historical misses no
 //         longer read as "0% right of 137" and no longer make every long-missed card a leech
-const APP_VERSION = '1.28.1';
+// 1.28.2: introduce one new form per word per day in Foco, including extra batches;
+//         defer unseen siblings of reviews so revealed answers cannot prime their first test
+const APP_VERSION = '1.28.2';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

@@ -526,13 +526,13 @@ step('inference: a known word + a known pattern makes an unseen regular form a "
   // pattern: PATTERN_MIN distinct regular -ar verbs confirmed in vocês
   voces.slice(0, Infer.PATTERN_MIN).forEach(function (c) {
     snap.mastered.presente[c.id] = 1;
-    snap.strength.presente[c.id] = { s: 1, m: 0, l: 1, t: today };
+    snap.strength.presente[c.id] = { s: 1, m: 0, l: 1, t: today - 1 };
   });
   // word: the "eu" form of the next verb is mastered — its vocês form is unseen
   var target = voces[Infer.PATTERN_MIN];
   var targetEu = target.infer.lexeme + '|0';
   snap.mastered.presente[targetEu] = 1;
-  snap.strength.presente[targetEu] = { s: 1, m: 0, l: 1, t: today };
+  snap.strength.presente[targetEu] = { s: 1, m: 0, l: 1, t: today - 1 };
   // a verb the learner has never met anywhere: pattern known, word not
   var stranger = voces[Infer.PATTERN_MIN + 1];
   seedState(snap);
@@ -645,7 +645,7 @@ step('typed near-misses: one unambiguous slip is accepted, an ambiguous one is a
   cards.forEach(function (c) {
     if (c.id === falo.id) return;
     snap.mastered.presente[c.id] = 1;
-    snap.strength.presente[c.id] = { s: 1, m: 0, l: 3, t: today };
+    snap.strength.presente[c.id] = { s: 1, m: 0, l: 3, t: today - 1 };
   });
   seedState(snap);
   goTo('#browse'); goTo('#presente');
@@ -770,7 +770,7 @@ step('a miss makes only that form shaky; one right answer clears it', function (
   return 'miss -> 1 shaky card (fresh siblings left alone); one hit -> level 1, deck empty';
 });
 
-step('a missed form does not label its unseen siblings shaky', function () {
+step('a missed form defers its unseen siblings', function () {
   var cards = topicCards(topicById('imperfeito'));
   var missed = cards[0];
   var lex = String(missed.id).split('|')[0];
@@ -779,20 +779,19 @@ step('a missed form does not label its unseen siblings shaky', function () {
   var snap = Store.snapshot();
   siblings.forEach(function (c) { delete snap.mastered.imperfeito[c.id]; delete snap.strength.imperfeito[c.id]; });
   seedState(snap);
-  Store.setPref('newPerDay', 1);                      // intake rounds up to finish the verb
+  Store.setPref('newPerDay', 1);
   Store.recordAnswer('imperfeito', missed.id, false);
   goTo('#browse'); goTo('#imperfeito');
   var total = parseInt(registry.statTotal.textContent, 10);
-  if (total !== 1 + siblings.length)
-    throw new Error('deck has ' + total + ' cards, expected the missed form + its ' + siblings.length + ' unseen siblings');
+  if (total !== 1) throw new Error('deck has ' + total + ' cards, expected only the missed form');
   siblings.forEach(function (c) {
-    if (Quiz._tierOf(c.id) !== 'new') throw new Error('sibling "' + c.id + '" is in tier ' + Quiz._tierOf(c.id));
+    if (Quiz._tierOf(c.id)) throw new Error('sibling "' + c.id + '" is in tier ' + Quiz._tierOf(c.id));
   });
-  if (Quiz._counts().shaky !== 1 || Quiz._counts().new !== siblings.length) throw new Error('unseen siblings mislabeled: ' + JSON.stringify(Quiz._counts()));
+  if (Quiz._counts().shaky !== 1 || Quiz._counts().new !== 0) throw new Error('unseen siblings mislabeled: ' + JSON.stringify(Quiz._counts()));
   Store.setPref('newPerDay', NEW_PER_DAY);
   Store.recordAnswer('imperfeito', missed.id, true);   // tidy up for the steps that follow
   siblings.forEach(function (c) { Store.markMastered('imperfeito', c.id); Store.recordAnswer('imperfeito', c.id, true); });
-  return 'miss -> the form + ' + siblings.length + ' unseen forms of "' + lex + '" as new, rounded to a whole verb';
+  return 'miss -> only the missed form; unseen siblings wait';
 });
 
 step('a mastered card comes back for review once it goes stale', function () {
@@ -1605,7 +1604,7 @@ step('first-run checkpoint offers optional sync once without changing the deck',
   }
 });
 
-step('finished Foco can introduce another whole-verb batch without raising the daily limit', function () {
+step('finished Foco can introduce another batch of distinct words without raising the daily limit', function () {
   var originalLikely = Infer.likelyKnown;
   try {
     Infer.likelyKnown = function () { return new Set(); };
@@ -1623,12 +1622,13 @@ step('finished Foco can introduce another whole-verb batch without raising the d
     });
     if (!extra.length || Store.newPerDay() !== cap || !Store.getPref('foco', false)) throw new Error('extra intake failed or settings changed');
     var lexemes = new Set(extra.map(function (c) { return c.id.split('|')[0]; }));
-    topicCards(topicById('presente')).forEach(function (c) {
-      if (lexemes.has(c.id.split('|')[0]) && Store.cardState('presente', c.id) === 'new' && !Store.introducedOn('presente', c.id)) throw new Error('split verb');
+    if (extra.length !== cap || lexemes.size !== extra.length) throw new Error('extra batch repeats a word or exceeds intake');
+    first.forEach(function (c) {
+      if (lexemes.has(c.id.split('|')[0])) throw new Error('extra batch primes a sibling');
     });
     Quiz.mount(topicById('presente'));
     if (!/answerInput/.test(registry.cardArea.innerHTML)) throw new Error('extra intake lost after remount');
-    return extra.length + ' extra cards; complete verbs; Foco and daily limit preserved';
+    return extra.length + ' extra cards from distinct words; Foco and daily limit preserved';
   } finally { Infer.likelyKnown = originalLikely; }
 });
 
@@ -1654,7 +1654,7 @@ step('hundreds of inferred confirmations share intake and cannot refill automati
   if (likely.size < 100) throw new Error('fixture did not create a large confirmation pool: ' + likely.size);
   Quiz.mount(t);
   var n = Number(registry.statTotal.textContent), c = Quiz._counts();
-  if (!c.verify || n > 23 || c.verify + c.new !== n || Store.introducedToday(t.id) !== n) throw new Error('confirmations bypassed intake: ' + JSON.stringify(c));
+  if (!c.verify || n > 20 || c.verify + c.new !== n || Store.introducedToday(t.id) !== n) throw new Error('confirmations bypassed intake: ' + JSON.stringify(c));
   for (var i = 0; i < n; i++) {
     var card = shownCard(t.id);
     registry.answerInput.value = card.answer; registry.actionBtn.fire('click'); registry.actionBtn.fire('click');
