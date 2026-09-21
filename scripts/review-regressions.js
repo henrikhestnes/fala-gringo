@@ -323,6 +323,10 @@ step('Foco introduces distinct words and defers siblings across misses, reloads,
       const first = admitted(), words = new Set(first.map(key));
       if (first.length !== 4 || words.size !== 4 || Store.introducedToday(t.id) !== 4)
         throw new Error(t.id + ': four new cards must be four words');
+      const forms = list => new Set(list.map(c => c.id.split('|').pop()));
+      if (forms(first).size < 2) throw new Error(t.id + ': first intake only includes one person/form');
+      if (first.every(c => /\|[0-3]$/.test(c.id)) && forms(first).size !== 4)
+        throw new Error(t.id + ': first four verbs do not cover all four persons');
       if (topicGroups(t).length > 1) {
         Quiz.toggleGroup(first[0].group);
         if (admitted().some(c => key(c) === key(first[0]))) throw new Error(t.id + ': filter admitted a reserved sibling');
@@ -344,6 +348,7 @@ step('Foco introduces distinct words and defers siblings across misses, reloads,
       const extra = admitted();
       if (extra.length !== 4 || new Set(extra.map(key)).size !== 4 || extra.some(c => words.has(key(c))))
         throw new Error(t.id + ': extra batch repeated a word');
+      if (forms(extra).size < 2) throw new Error(t.id + ': extra intake only includes one person/form');
       Quiz.mount(t);
       if (admitted().map(c => c.id).join() !== extra.map(c => c.id).join()) throw new Error(t.id + ': reload changed extra intake');
       Date.now = () => originalNow() + 86400000;

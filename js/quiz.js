@@ -163,6 +163,13 @@ const Quiz = (function () {
     return String(card.id).split('|')[0];
   }
 
+  // The last id segment identifies the person (also for pronominal verbs),
+  // or the form in the sister apps. Independent cards have no form to balance.
+  function intakeForm(card) {
+    const parts = String(card.id).split('|');
+    return parts.length > 1 ? parts[parts.length - 1] : null;
+  }
+
   /* One new form per word per topic per day: seeing an answer (including its
      conjugation table) must not prime a sibling's first assessment. Derive the
      exclusions from saved progress so reloads, filters and extra batches obey
@@ -185,16 +192,37 @@ const Quiz = (function () {
     const likely = (window.Infer && Infer.likelyKnown) ? Infer.likelyKnown(topicId, cards, unseen) : new Set();
     let room = extra ? Store.newPerDay() : Store.newPerDay() - Store.introducedToday(topicId);
     const intake = [];
+    const formCounts = new Map();
+    const countForm = c => {
+      const form = intakeForm(c);
+      if (form !== null) formCounts.set(form, (formCounts.get(form) || 0) + 1);
+    };
+    // Include today's completed and reserved cards so extra batches (even
+    // one-card batches) continue the mix instead of starting with "eu" again.
+    topicCards(topicById(topicId)).forEach(c => {
+      if (Store.introducedOn(topicId, c.id) === today) countForm(c);
+    });
+    const byLex = new Map();
     unseen.slice().sort((a, b) =>
       Number(Store.introducedOn(topicId, b.id) === today) - Number(Store.introducedOn(topicId, a.id) === today) ||
       Number(likely.has(b.id)) - Number(likely.has(a.id))).forEach(c => {
       const key = lexeme(c), introduced = Store.introducedOn(topicId, c.id);
       if (blocked.has(key) || (reserved.has(key) && reserved.get(key) !== c.id)) return;
       if (extra && introduced) return;
+      if (!byLex.has(key)) byLex.set(key, []);
+      byLex.get(key).push(c);
+    });
+    byLex.forEach(group => {
+      // Keep word order and inferred-confirmation priority, but choose the
+      // least represented eligible person within each word. Only considering
+      // eligible cards also handles missing, mastered and filtered-out forms.
+      group.sort((a, b) => Number(likely.has(b.id)) - Number(likely.has(a.id)) ||
+        (formCounts.get(intakeForm(a)) || 0) - (formCounts.get(intakeForm(b)) || 0));
+      const c = group[0], introduced = Store.introducedOn(topicId, c.id);
       const resume = !extra && introduced === today;
       if (!resume && room <= 0) return;
       intake.push(c);
-      blocked.add(key);
+      if (introduced !== today) countForm(c);
       if (!resume) room--;
     });
     return { intake: intake, likely: likely, waiting: unseen.length - intake.length };

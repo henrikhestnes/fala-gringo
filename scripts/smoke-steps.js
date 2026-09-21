@@ -1667,3 +1667,45 @@ step('hundreds of inferred confirmations share intake and cannot refill automati
   Store.resetAll();
   return likely.size + ' eligible confirmations → ' + n + ' admitted; reload stays empty; explicit extra intake works';
 });
+
+step('new verb intake balances all persons, including one-card extra batches and an existing eu-only day', function () {
+  try {
+    Store.setPref('foco', true); Store.setPref('mic', false);
+    const t = topicById('presente'), cards = topicCards(t);
+    const admitted = () => cards.filter(c => Quiz._tierOf(c.id) === 'new' || Quiz._tierOf(c.id) === 'verify');
+    Store.resetAll(); Store.setPref('newPerDay', 20);
+    Quiz.mount(t);
+    const first = admitted(), counts = [0, 0, 0, 0];
+    first.forEach(c => counts[Number(c.id.split('|').pop())]++);
+    if (counts.some(n => n !== 5)) throw new Error('20 fresh verbs should mix all persons: ' + counts);
+
+    Store.resetAll(); Store.setPref('newPerDay', 1);
+    Quiz.mount(t);
+    const picked = [];
+    for (let i = 0; i < 4; i++) {
+      const batch = admitted();
+      if (batch.length !== 1) throw new Error('one-card allowance changed');
+      const c = batch[0]; picked.push(c);
+      Store.markMastered(t.id, c.id); Store.recordAnswer(t.id, c.id, true);
+      Quiz.mount(t);
+      if (i < 3) registry.moreNewBtn.fire('click');
+    }
+    if (new Set(picked.map(c => c.id.split('|').pop())).size !== 4 ||
+        new Set(picked.map(c => c.id.split('|')[0])).size !== 4)
+      throw new Error('one-card extra batches did not rotate persons across distinct words');
+
+    // A learner upgrading mid-day already has eu cards reserved by 1.28.2.
+    Store.resetAll(); Store.setPref('newPerDay', 4);
+    const old = cards.filter(c => /\|0$/.test(c.id)).slice(0, 4);
+    Store.markIntroduced(t.id, old.map(c => c.id));
+    Quiz.mount(t);
+    if (admitted().map(c => c.id).join() !== old.map(c => c.id).join()) throw new Error('upgrade replaced reserved cards');
+    old.forEach(c => { Store.markMastered(t.id, c.id); Store.recordAnswer(t.id, c.id, true); });
+    Quiz.mount(t); registry.moreNewBtn.fire('click');
+    if (admitted().some(c => /\|0$/.test(c.id)) || new Set(admitted().map(c => c.id.split('|').pop())).size !== 3)
+      throw new Error('extra batch did not compensate for the eu-only intake');
+    return '20 cards: five of each person; one-card batches rotate; old eu reservations kept and next batch balances them';
+  } finally {
+    Store.setPref('newPerDay', NEW_PER_DAY); Store.resetAll();
+  }
+});

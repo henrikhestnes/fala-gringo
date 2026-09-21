@@ -122,7 +122,8 @@
 //         longer read as "0% right of 137" and no longer make every long-missed card a leech
 // 1.28.2: introduce one new form per word per day in Foco, including extra batches;
 //         defer unseen siblings of reviews so revealed answers cannot prime their first test
-const APP_VERSION = '1.28.2';
+// 1.28.3: balance the persons/forms in new intake instead of always selecting the first row
+const APP_VERSION = '1.28.3';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name
