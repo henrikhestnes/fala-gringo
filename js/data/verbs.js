@@ -1,4 +1,4 @@
-// 146 verbs: a 124-verb superset — this repo's own 105 verbs merged with the 95 from the
+// 147 verbs: a 124-verb superset — this repo's own 105 verbs merged with the 95 from the
 // source flashcards repo credited in the README (76 overlap). Forms for every verb were
 // cross-validated: the generated conjugations agree with their hand-written forms on
 // all 285 verb/tense pairs. Pronunciation hints and examples for the 29 study-only
@@ -6,7 +6,7 @@
 // was added on top with only its third-person rows drilled, then 21 high-frequency
 // spoken verbs (tomar, olhar, acabar, existir, morrer, nascer, receber, mandar, brincar,
 // almoçar, jantar, avisar, descobrir, ensinar, gastar, buscar, visitar, virar, arrumar,
-// aproveitar, desligar) — each placed in its category block.
+// aproveitar, desligar) — each placed in its category block — and later cadastrar (to sign up).
 window.DATA_VERBS = {
   categories: [
     { name: "Essenciais", color: "#ec4899" },
@@ -1798,6 +1798,29 @@ window.DATA_VERBS = {
           { form: "procurava", meaning: "you used to look for / were looking for", pron: "proh-koo-RAH-vah", example: "Você procurava emprego naquela época?" },
           { form: "procurávamos", meaning: "we used to look for / were looking for", pron: "proh-koo-RAH-vah-moosh", example: "Nós procurávamos casa perto do centro." },
           { form: "procuravam", meaning: "you all used to look for / were looking for", pron: "proh-koo-RAH-vahng", example: "Vocês procuravam por ele?" },
+        ],
+      },
+    },
+    {
+      pt: "cadastrar", en: "to sign up, to register", category: "Consumo e serviços",
+      tenses: {
+        presente: [
+          { form: "cadastro", meaning: "I sign up / register", pron: "kah-DAHSH-troo", example: "Eu sempre cadastro o cartão no aplicativo." },
+          { form: "cadastra", meaning: "you sign up / register", pron: "kah-DAHSH-trah", example: "Você cadastra os clientes no sistema?" },
+          { form: "cadastramos", meaning: "we sign up / register", pron: "kah-dash-TRAH-moosh", example: "Nós cadastramos os alunos novos no começo do ano." },
+          { form: "cadastram", meaning: "you all sign up / register", pron: "kah-DAHSH-trahng", example: "Vocês cadastram o endereço de entrega no site?" },
+        ],
+        perfeito: [
+          { form: "cadastrei", meaning: "I signed up / registered", pron: "kah-dash-TRAY", example: "Eu me cadastrei no site ontem." },
+          { form: "cadastrou", meaning: "you signed up / registered", pron: "kah-dash-TROH", example: "Você já cadastrou a chave Pix?" },
+          { form: "cadastramos", meaning: "we signed up / registered", pron: "kah-dash-TRAH-moosh", example: "Nós cadastramos o endereço novo no app." },
+          { form: "cadastraram", meaning: "you all signed up / registered", pron: "kah-dash-TRAH-rahng", example: "Vocês já se cadastraram na academia?" },
+        ],
+        imperfeito: [
+          { form: "cadastrava", meaning: "I used to sign up / register", pron: "kah-dash-TRAH-vah", example: "Eu cadastrava os pacientes quando trabalhava na clínica." },
+          { form: "cadastrava", meaning: "you used to sign up / register", pron: "kah-dash-TRAH-vah", example: "Você cadastrava os pedidos no sistema antes?" },
+          { form: "cadastrávamos", meaning: "we used to sign up / register", pron: "kah-dash-TRAH-vah-moosh", example: "Nós cadastrávamos tudo à mão numa planilha." },
+          { form: "cadastravam", meaning: "you all used to sign up / register", pron: "kah-dash-TRAH-vahng", example: "Antigamente vocês cadastravam os clientes num caderno?" },
         ],
       },
     },

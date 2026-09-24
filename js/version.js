@@ -123,7 +123,8 @@
 // 1.28.2: introduce one new form per word per day in Foco, including extra batches;
 //         defer unseen siblings of reviews so revealed answers cannot prime their first test
 // 1.28.3: balance the persons/forms in new intake instead of always selecting the first row
-const APP_VERSION = '1.28.3';
+// 1.28.4: cadastrar (to sign up, to register) — 147 verbs
+const APP_VERSION = '1.28.4';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

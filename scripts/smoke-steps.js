@@ -6,7 +6,7 @@ step('app boots and renders the Browse view', function () {
   var html = registry.view.innerHTML + registry.browseRows.innerHTML;
   if (!/<h1 lang="pt-BR">Verbos<\/h1>/.test(html)) throw new Error('browse view did not render');
   var rows = (html.match(/class="verb-row"/g) || []).length;
-  if (rows !== 146) throw new Error('expected 146 verb rows, got ' + rows);
+  if (rows !== 147) throw new Error('expected 147 verb rows, got ' + rows);
   return rows + ' verb rows, ' + html.length + ' bytes of HTML';
 });
 
@@ -23,7 +23,7 @@ step('Browse defers conjugations until a row is expanded, then preserves irregul
   });
   if (!/eu faço">fa<mark class="irr">ç<\/mark>o</.test(html)) throw new Error('faço not highlighted');
   if (!/você faz">faz<mark class="irr drop"/.test(html)) throw new Error('faz gap missing');
-  return '146 lazy panels; semantic audio buttons and expanded states';
+  return '147 lazy panels; semantic audio buttons and expanded states';
 });
 
 step('tab strip lists all 14 tabs, captioned by tier', function () {
@@ -287,7 +287,7 @@ step('theme cycles auto -> light -> dark -> auto', function () {
   return 'three taps round-trip back to following the system';
 });
 
-step('browse controls all run and keep 146 rows', function () {
+step('browse controls all run and keep 147 rows', function () {
   goTo('#browse');
   Browse.action('shuffle');
   var shuffledRows = (registry.browseRows.innerHTML.match(/class="verb-row"/g) || []).length;
@@ -296,9 +296,9 @@ step('browse controls all run and keep 146 rows', function () {
   Browse.action('hide-en');
   Browse.action('show');
   var rows = (registry.browseRows.innerHTML.match(/class="verb-row"/g) || []).length;
-  if (rows !== 146 || shuffledRows !== 146)
+  if (rows !== 147 || shuffledRows !== 147)
     throw new Error('rows: shuffled=' + shuffledRows + ' final=' + rows);
-  return 'shuffle/reset/hide/show all fine; 146 rows throughout';
+  return 'shuffle/reset/hide/show all fine; 147 rows throughout';
 });
 
 step('Browse search matches English and accent-insensitive Portuguese',function(){
