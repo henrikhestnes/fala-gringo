@@ -124,7 +124,8 @@
 //         defer unseen siblings of reviews so revealed answers cannot prime their first test
 // 1.28.3: balance the persons/forms in new intake instead of always selecting the first row
 // 1.28.4: cadastrar (to sign up, to register) — 147 verbs
-const APP_VERSION = '1.28.4';
+// 1.28.5: the "keep practicing" batch takes held-back siblings once no fresh word is left, so a nearly finished tab never stalls
+const APP_VERSION = '1.28.5';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

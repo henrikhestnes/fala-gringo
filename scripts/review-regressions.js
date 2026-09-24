@@ -395,3 +395,55 @@ step('legacy whole-word intake and reviews cannot cue a new sibling', function (
     Store.setPref('newPerDay', NEW_PER_DAY); Store.resetAll();
   }
 });
+
+step('with no fresh word left, the extra batch admits held-back siblings, one per word, and offers them again after a reload', function () {
+  try {
+    Store.setPref('foco', true); Store.setPref('mic', false); Store.setPref('newPerDay', 4);
+    const key = c => c.id.split('|')[0];
+    // two words with the most forms (verbs: 4 persons at the root, 2 tenses in the subpages)
+    const wordsOf = t => {
+      const cs = topicCards(t), size = w => cs.filter(c => key(c) === w).length;
+      return [...new Set(cs.filter(c => c.id.indexOf('|') >= 0).map(key))].filter(w => size(w) >= 2)
+        .sort((a, b) => size(b) - size(a)).slice(0, 2);
+    };
+    const t = TOPICS.find(t => t.kind === 'quiz' && wordsOf(t).length === 2);
+    const cards = topicCards(t), d = Store.today(), words = wordsOf(t);
+    const third = words.every(w => cards.filter(c => key(c) === w).length >= 3);
+    const answered = words.map(w => cards.find(c => key(c) === w));
+    // the whole tab mastered and fresh, except two words: one form answered today, the rest unseen
+    const seed = Store.snapshot();
+    seed.mastered[t.id] = {}; seed.strength[t.id] = {};
+    cards.filter(c => !words.includes(key(c)) || answered.includes(c)).forEach(c => {
+      seed.mastered[t.id][c.id] = 1;
+      seed.strength[t.id][c.id] = answered.includes(c) ? { s: 1, m: 0, l: 1, t: d, a: d, f: d, i: d }
+                                                       : { s: 1, m: 0, l: 3, t: d - 1, a: d - 1 };
+    });
+    seedState(seed);
+    const admitted = () => cards.filter(c => Quiz._tierOf(c.id) === 'new' || Quiz._tierOf(c.id) === 'verify');
+    Quiz.mount(t);
+    if (admitted().length) throw new Error('siblings of words answered today entered the regular deck');
+    if (!registry.moreNewBtn) throw new Error('no extra batch offered for the held-back siblings');
+    registry.moreNewBtn.fire('click');
+    const extra = admitted();
+    if (extra.length !== 2 || new Set(extra.map(key)).size !== 2 || extra.some(c => !words.includes(key(c)) || answered.includes(c)))
+      throw new Error('extra batch should be one unseen sibling per word: ' + extra.map(c => c.id).join());
+    Quiz.mount(t);
+    if (admitted().length) throw new Error('held-back siblings leaked into the regular deck on reload');
+    registry.moreNewBtn.fire('click');
+    if (admitted().map(c => c.id).sort().join() !== extra.map(c => c.id).sort().join())
+      throw new Error('reload did not offer the same unfinished siblings again');
+    extra.forEach(c => { Store.markMastered(t.id, c.id); Store.recordAnswer(t.id, c.id, true); });
+    Quiz.mount(t);
+    if (!third) {
+      if (registry.cardArea.innerHTML.indexOf('moreNewBtn') >= 0) throw new Error('extra batch offered with nothing left');
+      return t.id + ': ' + extra.length + ' held-back siblings admitted on request and re-offered after reload';
+    }
+    registry.moreNewBtn.fire('click');
+    const next = admitted();
+    if (!next.length || next.some(c => extra.includes(c) || answered.includes(c)) || new Set(next.map(key)).size !== next.length)
+      throw new Error('a second extra batch did not move on to the next siblings');
+    return t.id + ': ' + extra.length + ' held-back siblings admitted on request, re-offered after reload, then ' + next.length + ' more';
+  } finally {
+    Store.setPref('newPerDay', NEW_PER_DAY); Store.resetAll();
+  }
+});

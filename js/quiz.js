@@ -107,6 +107,7 @@ const Quiz = (function () {
   let tierOf = new Map();   // card id -> 'due' | 'shaky' | 'verify' | 'new' (Foco decks only)
   let missed = new Set();   // card ids missed in this run (they read as shaky on the chip)
   let impliedBy = new Map(); // lead card id -> due sibling ids a clean hit on the lead confirms (js/infer.js)
+  let extraHeld = new Map(); // held-back siblings the extra-batch button admitted: id -> 'verify' | 'new'
 
   /* mic mode (the 🎤 chip): hands-free spoken answers */
   let micTimer = 0;    // pending auto-advance
@@ -202,21 +203,30 @@ const Quiz = (function () {
     topicCards(topicById(topicId)).forEach(c => {
       if (Store.introducedOn(topicId, c.id) === today) countForm(c);
     });
-    const byLex = new Map();
+    // An explicit extra batch takes fresh words first and fills the room left
+    // with the held-back siblings, so a nearly finished tab never stalls behind
+    // the one-form rule. Those stay out of the regular deck (their stamps look
+    // like legacy whole-word intake), so the button offers them again instead.
+    const byLex = new Map(), held = new Map();
     unseen.slice().sort((a, b) =>
       Number(Store.introducedOn(topicId, b.id) === today) - Number(Store.introducedOn(topicId, a.id) === today) ||
       Number(likely.has(b.id)) - Number(likely.has(a.id))).forEach(c => {
       const key = lexeme(c), introduced = Store.introducedOn(topicId, c.id);
-      if (blocked.has(key) || (reserved.has(key) && reserved.get(key) !== c.id)) return;
-      if (extra && introduced) return;
-      if (!byLex.has(key)) byLex.set(key, []);
-      byLex.get(key).push(c);
+      const deferred = blocked.has(key) || (reserved.has(key) && reserved.get(key) !== c.id);
+      if (deferred && !extra) return;
+      if (extra && introduced && !deferred) return;
+      const into = deferred ? held : byLex;
+      if (!into.has(key)) into.set(key, []);
+      into.get(key).push(c);
     });
+    held.forEach((group, key) => { if (!byLex.has(key)) byLex.set(key, group); });
     byLex.forEach(group => {
       // Keep word order and inferred-confirmation priority, but choose the
       // least represented eligible person within each word. Only considering
       // eligible cards also handles missing, mastered and filtered-out forms.
-      group.sort((a, b) => Number(likely.has(b.id)) - Number(likely.has(a.id)) ||
+      // A form already introduced today and still unanswered is resumed first.
+      const resumed = c => Number(Store.introducedOn(topicId, c.id) === today);
+      group.sort((a, b) => resumed(b) - resumed(a) || Number(likely.has(b.id)) - Number(likely.has(a.id)) ||
         (formCounts.get(intakeForm(a)) || 0) - (formCounts.get(intakeForm(b)) || 0));
       const c = group[0], introduced = Store.introducedOn(topicId, c.id);
       const resume = !extra && introduced === today;
@@ -273,6 +283,15 @@ const Quiz = (function () {
     impliedBy = plan.implied;
     let impliedN = 0;
     impliedBy.forEach(ids => { impliedN += ids.length; });
+
+    // siblings the extra-batch button let past the one-form rule, while unanswered
+    const planned = new Set(plan.verify.concat(plan.intake).map(c => c.id));
+    cards.forEach(c => {
+      const tier = extraHeld.get(c.id);
+      if (!tier || planned.has(c.id) || Store.cardState(topic.id, c.id) !== 'new') return;
+      (tier === 'verify' ? plan.verify : plan.intake).push(c);
+      plan.waiting--;
+    });
 
     const tiers = [['due', plan.due], ['shaky', plan.shaky], ['verify', plan.verify], ['new', plan.intake]];
     tierOf = new Map();
@@ -395,14 +414,14 @@ const Quiz = (function () {
   }
 
   function nextNewBatch() {
-    if (!topic || !focusOn()) return [];
+    if (!topic || !focusOn()) return { intake: [], likely: new Set() };
     const cards = topicCards(topic).filter(c => !activeGroups || activeGroups.has(c.group));
-    return newIntake(topic.id, cards, true).intake;
+    return newIntake(topic.id, cards, true);
   }
 
   function moreNewHtml() {
     if (!topic || !focusOn()) return '';
-    const batch = nextNewBatch();
+    const batch = nextNewBatch().intake;
     return batch.length ? '<div class="controls"><button class="btn primary" id="moreNewBtn" type="button">' +
       escapeHtml(tfill(QUIZ_STRINGS.moreNew, { n: batch.length })) + '</button></div>' : '';
   }
@@ -411,14 +430,18 @@ const Quiz = (function () {
     const button = document.getElementById('moreNewBtn');
     if (button) button.addEventListener('click', () => {
       // Explicit extra intake, not a permanent change to the daily limit.
-      // Unfinished cards survive a reload; sibling forms still wait a day.
-      Store.markIntroduced(topic.id, nextNewBatch().map(c => c.id));
+      // Unfinished fresh words survive a reload; held-back siblings (taken
+      // only when fresh words run out) are offered by the button again.
+      const { intake, likely } = nextNewBatch();
+      intake.forEach(c => extraHeld.set(c.id, likely.has(c.id) ? 'verify' : 'new'));
+      Store.markIntroduced(topic.id, intake.map(c => c.id));
       buildDeck();
     });
   }
 
   function mount(t) {
     topic = t;
+    extraHeld = new Map();
     if (!window.APP_LANG && !Store.getPref('firstRunStarted', false)) {
       const saved = Store.snapshot();
       const hasAnswers = Object.keys(saved.days).length ||
