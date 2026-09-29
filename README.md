@@ -2,6 +2,8 @@
 
 *"Fala, gringo!" — the Rio greeting, and exactly what this app makes you do.*
 
+**Live at [falagringo.com](https://falagringo.com)** — free, no account, works offline.
+
 A tool for learning everyday **Brazilian Portuguese** — the spoken carioca register
 you actually hear in Rio, not textbook European Portuguese. It is aimed at an
 English speaker: you are shown English and type the Portuguese.
@@ -11,7 +13,7 @@ imperfect subjunctive on a 58-verb core — or drill any of twelve topics by typ
 the answer.
 
 **Static site, no build step, no required dependencies.** Optional sync and production-only usage analytics run separately from lessons. Open
-`index.html` directly from disk or serve the repository root from GitHub Pages.
+`index.html` directly from disk or serve the repository root (production is Cloudflare Pages).
 
 ## Tabs
 
