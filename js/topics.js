@@ -473,7 +473,7 @@ const TOPICS = [
   { id: 'glossary',   label: 'Glossary',   kind: 'quiz', tier: 1,
     groups: () => window.DATA_GLOSSARY.groups,   build: buildGlossaryCards },
 
-  { id: 'perfeito',   label: 'Passado',    kind: 'quiz', tier: 2, groups: VERB_GROUPS,
+  { id: 'perfeito',   label: 'Perfeito',   kind: 'quiz', tier: 2, groups: VERB_GROUPS,
     build: () => buildVerbCards('perfeito', 'Pretérito Perfeito') },
   { id: 'imperfeito', label: 'Imperfeito', kind: 'quiz', tier: 2, groups: VERB_GROUPS,
     build: () => buildVerbCards('imperfeito', 'Pretérito Imperfeito') },

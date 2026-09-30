@@ -21,7 +21,7 @@ the answer.
 |---|---|---|
 | **Browse** | The verb list: tap a word to hide/reveal it, expand a row for all three tenses, tap any form to hear it | 147 verbs |
 | **Presente** | Verb drill, present tense | 574 |
-| **Passado** | Verb drill, pretérito perfeito | 576 |
+| **Perfeito** | Verb drill, pretérito perfeito | 576 |
 | **Imperfeito** | Verb drill, pretérito imperfeito | 573 |
 | **Subjuntivo** | Verb drill, imperfeito do subjuntivo — 58 core verbs | 228 |
 | **Nouns** | With gender and article | 83 |

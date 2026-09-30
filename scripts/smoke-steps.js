@@ -36,7 +36,7 @@ step('tab strip lists all 14 tabs, captioned by tier', function () {
   if (!/Intermediário<\/span><button[^>]*data-tab="perfeito"/.test(registry.tabs.innerHTML) ||
       !/Avançado<\/span><button[^>]*data-tab="subjuntivo"/.test(registry.tabs.innerHTML))
     throw new Error('Intermediário / Avançado captions misplaced');
-  return '14 tabs incl. Browse + Daily; captions before Presente, Passado, Subjuntivo';
+  return '14 tabs incl. Browse + Daily; captions before Presente, Perfeito, Subjuntivo';
 });
 
 step('first-card help is dismissible and stays dismissed across mounts', function () {
@@ -1085,7 +1085,7 @@ step('a tab graduates at 80% of its cards on review level 3, wears 🎓, and nam
   registry.answerInput.value = card.answer;
   registry.actionBtn.fire('click');
   if (!Store.graduatedOn('adverbs')) throw new Error('not stamped after a correct answer');
-  if (!/🎓 Adverbs graduated! Next: Passado/.test(registry.toast.textContent)) throw new Error('toast reads "' + registry.toast.textContent + '"');
+  if (!/🎓 Adverbs graduated! Next: Perfeito/.test(registry.toast.textContent)) throw new Error('toast reads "' + registry.toast.textContent + '"');
   registry.toast.textContent = '';
   registry.actionBtn.fire('click');
   card = shownCard('adverbs');
@@ -1099,7 +1099,7 @@ step('a tab graduates at 80% of its cards on review level 3, wears 🎓, and nam
   if (Store.graduatedOn('adverbs') === 0) throw new Error('the stamp should survive a slip');
   Store.resetTopic('adverbs');
   if (Store.graduatedOn('adverbs')) throw new Error('reset kept the stamp');
-  return need + '/' + cards.length + ' -> 🎓 + title Intermediário; answer stamps once, toast names Passado; a miss lifts the cap; reset clears the stamp';
+  return need + '/' + cards.length + ' -> 🎓 + title Intermediário; answer stamps once, toast names Perfeito; a miss lifts the cap; reset clears the stamp';
 });
 
 step('with tier-3 progress the title reads Avançado; graduation stamps merge to the earliest day', function () {

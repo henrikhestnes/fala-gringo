@@ -125,7 +125,8 @@
 // 1.28.3: balance the persons/forms in new intake instead of always selecting the first row
 // 1.28.4: cadastrar (to sign up, to register) — 147 verbs
 // 1.28.5: the "keep practicing" batch takes held-back siblings once no fresh word is left, so a nearly finished tab never stalls
-const APP_VERSION = '1.28.5';
+// 1.28.6: the Passado tab is now Perfeito — every verb tab names its tense (Presente · Perfeito · Imperfeito · Subjuntivo)
+const APP_VERSION = '1.28.6';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name
