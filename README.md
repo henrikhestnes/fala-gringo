@@ -8,7 +8,7 @@ A tool for learning everyday **Brazilian Portuguese** — the spoken carioca reg
 you actually hear in Rio, not textbook European Portuguese. It is aimed at an
 English speaker: you are shown English and type the Portuguese.
 
-Browse 147 verbs with their conjugations across three indicative tenses — plus the
+Browse 162 verbs with their conjugations across three indicative tenses — plus the
 imperfect subjunctive on a 58-verb core — or drill any of twelve topics by typing
 the answer.
 
@@ -19,21 +19,21 @@ the answer.
 
 | Tab | What it is | Cards |
 |---|---|---|
-| **Browse** | The verb list: tap a word to hide/reveal it, expand a row for all three tenses, tap any form to hear it | 147 verbs |
-| **Presente** | Verb drill, present tense | 574 |
-| **Perfeito** | Verb drill, pretérito perfeito | 576 |
-| **Imperfeito** | Verb drill, pretérito imperfeito | 573 |
+| **Browse** | The verb list: tap a word to hide/reveal it, expand a row for all three tenses, tap any form to hear it | 162 verbs |
+| **Presente** | Verb drill, present tense | 638 |
+| **Perfeito** | Verb drill, pretérito perfeito | 636 |
+| **Imperfeito** | Verb drill, pretérito imperfeito | 637 |
 | **Subjuntivo** | Verb drill, imperfeito do subjuntivo — 58 core verbs | 228 |
-| **Nouns** | With gender and article | 83 |
-| **Adjectives** | With agreement | 53 |
-| **Adverbs** | Frequency, manner, place, time | 28 |
-| **Connecting** | Prepositions, contractions, demonstratives, articles — fill the gap | 87 |
+| **Nouns** | With gender and article — incl. family, body & mind | 139 |
+| **Adjectives** | With agreement | 80 |
+| **Adverbs** | Frequency, manner, place, time | 42 |
+| **Connecting** | Prepositions, contractions, demonstratives, articles, conjunctions — fill the gap | 96 |
 | **Numbers** | Numbers, weekdays, months, colours | 77 |
-| **Glossary** | Everyday expressions | 34 |
-| **Sentences** | Full-sentence translation, incl. hypotheticals & wishes | 83 |
+| **Glossary** | Everyday carioca expressions | 70 |
+| **Sentences** | Full-sentence translation — incl. hypotheticals & wishes, real conditions (se + future subjunctive), verb + preposition, opinions | 129 |
 | **★ Daily** | 7 cards a day, one per topic, deterministic from the date, 5 attempts each, shareable result | 7 |
 
-2081 quiz cards in total.
+2868 quiz cards in total.
 
 ### Se eu soubesse… — the imperfect subjunctive (Subjuntivo tab)
 
@@ -52,7 +52,7 @@ the trigger-prefixed `se/que eu falasse`. The Sentences tab's *Hypotheticals & w
 group practices producing whole trigger sentences.
 
 It covers a curated 58-verb core (the verbs you actually reach for in hypotheticals)
-rather than all 147 — and `haver` stays out for the same reason it is not drilled
+rather than all 162 — and `haver` stays out for the same reason it is not drilled
 elsewhere: only 3sg `houvesse` is live usage.
 
 ## How the drill works
@@ -106,7 +106,7 @@ They use the JavaScriptCore engine bundled with macOS. `verify.html` runs the
 same data checks in the browser — just open it.
 
 `scripts/check.jxa` and `verify.html` share `js/checks.js`, which asserts:
-147 verbs; 1764 forms with all three indicative tenses; every drilled form has a
+162 verbs; 1944 forms with all three indicative tenses; every drilled form has a
 form, meaning, pronunciation and example; every regular verb matches an independent
 conjugation oracle (`js/conjugate.js`); every verb flagged irregular really is;
 58 complete subjunctive blocks whose forms all derive from the perfeito 3pl (a rule

@@ -132,6 +132,67 @@ window.DATA_PRONOMINAL = {
         ],
       },
     },
+    {
+      pt: "se acostumar", en: "to get used to", tip: "'Acostumar-se com' = to get used to. 'Já me acostumei' = I'm used to it by now; the adjective is 'acostumado com'. In speech the infinitive keeps the pronoun in front: 'difícil se acostumar', never 'acostumar-se'.",
+      tenses: {
+        presente: [
+          { form: "me acostumo", meaning: "I get used to", pron: "mee ah-kosh-TOO-moo", example: "Eu me acostumo rápido com lugar novo." },
+          { form: "se acostuma", meaning: "you get used to", pron: "see ah-kosh-TOO-mah", example: "Você se acostuma com o barulho?" },
+          { form: "nos acostumamos", meaning: "we get used to", pron: "noosh ah-kosh-too-MAH-moosh", example: "Nós nos acostumamos com o calor do Rio." },
+          { form: "se acostumam", meaning: "you all get used to", pron: "see ah-kosh-TOO-mahng", example: "Vocês se acostumam com o horário novo?" },
+        ],
+        perfeito: [
+          { form: "me acostumei", meaning: "I got used to", pron: "mee ah-kosh-too-MAY", example: "Eu me acostumei com o sotaque." },
+          { form: "se acostumou", meaning: "you got used to", pron: "see ah-kosh-too-MOH", example: "Você se acostumou com a comida?" },
+          { form: "nos acostumamos", meaning: "we got used to", pron: "noosh ah-kosh-too-MAH-moosh", example: "Nós nos acostumamos com a vida aqui." },
+          { form: "se acostumaram", meaning: "you all got used to", pron: "see ah-kosh-too-MAH-rahng", example: "Vocês se acostumaram com o trânsito?" },
+        ],
+      },
+    },
+    {
+      pt: "se adaptar", en: "to adapt (oneself)", tip: "'Adaptar-se a' in careful speech, 'se adaptar em/no' on the street: 'é difícil se adaptar no Brasil'. Plain 'adaptar' is to adapt something else: adaptei a receita.",
+      tenses: {
+        presente: [
+          { form: "me adapto", meaning: "I adapt", pron: "mee ah-DAHP-too", example: "Eu me adapto a qualquer lugar." },
+          { form: "se adapta", meaning: "you adapt", pron: "see ah-DAHP-tah", example: "Você se adapta fácil?" },
+          { form: "nos adaptamos", meaning: "we adapt", pron: "noosh ah-dahp-TAH-moosh", example: "Nós nos adaptamos ao ritmo da cidade." },
+          { form: "se adaptam", meaning: "you all adapt", pron: "see ah-DAHP-tahng", example: "Vocês se adaptam bem ao frio?" },
+        ],
+      },
+    },
+    {
+      pt: "se mudar", en: "to move (house)", tip: "'Mudar-se' = to move house; plain 'mudar' = to change: 'eu me mudei pro Rio' vs 'eu mudei de trabalho'. Spoken BR also drops the pronoun ('mudei pro Rio') — both are everyday.",
+      tenses: {
+        perfeito: [
+          { form: "me mudei", meaning: "I moved (house)", pron: "mee moo-DAY", example: "Eu me mudei pro Brasil em 2022." },
+          { form: "se mudou", meaning: "you moved (house)", pron: "see moo-DOH", example: "Você se mudou pra Ipanema?" },
+          { form: "nos mudamos", meaning: "we moved (house)", pron: "noosh moo-DAH-moosh", example: "Nós nos mudamos três vezes num ano." },
+          { form: "se mudaram", meaning: "you all moved (house)", pron: "see moo-DAH-rahng", example: "Vocês se mudaram pro mesmo prédio?" },
+        ],
+      },
+    },
+    {
+      pt: "se queixar", en: "to complain", tip: "'Queixar-se de' = to complain about. 'Reclamar de' is the everyday synonym without the pronoun; 'a queixa' is the complaint.",
+      tenses: {
+        presente: [
+          { form: "me queixo", meaning: "I complain", pron: "mee KAY-shoo", example: "Eu me queixo do calor todo dia." },
+          { form: "se queixa", meaning: "you complain", pron: "see KAY-shah", example: "Você se queixa de tudo!" },
+          { form: "nos queixamos", meaning: "we complain", pron: "noosh kay-SHAH-moosh", example: "Nós nos queixamos do barulho pro síndico." },
+          { form: "se queixam", meaning: "you all complain", pron: "see KAY-shahng", example: "Vocês se queixam do preço, mas voltam sempre." },
+        ],
+      },
+    },
+    {
+      pt: "se arrumar", en: "to get ready", tip: "'Arrumar-se' = to get ready, to fix yourself up. Without the pronoun, 'arrumar' is to tidy or fix something: arrumo o quarto.",
+      tenses: {
+        presente: [
+          { form: "me arrumo", meaning: "I get ready", pron: "mee ah-HOO-moo", example: "Eu me arrumo em dez minutos." },
+          { form: "se arruma", meaning: "you get ready", pron: "see ah-HOO-mah", example: "Você se arruma pra sair à noite?" },
+          { form: "nos arrumamos", meaning: "we get ready", pron: "noosh ah-hoo-MAH-moosh", example: "Nós nos arrumamos e saímos correndo." },
+          { form: "se arrumam", meaning: "you all get ready", pron: "see ah-HOO-mahng", example: "Vocês se arrumam juntos antes da festa?" },
+        ],
+      },
+    },
   ],
 
   // ── Everyday phrases ──────────────────────────────────────
@@ -148,5 +209,13 @@ window.DATA_PRONOMINAL = {
     { pt: "Eu me acostumei com o calor.", en: "I got used to the heat.", alts: ["me acostumei com o calor"], pron: "mee ah-kosh-too-MAY", tip: "'Acostumar-se com' = to get used to. 'Já me acostumei' = I'm used to it by now." },
     { pt: "Te ligo amanhã!", en: "I'll call you tomorrow!", alts: ["ligo pra você amanhã"], pron: "chee LEE-goo ah-mah-NYANG", tip: "Here is 'te': the everyday object pronoun for 'você' in Brazil. Starting a sentence with it ('Te ligo…') is exactly what European Portuguese never does — and what Brazilians do all day." },
     { pt: "Se comporta!", en: "Behave yourself!", alts: ["comporte-se"], pron: "see kom-POHR-tah", tip: "'Comportar-se' = to behave. Pronoun-first imperative — what every carioca mother says at the door." },
+    { pt: "Me avisa quando chegar.", en: "Let me know when you arrive.", alts: ["me avise quando chegar", "me avisa quando você chegar", "me avise quando você chegar"], pron: "mee ah-VEE-zah KWAHN-doo sheh-GAHR", tip: "Object pronoun first, then the verb: 'me avisa', 'me liga', 'me manda'. The textbook imperative would be 'me avise'; Rio says 'me avisa'." },
+    { pt: "Te aviso depois.", en: "I'll let you know later.", alts: ["eu te aviso depois", "aviso você depois"], pron: "chee ah-VEE-zoo deh-POYSH", tip: "The pair of 'me avisa': you → 'te'. 'Te aviso', 'te ligo', 'te falo depois' — the present tense doing future duty, as usual in speech." },
+    { pt: "Me empresta uma camiseta?", en: "Can you lend me a T-shirt?", alts: ["me empreste uma camiseta", "você me empresta uma camiseta"], pron: "mee ehm-PREHSH-tah OO-mah kah-mee-ZEH-tah", tip: "Requests are just the present tense with 'me' in front: 'me empresta?', 'me passa o sal?', 'me dá um minuto?'. The answer: 'tá, te empresto a preta'." },
+    { pt: "Me devolve depois.", en: "Give it back to me later.", alts: ["me devolva depois", "devolve pra mim depois"], pron: "mee deh-VOW-vee deh-POYSH", tip: "'Devolver' = to give back. 'Me devolve' (spoken) or 'me devolva' (textbook imperative) — both accepted." },
+    { pt: "Não me importo.", en: "I don't mind.", alts: ["eu não me importo", "não ligo"], pron: "nowng mee eem-POHR-too", tip: "'Importar-se com' = to mind, to care about. 'Não ligo' and 'tô nem aí' say the same with less and less politeness." },
+    { pt: "Isso me incomoda.", en: "That bothers me.", pron: "EE-soo mee een-koh-MOH-dah", tip: "Here 'me' is the object, not a reflexive: the thing bothers ME. Same shape: 'me surpreende' (surprises me), 'não me convence' (doesn't convince me)." },
+    { pt: "Eu me identifico com isso.", en: "I relate to that.", alts: ["me identifico com isso"], pron: "eh-oo mee ee-dehn-chee-FEE-koo kong EE-soo", tip: "'Identificar-se com' = to relate to, to see yourself in. The classic reaction to a song, a film, a story." },
+    { pt: "Só me dei conta depois.", en: "I only realized afterwards.", alts: ["eu só me dei conta depois", "só percebi depois"], pron: "saw mee DAY KOHN-tah deh-POYSH", tip: "'Se dar conta (de)' = to realize; past of dar: dei. One of the 'conta' family: dar conta de (to manage), tomar conta de (to look after), levar em conta (to take into account)." },
   ],
 };

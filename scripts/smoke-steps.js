@@ -6,7 +6,7 @@ step('app boots and renders the Browse view', function () {
   var html = registry.view.innerHTML + registry.browseRows.innerHTML;
   if (!/<h1 lang="pt-BR">Verbos<\/h1>/.test(html)) throw new Error('browse view did not render');
   var rows = (html.match(/class="verb-row"/g) || []).length;
-  if (rows !== 147) throw new Error('expected 147 verb rows, got ' + rows);
+  if (rows !== 162) throw new Error('expected 162 verb rows, got ' + rows);
   return rows + ' verb rows, ' + html.length + ' bytes of HTML';
 });
 
@@ -23,7 +23,7 @@ step('Browse defers conjugations until a row is expanded, then preserves irregul
   });
   if (!/eu faço">fa<mark class="irr">ç<\/mark>o</.test(html)) throw new Error('faço not highlighted');
   if (!/você faz">faz<mark class="irr drop"/.test(html)) throw new Error('faz gap missing');
-  return '147 lazy panels; semantic audio buttons and expanded states';
+  return '162 lazy panels; semantic audio buttons and expanded states';
 });
 
 step('tab strip lists all 14 tabs, captioned by tier', function () {
@@ -287,7 +287,7 @@ step('theme cycles auto -> light -> dark -> auto', function () {
   return 'three taps round-trip back to following the system';
 });
 
-step('browse controls all run and keep 147 rows', function () {
+step('browse controls all run and keep 162 rows', function () {
   goTo('#browse');
   Browse.action('shuffle');
   var shuffledRows = (registry.browseRows.innerHTML.match(/class="verb-row"/g) || []).length;
@@ -296,9 +296,9 @@ step('browse controls all run and keep 147 rows', function () {
   Browse.action('hide-en');
   Browse.action('show');
   var rows = (registry.browseRows.innerHTML.match(/class="verb-row"/g) || []).length;
-  if (rows !== 147 || shuffledRows !== 147)
+  if (rows !== 162 || shuffledRows !== 162)
     throw new Error('rows: shuffled=' + shuffledRows + ' final=' + rows);
-  return 'shuffle/reset/hide/show all fine; 147 rows throughout';
+  return 'shuffle/reset/hide/show all fine; 162 rows throughout';
 });
 
 step('Browse search matches English and accent-insensitive Portuguese',function(){
@@ -391,20 +391,26 @@ step('clearing the intake leaves the rest waiting; a new day brings them', funct
   Quiz.toggleFocus();                    // off -> the full deck must come back
   if (parseInt(registry.statTotal.textContent, 10) !== all) throw new Error('full deck did not come back');
   Quiz.toggleFocus();                    // back to the default
-  advanceDays(1);
-  goTo('#browse'); goTo('#adverbs');
-  var total = parseInt(registry.statTotal.textContent, 10);
-  if (total !== all - cap) throw new Error('next day deck is ' + total + ', expected the remaining ' + (all - cap));
-  guard = 0;
-  while (registry.answerInput && guard++ < 60) {
-    var c2 = shownCard('adverbs');
-    registry.answerInput.value = c2.answer;
-    registry.actionBtn.fire('click'); registry.actionBtn.fire('click');
+  // Each following day brings the next intake (never more than the cap) until the topic is done.
+  var left = all - cap, days = 1;
+  while (left > 0) {
+    advanceDays(1); days++;
+    goTo('#browse'); goTo('#adverbs');
+    var total = parseInt(registry.statTotal.textContent, 10);
+    var want = Math.min(left, cap);
+    if (total !== want) throw new Error('day ' + days + ' deck is ' + total + ', expected ' + want + ' of the remaining ' + left);
+    guard = 0;
+    while (registry.answerInput && guard++ < 60) {
+      var c2 = shownCard('adverbs');
+      registry.answerInput.value = c2.answer;
+      registry.actionBtn.fire('click'); registry.actionBtn.fire('click');
+    }
+    registry.againBtn.fire('click');
+    left -= want;
   }
-  registry.againBtn.fire('click');
   if (!/Tudo em dia/.test(registry.cardArea.innerHTML) || /wait for tomorrow/.test(registry.cardArea.innerHTML))
     throw new Error('topic not fully mastered: ' + registry.cardArea.innerHTML);
-  return 'day 1: ' + cap + ' mastered, ' + (all - cap) + ' waiting; day 2: the rest; then "Tudo em dia"';
+  return 'day 1: ' + cap + ' mastered, ' + (all - cap) + ' waiting; the rest over ' + (days - 1) + ' more day(s); then "Tudo em dia"';
 });
 
 step('review level grows only across distinct days and climbs the interval ladder', function () {

@@ -126,7 +126,14 @@
 // 1.28.4: cadastrar (to sign up, to register) — 147 verbs
 // 1.28.5: the "keep practicing" batch takes held-back siblings once no fresh word is left, so a nearly finished tab never stalls
 // 1.28.6: the Passado tab is now Perfeito — every verb tab names its tense (Presente · Perfeito · Imperfeito · Subjuntivo)
-const APP_VERSION = '1.28.6';
+// 1.28.7: 396 cards from a Rio teacher's caderno (March–September 2026) — 36 glossary expressions (cadê, sei lá,
+//         pois é, tô nem aí, pode deixar…), a family group and 40 more nouns, 27 adjectives (teimoso, folgado, ansioso vs
+//         nervoso…), 14 adverbs (cedo, tarde, semana que vem, mesmo…), 9 connectors (só que, senão, porém, aliás, embora…),
+//         15 verbs (sentar, fugir, cuidar, emprestar, paquerar, acompanhar, lidar, torcer, experimentar, devolver, demorar,
+//         consertar, suar, reparar, gritar — 162 verbs), 5 pronominal verbs (se acostumar, se adaptar, se mudar, se queixar,
+//         se arrumar) + 8 object-pronoun phrases, and three new Sentences groups: real conditions (se + futuro do subjuntivo),
+//         verb + preposition (sonhar com, contar com, torcer pro…) and opinions & stances (que eu saiba, seja como for…)
+const APP_VERSION = '1.28.7';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name
