@@ -123,6 +123,51 @@ function runChecks() {
     return n === 58 ? true : 'got ' + n + ' verbs with subjuntivo';
   });
 
+  check('the same 58 verbs carry a complete subjuntivo-presente block', () => {
+    const bad = [];
+    let n = 0;
+    V.verbs.forEach(v => {
+      const rows = v.tenses['subjuntivo-presente'];
+      if (!rows !== !v.tenses.subjuntivo) bad.push(v.pt + ' (one subjunctive without the other)');
+      if (!rows) return;
+      n++;
+      if (rows.length !== 4) { bad.push(v.pt + ' (rows)'); return; }
+      rows.forEach((r, i) => {
+        if (r.quiz === false) return;        // Browse-only row (acontecer, existir)
+        if (!r.form || !r.meaning || !r.pron || !r.example) bad.push(v.pt + '/' + i);
+      });
+    });
+    if (bad.length) return bad.slice(0, 8).join(', ');
+    return n === 58 ? true : 'got ' + n + ' verbs with subjuntivo-presente';
+  });
+
+  check('every subjuntivo-presente form derives from the presente eu form', () => {
+    // drop -o, add -e/-emos/-em or -a/-amos/-am; six verbs are listed exceptions (ser, estar, ir, dar, saber, querer)
+    const bad = [];
+    V.verbs.forEach(v => {
+      if (!v.tenses['subjuntivo-presente']) return;
+      const expect = subjPresentFromPresente1sg(v.tenses.presente[0].form, v.pt);
+      if (!expect) { bad.push(v.pt + ' (no eu-form rule)'); return; }
+      const stored = v.tenses['subjuntivo-presente'].map(r => r.form).join(',');
+      if (stored !== expect.join(',')) bad.push(v.pt + ': ' + stored + ' vs ' + expect.join(','));
+    });
+    return bad.length ? bad.slice(0, 8).join('\n') : true;
+  });
+
+  check('every subjuntivo-presente example uses its form inside a trigger context', () => {
+    const TRIGGER = /(^|[ ,("“])(que|talvez|caso|embora|tomara|mesmo que|para que|pra que|até que|antes que|sem que)\s/i;
+    const bad = [];
+    V.verbs.forEach(v => {
+      if (!v.tenses['subjuntivo-presente']) return;
+      v.tenses['subjuntivo-presente'].forEach((r, i) => {
+        if (r.quiz === false) return;
+        if (r.example.indexOf(r.form) === -1) bad.push(v.pt + '/' + i + ' (form missing)');
+        else if (!TRIGGER.test(r.example)) bad.push(v.pt + '/' + i + ' (no trigger)');
+      });
+    });
+    return bad.length ? bad.slice(0, 8).join(', ') : true;
+  });
+
   check('every subjuntivo form derives from the perfeito 3pl', () => {
     // This rule has no exceptions in Portuguese, so it verifies irregulars too.
     const bad = [];
@@ -222,8 +267,8 @@ function runChecks() {
 
   /* ------------------------------------------------------------- topics --- */
 
-  check('all 12 quiz topics build cards', () => {
-    if (quizTopics.length !== 12) return 'expected 12 quiz topics, got ' + quizTopics.length;
+  check('all 13 quiz topics build cards', () => {
+    if (quizTopics.length !== 13) return 'expected 13 quiz topics, got ' + quizTopics.length;
     const counts = quizTopics.map(t => t.label + '=' + topicCards(t).length);
     const empty = quizTopics.filter(t => topicCards(t).length === 0);
     return empty.length ? 'empty: ' + empty.map(t => t.id).join(', ')

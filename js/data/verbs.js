@@ -28,7 +28,9 @@ window.DATA_VERBS = {
     { key: "presente",   label: "Presente" },
     { key: "perfeito",   label: "Pretérito Perfeito" },
     { key: "imperfeito", label: "Pretérito Imperfeito" },
-    // Optional per verb: a curated 58-verb subset carries the imperfect subjunctive.
+    // Optional per verb: a curated 58-verb subset carries both subjunctives.
+    // The tense key doubles as the drill tab's id (Browse reads the tally by it).
+    { key: "subjuntivo-presente", label: "Presente do Subjuntivo" },
     { key: "subjuntivo", label: "Imperfeito do Subjuntivo" },
   ],
   synonyms: [
@@ -56,6 +58,12 @@ window.DATA_VERBS = {
           { form: "era", meaning: "you were / used to be (permanent)", pron: "EH-rah", example: "Você era assim antes também?" },
           { form: "éramos", meaning: "we were / used to be (permanent)", pron: "EH-rah-moosh", example: "Nós éramos vizinhos na infância." },
           { form: "eram", meaning: "you all were / used to be (permanent)", pron: "EH-rahng", example: "Vocês eram amigos no colégio?" },
+        ],
+        "subjuntivo-presente": [
+          { form: "seja", meaning: "that I am (permanent)", pron: "SEH-zhah", example: "Espero que eu seja aprovado na entrevista." },
+          { form: "seja", meaning: "that you are (permanent)", pron: "SEH-zhah", example: "Quero que você seja sincero comigo." },
+          { form: "sejamos", meaning: "that we are (permanent)", pron: "seh-ZHAH-moosh", example: "Tomara que nós sejamos vizinhos de novo." },
+          { form: "sejam", meaning: "that you all are (permanent)", pron: "SEH-zhahng", example: "É importante que vocês sejam pontuais." },
         ],
         subjuntivo: [
           { form: "fosse", meaning: "if I were (permanent)", pron: "FOH-see", example: "Se eu fosse rico, morava de frente pra praia." },
@@ -86,6 +94,12 @@ window.DATA_VERBS = {
           { form: "estávamos", meaning: "we used to be / were (temporary)", pron: "esh-TAH-vah-moosh", example: "Nós estávamos na praia todo verão." },
           { form: "estavam", meaning: "you all used to be / were (temporary)", pron: "esh-TAH-vahng", example: "Vocês estavam juntos naquela época?" },
         ],
+        "subjuntivo-presente": [
+          { form: "esteja", meaning: "that I am (temporary)", pron: "ish-TEH-zhah", example: "Talvez eu esteja errado, mas acho que é ali." },
+          { form: "esteja", meaning: "that you are (temporary)", pron: "ish-TEH-zhah", example: "Espero que você esteja bem." },
+          { form: "estejamos", meaning: "that we are (temporary)", pron: "ish-teh-ZHAH-moosh", example: "Tomara que nós estejamos na praia amanhã." },
+          { form: "estejam", meaning: "that you all are (temporary)", pron: "ish-TEH-zhahng", example: "Quero que vocês estejam aqui às oito." },
+        ],
         subjuntivo: [
           { form: "estivesse", meaning: "if I were (temporary)", pron: "esh-chee-VEH-see", example: "Se eu estivesse aí, te ajudava com isso." },
           { form: "estivesse", meaning: "if you were (temporary)", pron: "esh-chee-VEH-see", example: "Gostaria que você estivesse na minha festa ontem." },
@@ -114,6 +128,12 @@ window.DATA_VERBS = {
           { form: "tinha", meaning: "you had / used to have", pron: "CHEE-nyah", example: "Você tinha bicicleta quando era criança?" },
           { form: "tínhamos", meaning: "we had / used to have", pron: "CHEE-nyah-moosh", example: "Nós tínhamos uma casa na praia." },
           { form: "tinham", meaning: "you all had / used to have", pron: "CHEE-nyahng", example: "Vocês tinham aula aos sábados?" },
+        ],
+        "subjuntivo-presente": [
+          { form: "tenha", meaning: "that I have", pron: "TEH-nyah", example: "Tomara que eu tenha sorte na prova." },
+          { form: "tenha", meaning: "that you have", pron: "TEH-nyah", example: "Espero que você tenha um bom dia." },
+          { form: "tenhamos", meaning: "that we have", pron: "teh-NYAH-moosh", example: "É importante que nós tenhamos paciência." },
+          { form: "tenham", meaning: "that you all have", pron: "TEH-nyahng", example: "Não acho que vocês tenham razão." },
         ],
         subjuntivo: [
           { form: "tivesse", meaning: "if I had", pron: "chee-VEH-see", example: "Se eu tivesse dinheiro, comprava um carro novo." },
@@ -167,6 +187,12 @@ window.DATA_VERBS = {
           { form: "íamos", meaning: "we used to go / were going", pron: "EE-ah-moosh", example: "Nós íamos na padaria todo dia." },
           { form: "iam", meaning: "you all used to go / were going", pron: "EE-ahng", example: "Vocês iam à praia nos fins de semana?" },
         ],
+        "subjuntivo-presente": [
+          { form: "vá", meaning: "that I go", pron: "VAH", example: "Talvez eu vá pra Salvador em dezembro." },
+          { form: "vá", meaning: "that you go", pron: "VAH", example: "Quero que você vá comigo no show." },
+          { form: "vamos", meaning: "that we go / let's go", pron: "VAH-moosh", example: "Ele quer que nós vamos de metrô." },
+          { form: "vão", meaning: "that you all go", pron: "VOWng", example: "Espero que vocês vão à festa." },
+        ],
         subjuntivo: [
           { form: "fosse", meaning: "if I went", pron: "FOH-see", example: "Se eu fosse de carro, chegava bem mais rápido." },
           { form: "fosse", meaning: "if you went", pron: "FOH-see", example: "Queria que você fosse comigo ao médico amanhã." },
@@ -195,6 +221,12 @@ window.DATA_VERBS = {
           { form: "vinha", meaning: "you used to come / were coming", pron: "VEE-nyah", example: "Você vinha de ônibus antes?" },
           { form: "vínhamos", meaning: "we used to come / were coming", pron: "VEE-nyah-moosh", example: "Nós vínhamos juntos para a aula." },
           { form: "vinham", meaning: "you all used to come / were coming", pron: "VEE-nyahng", example: "Vocês vinham sempre nesse horário?" },
+        ],
+        "subjuntivo-presente": [
+          { form: "venha", meaning: "that I come", pron: "VEH-nyah", example: "Ela pediu que eu venha mais cedo." },
+          { form: "venha", meaning: "that you come", pron: "VEH-nyah", example: "Quero que você venha jantar aqui em casa." },
+          { form: "venhamos", meaning: "that we come", pron: "veh-NYAH-moosh", example: "É melhor que nós venhamos de carro." },
+          { form: "venham", meaning: "that you all come", pron: "VEH-nyahng", example: "Tomara que vocês venham no carnaval." },
         ],
         subjuntivo: [
           { form: "viesse", meaning: "if I came", pron: "vee-EH-see", example: "Ela queria que eu viesse mais cedo pra casa." },
@@ -225,6 +257,12 @@ window.DATA_VERBS = {
           { form: "fazíamos", meaning: "we used to do / make / were doing", pron: "fah-ZEE-ah-moosh", example: "Nós fazíamos festa no quintal." },
           { form: "faziam", meaning: "you all used to do / make / were doing", pron: "fah-ZEE-ahng", example: "Vocês faziam dever de casa à tarde?" },
         ],
+        "subjuntivo-presente": [
+          { form: "faça", meaning: "that I do / make", pron: "FAH-sah", example: "Ele quer que eu faça o jantar hoje." },
+          { form: "faça", meaning: "that you do / make", pron: "FAH-sah", example: "É importante que você faça exercício." },
+          { form: "façamos", meaning: "that we do / make", pron: "fah-SAH-moosh", example: "Espero que nós façamos uma boa viagem." },
+          { form: "façam", meaning: "that you all do / make", pron: "FAH-sahng", example: "Não acho que vocês façam isso de propósito." },
+        ],
         subjuntivo: [
           { form: "fizesse", meaning: "if I did / made", pron: "fee-ZEH-see", example: "Se eu fizesse dieta, perdia uns quilos rapidinho." },
           { form: "fizesse", meaning: "if you did / made", pron: "fee-ZEH-see", example: "Queria que você fizesse o jantar hoje." },
@@ -253,6 +291,12 @@ window.DATA_VERBS = {
           { form: "dava", meaning: "you used to give / were giving", pron: "DAH-vah", example: "Você dava presente no aniversário dela?" },
           { form: "dávamos", meaning: "we used to give / were giving", pron: "DAH-vah-moosh", example: "Nós dávamos aula de reforço no sábado." },
           { form: "davam", meaning: "you all used to give / were giving", pron: "DAH-vahng", example: "Vocês davam café da manhã cedo?" },
+        ],
+        "subjuntivo-presente": [
+          { form: "dê", meaning: "that I give", pron: "DEH", example: "Tomara que eu dê conta desse projeto." },
+          { form: "dê", meaning: "that you give", pron: "DEH", example: "Espero que você dê um jeito." },
+          { form: "demos", meaning: "that we give", pron: "DEH-moosh", example: "Ela quer que nós demos uma carona pra ela." },
+          { form: "deem", meaning: "that you all give", pron: "DEH-eng", example: "Talvez vocês deem sorte na loteria." },
         ],
         subjuntivo: [
           { form: "desse", meaning: "if I gave", pron: "DEH-see", example: "Se eu desse mais atenção, ela ficava feliz." },
@@ -283,6 +327,12 @@ window.DATA_VERBS = {
           { form: "víamos", meaning: "we used to see / were seeing", pron: "VEE-ah-moosh", example: "Nós víamos o pôr do sol da varanda." },
           { form: "viam", meaning: "you all used to see / were seeing", pron: "VEE-ahng", example: "Vocês viam aquele programa na Globo?" },
         ],
+        "subjuntivo-presente": [
+          { form: "veja", meaning: "that I see", pron: "VEH-zhah", example: "Espero que eu veja o jogo de perto." },
+          { form: "veja", meaning: "that you see", pron: "VEH-zhah", example: "Quero que você veja essa série." },
+          { form: "vejamos", meaning: "that we see", pron: "veh-ZHAH-moosh", example: "É possível que nós vejamos golfinhos na trilha." },
+          { form: "vejam", meaning: "that you all see", pron: "VEH-zhahng", example: "Tomara que vocês vejam o pôr do sol no Arpoador." },
+        ],
         subjuntivo: [
           { form: "visse", meaning: "if I saw", pron: "VEE-see", example: "Se eu visse ele na rua, nem cumprimentava." },
           { form: "visse", meaning: "if you saw", pron: "VEE-see", example: "Queria que você visse o pôr do sol daqui." },
@@ -311,6 +361,12 @@ window.DATA_VERBS = {
           { form: "ficava", meaning: "you used to stay / remain / were staying", pron: "fee-KAH-vah", example: "Você ficava até tarde na festa?" },
           { form: "ficávamos", meaning: "we used to stay / remain / were staying", pron: "fee-KAH-vah-moosh", example: "Nós ficávamos no parque até o anoitecer." },
           { form: "ficavam", meaning: "you all used to stay / remain / were staying", pron: "fee-KAH-vahng", example: "Vocês ficavam com os avós no verão?" },
+        ],
+        "subjuntivo-presente": [
+          { form: "fique", meaning: "that I stay / become", pron: "FEE-kee", example: "Talvez eu fique em casa hoje." },
+          { form: "fique", meaning: "that you stay / become", pron: "FEE-kee", example: "Espero que você fique bem logo." },
+          { form: "fiquemos", meaning: "that we stay / become", pron: "fee-KEH-moosh", example: "Ele quer que nós fiquemos até o fim." },
+          { form: "fiquem", meaning: "that you all stay / become", pron: "FEE-keng", example: "Tomara que vocês fiquem mais uma semana." },
         ],
         subjuntivo: [
           { form: "ficasse", meaning: "if I stayed / became", pron: "fee-KAH-see", example: "Ela queria que eu ficasse mais um pouco na festa." },
@@ -344,6 +400,12 @@ window.DATA_VERBS = {
           { form: "acontecíamos", meaning: "we used to happen (never used)", pron: "ah-kon-teh-SEE-ah-moosh", example: "", quiz: false },
           { form: "aconteciam", meaning: "things used to happen", pron: "ah-kon-teh-SEE-ahng", example: "Antigamente as coisas aconteciam mais devagar.", person: "as coisas" },
         ],
+        "subjuntivo-presente": [
+          { form: "aconteça", meaning: "that I happen (never used)", pron: "ah-kon-TEH-sah", example: "", quiz: false },
+          { form: "aconteça", meaning: "that it happens", pron: "ah-kon-TEH-sah", example: "Tomara que isso aconteça logo.", person: "isso" },
+          { form: "aconteçamos", meaning: "that we happen (never used)", pron: "ah-kon-teh-SAH-moosh", example: "", quiz: false },
+          { form: "aconteçam", meaning: "that things happen", pron: "ah-kon-TEH-sahng", example: "Espero que as coisas aconteçam do jeito certo.", person: "as coisas" },
+        ],
         subjuntivo: [
           { form: "acontecesse", meaning: "if I happened (never used)", pron: "ah-kon-teh-SEH-see", example: "", quiz: false },
           { form: "acontecesse", meaning: "if it happened", pron: "ah-kon-teh-SEH-see", example: "Se acontecesse alguma coisa, você me avisava, né?", person: "isso" },
@@ -374,6 +436,12 @@ window.DATA_VERBS = {
           { form: "existíamos", meaning: "we used to exist (rare)", pron: "eh-zeesh-CHEE-ah-moosh", example: "", quiz: false },
           { form: "existiam", meaning: "they used to exist", pron: "eh-zeesh-CHEE-ahng", example: "Naquela época eles nem existiam.", person: "eles" },
         ],
+        "subjuntivo-presente": [
+          { form: "exista", meaning: "that I exist (rare)", pron: "eh-ZEESH-tah", example: "", quiz: false },
+          { form: "exista", meaning: "that it exists", pron: "eh-ZEESH-tah", example: "Não acho que isso exista no Brasil.", person: "isso" },
+          { form: "existamos", meaning: "that we exist (rare)", pron: "eh-zeesh-TAH-moosh", example: "", quiz: false },
+          { form: "existam", meaning: "that they exist", pron: "eh-ZEESH-tahng", example: "Duvido que eles existam de verdade.", person: "eles" },
+        ],
         subjuntivo: [
           { form: "existisse", meaning: "if I existed (rare)", pron: "eh-zeesh-CHEE-see", example: "", quiz: false },
           { form: "existisse", meaning: "if it existed", pron: "eh-zeesh-CHEE-see", example: "Se existisse um remédio pra ressaca, eu tomava todo dia.", person: "isso" },
@@ -402,6 +470,12 @@ window.DATA_VERBS = {
           { form: "podia", meaning: "you used to be able to / could", pron: "poh-DJEE-ah", example: "Você podia dormir até tarde nas férias?" },
           { form: "podíamos", meaning: "we used to be able to / could", pron: "poh-DJEE-ah-moosh", example: "Nós podíamos nadar na piscina do prédio." },
           { form: "podiam", meaning: "you all used to be able to / could", pron: "poh-DJEE-ahng", example: "Vocês podiam brincar na rua?" },
+        ],
+        "subjuntivo-presente": [
+          { form: "possa", meaning: "that I can", pron: "POH-sah", example: "Espero que eu possa ir amanhã." },
+          { form: "possa", meaning: "that you can", pron: "POH-sah", example: "Talvez você possa me ajudar." },
+          { form: "possamos", meaning: "that we can", pron: "poh-SAH-moosh", example: "Tomara que nós possamos viajar juntos." },
+          { form: "possam", meaning: "that you all can", pron: "POH-sahng", example: "É possível que vocês possam entrar de graça." },
         ],
         subjuntivo: [
           { form: "pudesse", meaning: "if I could", pron: "poo-DEH-see", example: "Se eu pudesse, viajava o mundo inteiro." },
@@ -432,6 +506,12 @@ window.DATA_VERBS = {
           { form: "queríamos", meaning: "we wanted / we'd like (polite)", pron: "keh-REE-ah-moosh", example: "Nós queríamos viajar todo ano." },
           { form: "queriam", meaning: "you all wanted / you'd like (polite)", pron: "keh-REE-ahng", example: "Vocês queriam morar em outro bairro?" },
         ],
+        "subjuntivo-presente": [
+          { form: "queira", meaning: "that I want", pron: "KAY-rah", example: "Ela espera que eu queira ficar." },
+          { form: "queira", meaning: "that you want", pron: "KAY-rah", example: "Duvido que você queira acordar cedo." },
+          { form: "queiramos", meaning: "that we want", pron: "kay-RAH-moosh", example: "Talvez nós queiramos mudar de ideia." },
+          { form: "queiram", meaning: "that you all want", pron: "KAY-rahng", example: "Espero que vocês queiram voltar." },
+        ],
         subjuntivo: [
           { form: "quisesse", meaning: "if I wanted", pron: "kee-ZEH-see", example: "Se eu quisesse sair hoje, chamava você." },
           { form: "quisesse", meaning: "if you wanted", pron: "kee-ZEH-see", example: "Você me olhou como se quisesse dizer algo." },
@@ -460,6 +540,12 @@ window.DATA_VERBS = {
           { form: "precisava", meaning: "you used to need", pron: "preh-see-ZAH-vah", example: "Você precisava acordar cedo?" },
           { form: "precisávamos", meaning: "we used to need", pron: "preh-see-ZAH-vah-moosh", example: "Nós precisávamos estudar para a prova." },
           { form: "precisavam", meaning: "you all used to need", pron: "preh-see-ZAH-vahng", example: "Vocês precisavam de mais tempo?" },
+        ],
+        "subjuntivo-presente": [
+          { form: "precise", meaning: "that I need", pron: "preh-SEE-zee", example: "Tomara que eu não precise trabalhar sábado." },
+          { form: "precise", meaning: "that you need", pron: "preh-SEE-zee", example: "Espero que você não precise de ajuda." },
+          { form: "precisemos", meaning: "that we need", pron: "preh-see-ZEH-moosh", example: "É possível que nós precisemos de mais tempo." },
+          { form: "precisem", meaning: "that you all need", pron: "preh-SEE-zeng", example: "Caso vocês precisem de algo, me liga." },
         ],
         subjuntivo: [
           { form: "precisasse", meaning: "if I needed", pron: "preh-see-ZAH-see", example: "Se eu precisasse de ajuda, te ligava na hora." },
@@ -490,6 +576,12 @@ window.DATA_VERBS = {
           { form: "devíamos", meaning: "we used to owe / should / were supposed to", pron: "deh-VEE-ah-moosh", example: "Nós devíamos prestar mais atenção a isso." },
           { form: "deviam", meaning: "you all used to owe / should", pron: "deh-VEE-ahng", example: "Vocês deviam chegar mais cedo?" },
         ],
+        "subjuntivo-presente": [
+          { form: "deva", meaning: "that I must / owe", pron: "DEH-vah", example: "Talvez eu deva falar com ela." },
+          { form: "deva", meaning: "that you must / should", pron: "DEH-vah", example: "Não acho que você deva ir sozinho." },
+          { form: "devamos", meaning: "that we must / should", pron: "deh-VAH-moosh", example: "É possível que nós devamos dinheiro ao banco." },
+          { form: "devam", meaning: "that you all must / should", pron: "DEH-vahng", example: "Duvido que vocês devam alguma coisa." },
+        ],
         subjuntivo: [
           { form: "devesse", meaning: "if I had to / owed", pron: "deh-VEH-see", example: "Ele me cobra como se eu devesse milhões." },
           { form: "devesse", meaning: "if you had to / owed", pron: "deh-VEH-see", example: "Se você devesse dinheiro, o banco já tinha ligado." },
@@ -518,6 +610,12 @@ window.DATA_VERBS = {
           { form: "sabia", meaning: "you used to know (a fact)", pron: "sah-BEE-ah", example: "Você sabia o nome de todos os vizinhos?" },
           { form: "sabíamos", meaning: "we used to know (a fact)", pron: "sah-BEE-ah-moosh", example: "Nós sabíamos a resposta sempre." },
           { form: "sabiam", meaning: "you all used to know (a fact)", pron: "sah-BEE-ahng", example: "Vocês sabiam que ele morava perto?" },
+        ],
+        "subjuntivo-presente": [
+          { form: "saiba", meaning: "that I know (a fact)", pron: "SY-bah", example: "Espero que eu saiba a resposta na prova." },
+          { form: "saiba", meaning: "that you know (a fact)", pron: "SY-bah", example: "Quero que você saiba a verdade." },
+          { form: "saibamos", meaning: "that we know (a fact)", pron: "sy-BAH-moosh", example: "É importante que nós saibamos o caminho." },
+          { form: "saibam", meaning: "that you all know (a fact)", pron: "SY-bahng", example: "Tomara que vocês saibam nadar." },
         ],
         subjuntivo: [
           { form: "soubesse", meaning: "if I knew (a fact)", pron: "soh-BEH-see", example: "Se eu soubesse disso antes, tinha te avisado." },
@@ -548,6 +646,12 @@ window.DATA_VERBS = {
           { form: "conhecíamos", meaning: "we used to know / were acquainted with (a person/place)", pron: "koh-nyeh-SEE-ah-moosh", example: "Nós conhecíamos aquele lugar desde criança." },
           { form: "conheciam", meaning: "you all used to know / were acquainted with (a person/place)", pron: "koh-nyeh-SEE-ahng", example: "Vocês conheciam a professora antes?" },
         ],
+        "subjuntivo-presente": [
+          { form: "conheça", meaning: "that I know (a person/place)", pron: "koh-NYEH-sah", example: "Espero que eu conheça a Bahia esse ano." },
+          { form: "conheça", meaning: "that you know (a person/place)", pron: "koh-NYEH-sah", example: "Quero que você conheça meus pais." },
+          { form: "conheçamos", meaning: "that we know (a person/place)", pron: "koh-nyeh-SAH-moosh", example: "Tomara que nós conheçamos gente nova na viagem." },
+          { form: "conheçam", meaning: "that you all know (a person/place)", pron: "koh-NYEH-sahng", example: "É importante que vocês conheçam a cidade." },
+        ],
         subjuntivo: [
           { form: "conhecesse", meaning: "if I knew (a person/place)", pron: "koh-nyeh-SEH-see", example: "Ela falava como se eu conhecesse todo mundo ali." },
           { form: "conhecesse", meaning: "if you knew (a person/place)", pron: "koh-nyeh-SEH-see", example: "Queria que você conhecesse minha família no Natal." },
@@ -576,6 +680,12 @@ window.DATA_VERBS = {
           { form: "achava", meaning: "you used to think / find (reckon)", pron: "ah-SHAH-vah", example: "Você achava que ia chover?" },
           { form: "achávamos", meaning: "we used to think / find (reckon)", pron: "ah-SHAH-vah-moosh", example: "Nós achávamos o lugar bonito." },
           { form: "achavam", meaning: "you all used to think / find (reckon)", pron: "ah-SHAH-vahng", example: "Vocês achavam difícil aprender inglês?" },
+        ],
+        "subjuntivo-presente": [
+          { form: "ache", meaning: "that I think / find (reckon)", pron: "AH-shee", example: "Talvez eu ache um apartamento em Botafogo." },
+          { form: "ache", meaning: "that you think / find (reckon)", pron: "AH-shee", example: "Espero que você ache o celular." },
+          { form: "achemos", meaning: "that we think / find (reckon)", pron: "ah-SHEH-moosh", example: "Tomara que nós achemos lugar na praia." },
+          { form: "achem", meaning: "that you all think / find (reckon)", pron: "AH-sheng", example: "Duvido que vocês achem isso engraçado." },
         ],
         subjuntivo: [
           { form: "achasse", meaning: "if I thought (reckon)", pron: "ah-SHAH-see", example: "Se eu achasse a ideia boa, falava logo." },
@@ -606,6 +716,12 @@ window.DATA_VERBS = {
           { form: "pensávamos", meaning: "we used to think / were thinking (reflect)", pron: "pen-SAH-vah-moosh", example: "Nós pensávamos em nos mudar." },
           { form: "pensavam", meaning: "you all used to think (reflect)", pron: "pen-SAH-vahng", example: "Vocês pensavam muito antes de decidir?" },
         ],
+        "subjuntivo-presente": [
+          { form: "pense", meaning: "that I think (reflect)", pron: "PEN-see", example: "Ela quer que eu pense melhor." },
+          { form: "pense", meaning: "that you think (reflect)", pron: "PEN-see", example: "É importante que você pense antes de falar." },
+          { form: "pensemos", meaning: "that we think (reflect)", pron: "pen-SEH-moosh", example: "Talvez nós pensemos igual." },
+          { form: "pensem", meaning: "that you all think (reflect)", pron: "PEN-seng", example: "Quero que vocês pensem no assunto." },
+        ],
         subjuntivo: [
           { form: "pensasse", meaning: "if I thought (reflect)", pron: "pen-SAH-see", example: "Se eu pensasse demais, não fazia nada." },
           { form: "pensasse", meaning: "if you thought (reflect)", pron: "pen-SAH-see", example: "Era melhor que você pensasse antes de falar." },
@@ -634,6 +750,12 @@ window.DATA_VERBS = {
           { form: "lembrava", meaning: "you used to remember / were remembering", pron: "lem-BRAH-vah", example: "Você lembrava o nome dos colegas?" },
           { form: "lembrávamos", meaning: "we used to remember / were remembering", pron: "lem-BRAH-vah-moosh", example: "Nós lembrávamos as receitas de cor." },
           { form: "lembravam", meaning: "you all used to remember", pron: "lem-BRAH-vahng", example: "Vocês lembravam das histórias antigas?" },
+        ],
+        "subjuntivo-presente": [
+          { form: "lembre", meaning: "that I remember", pron: "LEM-bree", example: "Tomara que eu lembre do nome dela." },
+          { form: "lembre", meaning: "that you remember", pron: "LEM-bree", example: "Espero que você lembre de trazer frutas." },
+          { form: "lembremos", meaning: "that we remember", pron: "lem-BREH-moosh", example: "É importante que nós lembremos da senha." },
+          { form: "lembrem", meaning: "that you all remember", pron: "LEM-breng", example: "Quero que vocês lembrem disso." },
         ],
         subjuntivo: [
           { form: "lembrasse", meaning: "if I remembered", pron: "lem-BRAH-see", example: "Se eu lembrasse do código, abria a porta." },
@@ -779,6 +901,12 @@ window.DATA_VERBS = {
           { form: "morávamos", meaning: "we used to live / were living (reside)", pron: "moh-RAH-vah-moosh", example: "Nós morávamos em Copacabana naquela época." },
           { form: "moravam", meaning: "you all used to live / were living (reside)", pron: "moh-RAH-vahng", example: "Vocês moravam no mesmo prédio?" },
         ],
+        "subjuntivo-presente": [
+          { form: "more", meaning: "that I live (reside)", pron: "MOH-ree", example: "Talvez eu more no Rio pra sempre." },
+          { form: "more", meaning: "that you live (reside)", pron: "MOH-ree", example: "Espero que você more perto do trabalho." },
+          { form: "moremos", meaning: "that we live (reside)", pron: "moh-REH-moosh", example: "Ele quer que nós moremos juntos." },
+          { form: "morem", meaning: "that you all live (reside)", pron: "MOH-reng", example: "Tomara que vocês morem perto da praia." },
+        ],
         subjuntivo: [
           { form: "morasse", meaning: "if I lived (reside)", pron: "moh-RAH-see", example: "Se eu morasse na praia, nadava todo dia." },
           { form: "morasse", meaning: "if you lived (reside)", pron: "moh-RAH-see", example: "Queria que você morasse mais perto da gente." },
@@ -807,6 +935,12 @@ window.DATA_VERBS = {
           { form: "trabalhava", meaning: "you used to work / were working", pron: "trah-bah-LYAH-vah", example: "Você trabalhava depois da escola?" },
           { form: "trabalhávamos", meaning: "we used to work / were working", pron: "trah-bah-LYAH-vah-moosh", example: "Nós trabalhávamos juntos no verão." },
           { form: "trabalhavam", meaning: "you all used to work / were working", pron: "trah-bah-LYAH-vahng", example: "Vocês trabalhavam numa loja naquele bairro?" },
+        ],
+        "subjuntivo-presente": [
+          { form: "trabalhe", meaning: "that I work", pron: "trah-BAH-lyee", example: "Espero que eu não trabalhe no feriado." },
+          { form: "trabalhe", meaning: "that you work", pron: "trah-BAH-lyee", example: "É importante que você trabalhe com calma." },
+          { form: "trabalhemos", meaning: "that we work", pron: "trah-bah-LYEH-moosh", example: "Talvez nós trabalhemos de casa amanhã." },
+          { form: "trabalhem", meaning: "that you all work", pron: "trah-BAH-lyeng", example: "Duvido que vocês trabalhem no domingo." },
         ],
         subjuntivo: [
           { form: "trabalhasse", meaning: "if I worked", pron: "trah-bah-LYAH-see", example: "Meu chefe queria que eu trabalhasse no feriado." },
@@ -837,6 +971,12 @@ window.DATA_VERBS = {
           { form: "estudávamos", meaning: "we used to study / were studying", pron: "esh-too-DAH-vah-moosh", example: "Nós estudávamos juntos na biblioteca." },
           { form: "estudavam", meaning: "you all used to study", pron: "esh-too-DAH-vahng", example: "Vocês estudavam à noite?" },
         ],
+        "subjuntivo-presente": [
+          { form: "estude", meaning: "that I study", pron: "esh-TOO-djee", example: "Ela quer que eu estude mais." },
+          { form: "estude", meaning: "that you study", pron: "esh-TOO-djee", example: "É importante que você estude todo dia." },
+          { form: "estudemos", meaning: "that we study", pron: "esh-too-DEH-moosh", example: "Espero que nós estudemos juntos." },
+          { form: "estudem", meaning: "that you all study", pron: "esh-TOO-deng", example: "Tomara que vocês estudem pra prova." },
+        ],
         subjuntivo: [
           { form: "estudasse", meaning: "if I studied", pron: "esh-too-DAH-see", example: "Se eu estudasse mais, passava fácil nessa prova." },
           { form: "estudasse", meaning: "if you studied", pron: "esh-too-DAH-see", example: "Sua mãe queria que você estudasse medicina, né?" },
@@ -865,6 +1005,12 @@ window.DATA_VERBS = {
           { form: "chegava", meaning: "you used to arrive / were arriving", pron: "sheh-GAH-vah", example: "Você chegava sempre atrasado?" },
           { form: "chegávamos", meaning: "we used to arrive / were arriving", pron: "sheh-GAH-vah-moosh", example: "Nós chegávamos cedo no trabalho." },
           { form: "chegavam", meaning: "you all used to arrive / were arriving", pron: "sheh-GAH-vahng", example: "Vocês chegavam de ônibus?" },
+        ],
+        "subjuntivo-presente": [
+          { form: "chegue", meaning: "that I arrive", pron: "SHEH-gee", example: "Espero que eu chegue a tempo." },
+          { form: "chegue", meaning: "that you arrive", pron: "SHEH-gee", example: "Quero que você chegue cedo." },
+          { form: "cheguemos", meaning: "that we arrive", pron: "sheh-GEH-moosh", example: "Tomara que nós cheguemos antes da chuva." },
+          { form: "cheguem", meaning: "that you all arrive", pron: "SHEH-geng", example: "É importante que vocês cheguem no horário." },
         ],
         subjuntivo: [
           { form: "chegasse", meaning: "if I arrived", pron: "sheh-GAH-see", example: "Ela agia como se eu chegasse sempre atrasado no trabalho." },
@@ -918,6 +1064,12 @@ window.DATA_VERBS = {
           { form: "saíamos", meaning: "we used to leave / go out / were leaving", pron: "sah-EE-ah-moosh", example: "Nós saíamos para jantar no sábado." },
           { form: "saíam", meaning: "you all used to leave / go out / were leaving", pron: "sah-EE-ahng", example: "Vocês saíam do trabalho às cinco?" },
         ],
+        "subjuntivo-presente": [
+          { form: "saia", meaning: "that I leave / go out", pron: "SAH-yah", example: "Talvez eu saia mais cedo hoje." },
+          { form: "saia", meaning: "that you leave / go out", pron: "SAH-yah", example: "Quero que você saia comigo sábado." },
+          { form: "saiamos", meaning: "that we leave / go out", pron: "sah-YAH-moosh", example: "Tomara que nós saiamos antes do trânsito." },
+          { form: "saiam", meaning: "that you all leave / go out", pron: "SAH-yahng", example: "Espero que vocês saiam da praia antes de escurecer." },
+        ],
         subjuntivo: [
           { form: "saísse", meaning: "if I went out", pron: "sah-EE-see", example: "Minha mãe queria que eu saísse menos à noite." },
           { form: "saísse", meaning: "if you went out", pron: "sah-EE-see", example: "Se você saísse do trabalho cedo, ia comigo ao show." },
@@ -970,6 +1122,12 @@ window.DATA_VERBS = {
           { form: "pegávamos", meaning: "we used to take / grab (bus, Uber)", pron: "peh-GAH-vah-moosh", example: "Nós pegávamos o metrô juntos." },
           { form: "pegavam", meaning: "you all used to take / grab (bus, Uber)", pron: "peh-GAH-vahng", example: "Vocês pegavam o mesmo caminho?" },
         ],
+        "subjuntivo-presente": [
+          { form: "pegue", meaning: "that I take / grab (bus, Uber)", pron: "PEH-gee", example: "Tomara que eu pegue o ônibus das sete." },
+          { form: "pegue", meaning: "that you take / grab (bus, Uber)", pron: "PEH-gee", example: "Espero que você pegue uma onda boa." },
+          { form: "peguemos", meaning: "that we take / grab (bus, Uber)", pron: "peh-GEH-moosh", example: "É melhor que nós peguemos um táxi." },
+          { form: "peguem", meaning: "that you all take / grab (bus, Uber)", pron: "PEH-geng", example: "Quero que vocês peguem as chaves na portaria." },
+        ],
         subjuntivo: [
           { form: "pegasse", meaning: "if I took / grabbed (bus, Uber)", pron: "peh-GAH-see", example: "Se eu pegasse o metrô, chegava em vinte minutos." },
           { form: "pegasse", meaning: "if you took / grabbed (bus, Uber)", pron: "peh-GAH-see", example: "Queria que você pegasse as crianças na escola hoje." },
@@ -998,6 +1156,12 @@ window.DATA_VERBS = {
           { form: "levava", meaning: "you used to take / carry / were taking", pron: "leh-VAH-vah", example: "Você levava o cachorro no parque?" },
           { form: "levávamos", meaning: "we used to take / carry / were taking", pron: "leh-VAH-vah-moosh", example: "Nós levávamos flores para a professora." },
           { form: "levavam", meaning: "you all used to take / carry / were taking", pron: "leh-VAH-vahng", example: "Vocês levavam a bicicleta na viagem?" },
+        ],
+        "subjuntivo-presente": [
+          { form: "leve", meaning: "that I take / carry", pron: "LEH-vee", example: "Talvez eu leve o cachorro pra praia." },
+          { form: "leve", meaning: "that you take / carry", pron: "LEH-vee", example: "Quero que você leve um casaco." },
+          { form: "levemos", meaning: "that we take / carry", pron: "leh-VEH-moosh", example: "É melhor que nós levemos água." },
+          { form: "levem", meaning: "that you all take / carry", pron: "LEH-veng", example: "Espero que vocês levem protetor solar." },
         ],
         subjuntivo: [
           { form: "levasse", meaning: "if I took / carried", pron: "leh-VAH-see", example: "Se eu levasse o casaco, não passava frio agora." },
@@ -1050,6 +1214,12 @@ window.DATA_VERBS = {
           { form: "voltava", meaning: "you used to return / come back / were returning", pron: "vow-TAH-vah", example: "Você voltava cedo da escola?" },
           { form: "voltávamos", meaning: "we used to return / come back / were returning", pron: "vow-TAH-vah-moosh", example: "Nós voltávamos da praia todo domingo." },
           { form: "voltavam", meaning: "you all used to return / come back / were returning", pron: "vow-TAH-vahng", example: "Vocês voltavam tarde da festa?" },
+        ],
+        "subjuntivo-presente": [
+          { form: "volte", meaning: "that I return / come back", pron: "VOW-chee", example: "Espero que eu volte ao Rio em breve." },
+          { form: "volte", meaning: "that you return / come back", pron: "VOW-chee", example: "Quero que você volte logo." },
+          { form: "voltemos", meaning: "that we return / come back", pron: "vow-TEH-moosh", example: "Tomara que nós voltemos antes da meia-noite." },
+          { form: "voltem", meaning: "that you all return / come back", pron: "VOW-teng", example: "É importante que vocês voltem em segurança." },
         ],
         subjuntivo: [
           { form: "voltasse", meaning: "if I returned", pron: "vow-TAH-see", example: "Se eu voltasse pro Rio, morava em Ipanema de novo." },
@@ -1126,6 +1296,12 @@ window.DATA_VERBS = {
           { form: "ligávamos", meaning: "we used to call / turn on / were calling (phone)", pron: "lee-GAH-vah-moosh", example: "Nós ligávamos o rádio de manhã." },
           { form: "ligavam", meaning: "you all used to call / turn on (phone)", pron: "lee-GAH-vahng", example: "Vocês ligavam pra família às vezes?" },
         ],
+        "subjuntivo-presente": [
+          { form: "ligue", meaning: "that I call (phone)", pron: "LEE-gee", example: "Talvez eu ligue pra ela amanhã." },
+          { form: "ligue", meaning: "that you call (phone)", pron: "LEE-gee", example: "Quero que você ligue quando chegar." },
+          { form: "liguemos", meaning: "that we call (phone)", pron: "lee-GEH-moosh", example: "É melhor que nós liguemos antes de ir." },
+          { form: "liguem", meaning: "that you all call (phone)", pron: "LEE-geng", example: "Espero que vocês liguem pra mim." },
+        ],
         subjuntivo: [
           { form: "ligasse", meaning: "if I called / turned on (phone)", pron: "lee-GAH-see", example: "Se eu ligasse pra ela agora, ela nem atendia." },
           { form: "ligasse", meaning: "if you called / turned on (phone)", pron: "lee-GAH-see", example: "Queria que você ligasse pra sua mãe mais vezes." },
@@ -1177,6 +1353,12 @@ window.DATA_VERBS = {
           { form: "falava", meaning: "you used to speak / talk / were talking", pron: "fah-LAH-vah", example: "Você falava alto na aula?" },
           { form: "falávamos", meaning: "we used to speak / talk / were talking", pron: "fah-LAH-vah-moosh", example: "Nós falávamos no telefone toda noite." },
           { form: "falavam", meaning: "you all used to speak / talk / were talking", pron: "fah-LAH-vahng", example: "Vocês falavam inglês em casa?" },
+        ],
+        "subjuntivo-presente": [
+          { form: "fale", meaning: "that I speak / talk", pron: "FAH-lee", example: "Ela quer que eu fale português na aula." },
+          { form: "fale", meaning: "that you speak", pron: "FAH-lee", example: "É importante que você fale devagar." },
+          { form: "falemos", meaning: "that we speak / talk", pron: "fah-LEH-moosh", example: "Talvez nós falemos com o síndico." },
+          { form: "falem", meaning: "that you all speak / talk", pron: "FAH-leng", example: "Espero que vocês falem com ele hoje." },
         ],
         subjuntivo: [
           { form: "falasse", meaning: "if I spoke", pron: "fah-LAH-see", example: "Se eu falasse inglês, arrumava emprego melhor." },
@@ -1230,6 +1412,12 @@ window.DATA_VERBS = {
           { form: "dizíamos", meaning: "we used to say / were saying", pron: "djee-ZEE-ah-moosh", example: "Nós dizíamos piada na hora do almoço." },
           { form: "diziam", meaning: "you all used to say / were saying", pron: "djee-ZEE-ahng", example: "Vocês diziam que iam voltar cedo?" },
         ],
+        "subjuntivo-presente": [
+          { form: "diga", meaning: "that I say / tell", pron: "DJEE-gah", example: "Ele quer que eu diga a verdade." },
+          { form: "diga", meaning: "that you say / tell", pron: "DJEE-gah", example: "Quero que você diga o que pensa." },
+          { form: "digamos", meaning: "that we say / tell", pron: "djee-GAH-moosh", example: "É melhor que nós digamos não." },
+          { form: "digam", meaning: "that you all say / tell", pron: "DJEE-gahng", example: "Espero que vocês digam sim." },
+        ],
         subjuntivo: [
           { form: "dissesse", meaning: "if I said", pron: "djee-SEH-see", example: "Ele queria que eu dissesse sim na hora." },
           { form: "dissesse", meaning: "if you said", pron: "djee-SEH-see", example: "Se você dissesse a verdade, ninguém brigava." },
@@ -1258,6 +1446,12 @@ window.DATA_VERBS = {
           { form: "perguntava", meaning: "you used to ask / were asking", pron: "pehr-goon-TAH-vah", example: "Você perguntava o preço antes de comprar?" },
           { form: "perguntávamos", meaning: "we used to ask / were asking", pron: "pehr-goon-TAH-vah-moosh", example: "Nós perguntávamos o caminho sempre." },
           { form: "perguntavam", meaning: "you all used to ask", pron: "pehr-goon-TAH-vahng", example: "Vocês perguntavam a opinião dos outros?" },
+        ],
+        "subjuntivo-presente": [
+          { form: "pergunte", meaning: "that I ask", pron: "per-GOON-chee", example: "Ela quer que eu pergunte o preço." },
+          { form: "pergunte", meaning: "that you ask", pron: "per-GOON-chee", example: "É importante que você pergunte ao médico." },
+          { form: "perguntemos", meaning: "that we ask", pron: "per-goon-TEH-moosh", example: "Talvez nós perguntemos ao porteiro." },
+          { form: "perguntem", meaning: "that you all ask", pron: "per-GOON-teng", example: "Quero que vocês perguntem antes de entrar." },
         ],
         subjuntivo: [
           { form: "perguntasse", meaning: "if I asked", pron: "pehr-goon-TAH-see", example: "Se eu perguntasse o preço, você me falava?" },
@@ -1426,6 +1620,12 @@ window.DATA_VERBS = {
           { form: "entendíamos", meaning: "we used to understand", pron: "en-ten-DJEE-ah-moosh", example: "Nós entendíamos uns aos outros sem falar." },
           { form: "entendiam", meaning: "you all used to understand", pron: "en-ten-DJEE-ahng", example: "Vocês entendiam a lição?" },
         ],
+        "subjuntivo-presente": [
+          { form: "entenda", meaning: "that I understand", pron: "en-TEN-dah", example: "Espero que eu entenda o sotaque carioca logo." },
+          { form: "entenda", meaning: "that you understand", pron: "en-TEN-dah", example: "Quero que você entenda meu lado." },
+          { form: "entendamos", meaning: "that we understand", pron: "en-ten-DAH-moosh", example: "É importante que nós entendamos as regras." },
+          { form: "entendam", meaning: "that you all understand", pron: "en-TEN-dahng", example: "Tomara que vocês entendam a piada." },
+        ],
         subjuntivo: [
           { form: "entendesse", meaning: "if I understood", pron: "en-ten-DEH-see", example: "Se eu entendesse de carro, consertava sozinho." },
           { form: "entendesse", meaning: "if you understood", pron: "en-ten-DEH-see", example: "Queria que você entendesse o meu lado." },
@@ -1454,6 +1654,12 @@ window.DATA_VERBS = {
           { form: "aprendia", meaning: "you used to learn / were learning", pron: "ah-pren-DJEE-ah", example: "Você aprendia piano quando era pequeno?" },
           { form: "aprendíamos", meaning: "we used to learn / were learning", pron: "ah-pren-DJEE-ah-moosh", example: "Nós aprendíamos coisas novas todo dia." },
           { form: "aprendiam", meaning: "you all used to learn / were learning", pron: "ah-pren-DJEE-ahng", example: "Vocês aprendiam rápido na aula?" },
+        ],
+        "subjuntivo-presente": [
+          { form: "aprenda", meaning: "that I learn", pron: "ah-PREN-dah", example: "Espero que eu aprenda português esse ano." },
+          { form: "aprenda", meaning: "that you learn", pron: "ah-PREN-dah", example: "Quero que você aprenda a surfar." },
+          { form: "aprendamos", meaning: "that we learn", pron: "ah-pren-DAH-moosh", example: "É importante que nós aprendamos com os erros." },
+          { form: "aprendam", meaning: "that you all learn", pron: "ah-PREN-dahng", example: "Tomara que vocês aprendam rápido." },
         ],
         subjuntivo: [
           { form: "aprendesse", meaning: "if I learned", pron: "ah-pren-DEH-see", example: "Se eu aprendesse inglês, viajava mais tranquilo." },
@@ -1599,6 +1805,12 @@ window.DATA_VERBS = {
           { form: "comprávamos", meaning: "we used to buy / were buying", pron: "kohm-PRAH-vah-moosh", example: "Nós comprávamos fruta no mercado." },
           { form: "compravam", meaning: "you all used to buy / were buying", pron: "kohm-PRAH-vahng", example: "Vocês compravam ingresso antecipado?" },
         ],
+        "subjuntivo-presente": [
+          { form: "compre", meaning: "that I buy", pron: "KOHM-pree", example: "Talvez eu compre uma bicicleta." },
+          { form: "compre", meaning: "that you buy", pron: "KOHM-pree", example: "Quero que você compre pão na volta." },
+          { form: "compremos", meaning: "that we buy", pron: "kohm-PREH-moosh", example: "É melhor que nós compremos os ingressos hoje." },
+          { form: "comprem", meaning: "that you all buy", pron: "KOHM-preng", example: "Espero que vocês comprem algo na feira." },
+        ],
         subjuntivo: [
           { form: "comprasse", meaning: "if I bought", pron: "kohm-PRAH-see", example: "Se eu comprasse aquele apartamento, ficava sem dinheiro nenhum." },
           { form: "comprasse", meaning: "if you bought", pron: "kohm-PRAH-see", example: "Queria que você comprasse pão na volta do trabalho." },
@@ -1627,6 +1839,12 @@ window.DATA_VERBS = {
           { form: "pagava", meaning: "you used to pay / were paying", pron: "pah-GAH-vah", example: "Você pagava a passagem de ônibus?" },
           { form: "pagávamos", meaning: "we used to pay / were paying", pron: "pah-GAH-vah-moosh", example: "Nós pagávamos a conta dividida." },
           { form: "pagavam", meaning: "you all used to pay / were paying", pron: "pah-GAH-vahng", example: "Vocês pagavam em dinheiro?" },
+        ],
+        "subjuntivo-presente": [
+          { form: "pague", meaning: "that I pay", pron: "PAH-gee", example: "Tomara que eu pague menos imposto esse ano." },
+          { form: "pague", meaning: "that you pay", pron: "PAH-gee", example: "Ela quer que você pague a conta." },
+          { form: "paguemos", meaning: "that we pay", pron: "pah-GEH-moosh", example: "É justo que nós paguemos metade cada um." },
+          { form: "paguem", meaning: "that you all pay", pron: "PAH-geng", example: "Espero que vocês paguem em dia." },
         ],
         subjuntivo: [
           { form: "pagasse", meaning: "if I paid", pron: "pah-GAH-see", example: "Se eu pagasse todas as contas hoje, ficava zerado." },
@@ -1702,6 +1920,12 @@ window.DATA_VERBS = {
           { form: "pedia", meaning: "you used to ask for / order", pron: "peh-DJEE-ah", example: "Você pedia ajuda quando precisava?" },
           { form: "pedíamos", meaning: "we used to ask for / order", pron: "peh-DJEE-ah-moosh", example: "Nós pedíamos comida no mesmo restaurante." },
           { form: "pediam", meaning: "you all used to ask for / order", pron: "peh-DJEE-ahng", example: "Vocês pediam refrigerante no almoço?" },
+        ],
+        "subjuntivo-presente": [
+          { form: "peça", meaning: "that I ask for / order", pron: "PEH-sah", example: "Ele quer que eu peça desculpa." },
+          { form: "peça", meaning: "that you ask for / order", pron: "PEH-sah", example: "É melhor que você peça ajuda." },
+          { form: "peçamos", meaning: "that we ask for / order", pron: "peh-SAH-moosh", example: "Talvez nós peçamos uma pizza." },
+          { form: "peçam", meaning: "that you all ask for / order", pron: "PEH-sahng", example: "Espero que vocês peçam a conta." },
         ],
         subjuntivo: [
           { form: "pedisse", meaning: "if I asked for / ordered", pron: "peh-DJEE-see", example: "Ela queria que eu pedisse desculpa pra ele." },
@@ -1939,6 +2163,12 @@ window.DATA_VERBS = {
           { form: "comíamos", meaning: "we used to eat / were eating", pron: "koh-MEE-ah-moosh", example: "Nós comíamos na casa da vó aos domingos." },
           { form: "comiam", meaning: "you all used to eat / were eating", pron: "koh-MEE-ahng", example: "Vocês comiam juntos no intervalo?" },
         ],
+        "subjuntivo-presente": [
+          { form: "coma", meaning: "that I eat", pron: "KOH-mah", example: "Ela quer que eu coma mais verdura." },
+          { form: "coma", meaning: "that you eat", pron: "KOH-mah", example: "Espero que você coma bem na viagem." },
+          { form: "comamos", meaning: "that we eat", pron: "koh-MAH-moosh", example: "Talvez nós comamos fora hoje." },
+          { form: "comam", meaning: "that you all eat", pron: "KOH-mahng", example: "Tomara que vocês comam tudo." },
+        ],
         subjuntivo: [
           { form: "comesse", meaning: "if I ate", pron: "koh-MEH-see", example: "Se eu comesse menos açúcar, dormia melhor." },
           { form: "comesse", meaning: "if you ate", pron: "koh-MEH-see", example: "Queria que você comesse alguma coisa antes de sair." },
@@ -1990,6 +2220,12 @@ window.DATA_VERBS = {
           { form: "tomava", meaning: "you used to take (a shower, a coffee)", pron: "toh-MAH-vah", example: "Você tomava café quando era criança?" },
           { form: "tomávamos", meaning: "we used to take (a shower, a coffee)", pron: "toh-MAH-vah-moosh", example: "Nós tomávamos suco de laranja toda manhã." },
           { form: "tomavam", meaning: "you all used to take (a shower, a coffee)", pron: "toh-MAH-vahng", example: "Vocês tomavam ônibus pra escola?" },
+        ],
+        "subjuntivo-presente": [
+          { form: "tome", meaning: "that I take (a shower, a coffee)", pron: "TOH-mee", example: "Ela quer que eu tome o remédio." },
+          { form: "tome", meaning: "that you take (a shower, a coffee)", pron: "TOH-mee", example: "É importante que você tome água." },
+          { form: "tomemos", meaning: "that we take (a shower, a coffee)", pron: "toh-MEH-moosh", example: "Talvez nós tomemos um café depois." },
+          { form: "tomem", meaning: "that you all take (a shower, a coffee)", pron: "TOH-meng", example: "Espero que vocês tomem cuidado." },
         ],
         subjuntivo: [
           { form: "tomasse", meaning: "if I took (a shower, a coffee)", pron: "toh-MAH-see", example: "Se eu tomasse um café agora, não dormia mais." },
@@ -2457,6 +2693,12 @@ window.DATA_VERBS = {
           { form: "dormíamos", meaning: "we used to sleep / were sleeping", pron: "dor-MEE-ah-moosh", example: "Nós dormíamos na rede na praia." },
           { form: "dormiam", meaning: "you all used to sleep / were sleeping", pron: "dor-MEE-ahng", example: "Vocês dormiam com a luz acesa?" },
         ],
+        "subjuntivo-presente": [
+          { form: "durma", meaning: "that I sleep", pron: "DOOR-mah", example: "Espero que eu durma bem hoje." },
+          { form: "durma", meaning: "that you sleep", pron: "DOOR-mah", example: "Quero que você durma cedo." },
+          { form: "durmamos", meaning: "that we sleep", pron: "door-MAH-moosh", example: "É melhor que nós durmamos agora." },
+          { form: "durmam", meaning: "that you all sleep", pron: "DOOR-mahng", example: "Tomara que vocês durmam bem." },
+        ],
         subjuntivo: [
           { form: "dormisse", meaning: "if I slept", pron: "dohr-MEE-see", example: "Ela queria que eu dormisse mais cedo durante a semana." },
           { form: "dormisse", meaning: "if you slept", pron: "dohr-MEE-see", example: "Se você dormisse oito horas, acordava bem melhor." },
@@ -2485,6 +2727,12 @@ window.DATA_VERBS = {
           { form: "lia", meaning: "you used to read / were reading", pron: "LEE-ah", example: "Você lia muito quando era criança?" },
           { form: "líamos", meaning: "we used to read / were reading", pron: "LEE-ah-moosh", example: "Nós líamos o jornal de manhã." },
           { form: "liam", meaning: "you all used to read / were reading", pron: "LEE-ahng", example: "Vocês liam revistas em casa?" },
+        ],
+        "subjuntivo-presente": [
+          { form: "leia", meaning: "that I read", pron: "LEH-yah", example: "Ela quer que eu leia o livro dela." },
+          { form: "leia", meaning: "that you read", pron: "LEH-yah", example: "Espero que você leia a mensagem." },
+          { form: "leiamos", meaning: "that we read", pron: "leh-YAH-moosh", example: "É importante que nós leiamos o contrato." },
+          { form: "leiam", meaning: "that you all read", pron: "LEH-yahng", example: "Quero que vocês leiam o jornal amanhã." },
         ],
         subjuntivo: [
           { form: "lesse", meaning: "if I read", pron: "LEH-see", example: "Se eu lesse mais, escrevia melhor." },
@@ -2561,6 +2809,12 @@ window.DATA_VERBS = {
           { form: "começávamos", meaning: "we used to start / begin / were starting", pron: "koh-meh-SAH-vah-moosh", example: "Nós começávamos a aula com música." },
           { form: "começavam", meaning: "you all used to start / begin / were starting", pron: "koh-meh-SAH-vahng", example: "Vocês começavam o trabalho às oito?" },
         ],
+        "subjuntivo-presente": [
+          { form: "comece", meaning: "that I start / begin", pron: "koh-MEH-see", example: "Tomara que eu comece o trabalho novo em março." },
+          { form: "comece", meaning: "that you start / begin", pron: "koh-MEH-see", example: "Quero que você comece hoje." },
+          { form: "comecemos", meaning: "that we start / begin", pron: "koh-meh-SEH-moosh", example: "É melhor que nós comecemos cedo." },
+          { form: "comecem", meaning: "that you all start / begin", pron: "koh-MEH-seng", example: "Espero que vocês comecem sem mim." },
+        ],
         subjuntivo: [
           { form: "começasse", meaning: "if I started / began", pron: "koh-meh-SAH-see", example: "Se eu começasse a correr, emagrecia rápido." },
           { form: "começasse", meaning: "if you started / began", pron: "koh-meh-SAH-see", example: "Queria que você começasse a estudar hoje mesmo." },
@@ -2636,6 +2890,12 @@ window.DATA_VERBS = {
           { form: "tentávamos", meaning: "we used to try / were trying", pron: "ten-TAH-vah-moosh", example: "Nós tentávamos chegar no horário." },
           { form: "tentavam", meaning: "you all used to try", pron: "ten-TAH-vahng", example: "Vocês tentavam falar português?" },
         ],
+        "subjuntivo-presente": [
+          { form: "tente", meaning: "that I try", pron: "TEN-chee", example: "Ela quer que eu tente de novo." },
+          { form: "tente", meaning: "that you try", pron: "TEN-chee", example: "É importante que você tente falar português." },
+          { form: "tentemos", meaning: "that we try", pron: "ten-TEH-moosh", example: "Talvez nós tentemos outro restaurante." },
+          { form: "tentem", meaning: "that you all try", pron: "TEN-teng", example: "Espero que vocês tentem mais uma vez." },
+        ],
         subjuntivo: [
           { form: "tentasse", meaning: "if I tried", pron: "ten-TAH-see", example: "Se eu tentasse de novo, acho que conseguia." },
           { form: "tentasse", meaning: "if you tried", pron: "ten-TAH-see", example: "Queria que você tentasse pelo menos uma vez." },
@@ -2664,6 +2924,12 @@ window.DATA_VERBS = {
           { form: "conseguia", meaning: "you used to manage / achieve / were managing", pron: "kon-seh-GHEE-ah", example: "Você conseguia resolver isso sozinha?" },
           { form: "conseguíamos", meaning: "we used to manage / achieve / were managing", pron: "kon-seh-GHEE-ah-moosh", example: "Nós conseguíamos trabalhar bem juntos." },
           { form: "conseguiam", meaning: "you all used to manage / achieve", pron: "kon-seh-GHEE-ahng", example: "Vocês conseguiam se comunicar em inglês?" },
+        ],
+        "subjuntivo-presente": [
+          { form: "consiga", meaning: "that I manage", pron: "kohn-SEE-gah", example: "Espero que eu consiga um emprego logo." },
+          { form: "consiga", meaning: "that you manage", pron: "kohn-SEE-gah", example: "Tomara que você consiga o visto." },
+          { form: "consigamos", meaning: "that we manage", pron: "kohn-see-GAH-moosh", example: "É possível que nós consigamos ingresso." },
+          { form: "consigam", meaning: "that you all manage", pron: "kohn-SEE-gahng", example: "Duvido que vocês consigam chegar a tempo." },
         ],
         subjuntivo: [
           { form: "conseguisse", meaning: "if I managed (to)", pron: "kon-seh-GHEE-see", example: "Se eu conseguisse uma folga, ia pra praia com você." },
@@ -2809,6 +3075,12 @@ window.DATA_VERBS = {
           { form: "trazíamos", meaning: "we used to bring / were bringing", pron: "trah-ZEE-ah-moosh", example: "Nós trazíamos comida para a festa." },
           { form: "traziam", meaning: "you all used to bring / were bringing", pron: "trah-ZEE-ahng", example: "Vocês traziam novidades da viagem?" },
         ],
+        "subjuntivo-presente": [
+          { form: "traga", meaning: "that I bring", pron: "TRAH-gah", example: "Ela quer que eu traga o violão." },
+          { form: "traga", meaning: "that you bring", pron: "TRAH-gah", example: "Espero que você traga o carregador." },
+          { form: "tragamos", meaning: "that we bring", pron: "trah-GAH-moosh", example: "É melhor que nós tragamos comida." },
+          { form: "tragam", meaning: "that you all bring", pron: "TRAH-gahng", example: "Quero que vocês tragam os amigos." },
+        ],
         subjuntivo: [
           { form: "trouxesse", meaning: "if I brought", pron: "troh-SEH-see", example: "Se eu trouxesse o guarda-chuva, não me molhava tanto." },
           { form: "trouxesse", meaning: "if you brought", pron: "troh-SEH-see", example: "Queria que você trouxesse aquele bolo da sua mãe." },
@@ -2884,6 +3156,12 @@ window.DATA_VERBS = {
           { form: "deixávamos", meaning: "we used to leave (behind) / let", pron: "day-SHAH-vah-moosh", example: "Nós deixávamos o cachorro solto." },
           { form: "deixavam", meaning: "you all used to leave (behind) / let", pron: "day-SHAH-vahng", example: "Vocês deixavam a luz acesa?" },
         ],
+        "subjuntivo-presente": [
+          { form: "deixe", meaning: "that I leave (behind) / let", pron: "DAY-shee", example: "Ele quer que eu deixe a chave na portaria." },
+          { form: "deixe", meaning: "that you leave (behind) / let", pron: "DAY-shee", example: "Espero que você deixe o cachorro em casa." },
+          { form: "deixemos", meaning: "that we leave (behind) / let", pron: "day-SHEH-moosh", example: "É melhor que nós deixemos isso pra depois." },
+          { form: "deixem", meaning: "that you all leave (behind) / let", pron: "DAY-sheng", example: "Quero que vocês deixem tudo arrumado." },
+        ],
         subjuntivo: [
           { form: "deixasse", meaning: "if I left (behind) / let", pron: "day-SHAH-see", example: "Se eu deixasse o carro em casa, chegava mais rápido." },
           { form: "deixasse", meaning: "if you left (behind) / let", pron: "day-SHAH-see", example: "Queria que você deixasse a chave com o porteiro." },
@@ -2913,6 +3191,12 @@ window.DATA_VERBS = {
           { form: "passávamos", meaning: "we used to pass / spend / were passing (time)", pron: "pah-SAH-vah-moosh", example: "Nós passávamos o verão na praia." },
           { form: "passavam", meaning: "you all used to pass / spend / were passing (time)", pron: "pah-SAH-vahng", example: "Vocês passavam muito tempo juntos?" },
         ],
+        "subjuntivo-presente": [
+          { form: "passe", meaning: "that I pass / spend (time)", pron: "PAH-see", example: "Espero que eu passe na prova." },
+          { form: "passe", meaning: "that you pass / spend (time)", pron: "PAH-see", example: "Tomara que você passe bem na entrevista." },
+          { form: "passemos", meaning: "that we pass / spend (time)", pron: "pah-SEH-moosh", example: "É possível que nós passemos por Niterói." },
+          { form: "passem", meaning: "that you all pass / spend (time)", pron: "PAH-seng", example: "Quero que vocês passem aqui em casa." },
+        ],
         subjuntivo: [
           { form: "passasse", meaning: "if I passed / spent (time)", pron: "pah-SAH-see", example: "Ela queria que eu passasse o fim de semana lá." },
           { form: "passasse", meaning: "if you passed / spent (time)", pron: "pah-SAH-see", example: "Se você passasse lá em casa, a gente conversava melhor." },
@@ -2941,6 +3225,12 @@ window.DATA_VERBS = {
           { form: "parava", meaning: "you used to stop / were stopping", pron: "pah-RAH-vah", example: "Você parava pra descansar?" },
           { form: "parávamos", meaning: "we used to stop / were stopping", pron: "pah-RAH-vah-moosh", example: "Nós parávamos de trabalhar mais cedo." },
           { form: "paravam", meaning: "you all used to stop / were stopping", pron: "pah-RAH-vahng", example: "Vocês paravam nesse posto?" },
+        ],
+        "subjuntivo-presente": [
+          { form: "pare", meaning: "that I stop", pron: "PAH-ree", example: "Ela quer que eu pare de fumar." },
+          { form: "pare", meaning: "that you stop", pron: "PAH-ree", example: "É importante que você pare de reclamar." },
+          { form: "paremos", meaning: "that we stop", pron: "pah-REH-moosh", example: "Talvez nós paremos num posto." },
+          { form: "parem", meaning: "that you all stop", pron: "PAH-reng", example: "Espero que vocês parem de brigar." },
         ],
         subjuntivo: [
           { form: "parasse", meaning: "if I stopped", pron: "pah-RAH-see", example: "Se eu parasse de comer pão, emagrecia." },
@@ -2993,6 +3283,12 @@ window.DATA_VERBS = {
           { form: "mudava", meaning: "you used to change / move / were changing", pron: "moo-DAH-vah", example: "Você mudava de assunto na hora errada?" },
           { form: "mudávamos", meaning: "we used to change / move / were changing", pron: "moo-DAH-vah-moosh", example: "Nós mudávamos os planos de última hora." },
           { form: "mudavam", meaning: "you all used to change / move", pron: "moo-DAH-vahng", example: "Vocês mudavam muito durante esse período?" },
+        ],
+        "subjuntivo-presente": [
+          { form: "mude", meaning: "that I change", pron: "MOO-djee", example: "Talvez eu mude de emprego." },
+          { form: "mude", meaning: "that you change", pron: "MOO-djee", example: "Espero que você mude de ideia." },
+          { form: "mudemos", meaning: "that we change", pron: "moo-DEH-moosh", example: "Ele quer que nós mudemos pra Niterói." },
+          { form: "mudem", meaning: "that you all change", pron: "MOO-deng", example: "Duvido que vocês mudem de opinião." },
         ],
         subjuntivo: [
           { form: "mudasse", meaning: "if I changed / moved", pron: "moo-DAH-see", example: "Se eu mudasse de emprego, ganhava melhor." },
@@ -3276,6 +3572,12 @@ window.DATA_VERBS = {
           { form: "sentíamos", meaning: "we used to feel / were feeling", pron: "sen-CHEE-ah-moosh", example: "Nós sentíamos falta da comida de casa." },
           { form: "sentiam", meaning: "you all used to feel", pron: "sen-CHEE-ahng", example: "Vocês sentiam dificuldade no começo?" },
         ],
+        "subjuntivo-presente": [
+          { form: "sinta", meaning: "that I feel", pron: "SEEN-tah", example: "Espero que eu não sinta frio na Noruega." },
+          { form: "sinta", meaning: "that you feel", pron: "SEEN-tah", example: "Quero que você sinta orgulho disso." },
+          { form: "sintamos", meaning: "that we feel", pron: "seen-TAH-moosh", example: "É natural que nós sintamos saudade." },
+          { form: "sintam", meaning: "that you all feel", pron: "SEEN-tahng", example: "Tomara que vocês sintam o clima do Rio." },
+        ],
         subjuntivo: [
           { form: "sentisse", meaning: "if I felt", pron: "sen-CHEE-see", example: "Se eu sentisse frio, colocava um casaco." },
           { form: "sentisse", meaning: "if you felt", pron: "sen-CHEE-see", example: "Queria que você sentisse o cheiro desse bolo." },
@@ -3397,6 +3699,12 @@ window.DATA_VERBS = {
           { form: "ganhávamos", meaning: "we used to win / earn", pron: "gah-NYAH-vah-moosh", example: "Nós ganhávamos medalha na escola." },
           { form: "ganhavam", meaning: "you all used to win / earn", pron: "gah-NYAH-vahng", example: "Vocês ganhavam presentes no Natal?" },
         ],
+        "subjuntivo-presente": [
+          { form: "ganhe", meaning: "that I win / earn", pron: "GAH-nyee", example: "Tomara que eu ganhe na loteria." },
+          { form: "ganhe", meaning: "that you win / earn", pron: "GAH-nyee", example: "Espero que você ganhe o jogo." },
+          { form: "ganhemos", meaning: "that we win / earn", pron: "gah-NYEH-moosh", example: "É possível que nós ganhemos o campeonato." },
+          { form: "ganhem", meaning: "that you all win / earn", pron: "GAH-nyeng", example: "Duvido que vocês ganhem da Argentina." },
+        ],
         subjuntivo: [
           { form: "ganhasse", meaning: "if I won / earned", pron: "gah-NYAH-see", example: "Se eu ganhasse na loteria, comprava uma casa na Barra." },
           { form: "ganhasse", meaning: "if you won / earned", pron: "gah-NYAH-see", example: "Queria que você ganhasse esse prêmio." },
@@ -3425,6 +3733,12 @@ window.DATA_VERBS = {
           { form: "perdia", meaning: "you used to lose / were losing", pron: "per-DJEE-ah", example: "Você perdia a chave com frequência?" },
           { form: "perdíamos", meaning: "we used to lose / were losing", pron: "per-DJEE-ah-moosh", example: "Nós perdíamos as partidas no começo." },
           { form: "perdiam", meaning: "you all used to lose / were losing", pron: "per-DJEE-ahng", example: "Vocês perdiam o treino quando chovia?" },
+        ],
+        "subjuntivo-presente": [
+          { form: "perca", meaning: "that I lose", pron: "PEHR-kah", example: "Tomara que eu não perca o voo." },
+          { form: "perca", meaning: "that you lose", pron: "PEHR-kah", example: "Não quero que você perca o show." },
+          { form: "percamos", meaning: "that we lose", pron: "pehr-KAH-moosh", example: "É possível que nós percamos a conexão." },
+          { form: "percam", meaning: "that you all lose", pron: "PEHR-kahng", example: "Espero que vocês não percam o ônibus." },
         ],
         subjuntivo: [
           { form: "perdesse", meaning: "if I lost", pron: "per-DEH-see", example: "Se eu perdesse esse ônibus, só tinha outro em uma hora." },
@@ -3546,6 +3860,12 @@ window.DATA_VERBS = {
           { form: "vivia", meaning: "you used to live / were living (life, experience)", pron: "vee-VEE-ah", example: "Você vivia bem lá?" },
           { form: "vivíamos", meaning: "we used to live / were living (life, experience)", pron: "vee-VEE-ah-moosh", example: "Nós vivíamos com muito pouco." },
           { form: "viviam", meaning: "you all used to live / were living (life, experience)", pron: "vee-VEE-ahng", example: "Vocês viviam juntos antes?" },
+        ],
+        "subjuntivo-presente": [
+          { form: "viva", meaning: "that I live (life, experience)", pron: "VEE-vah", example: "Espero que eu viva muitos anos no Rio." },
+          { form: "viva", meaning: "that you live (life, experience)", pron: "VEE-vah", example: "Quero que você viva bem." },
+          { form: "vivamos", meaning: "that we live (life, experience)", pron: "vee-VAH-moosh", example: "É importante que nós vivamos o presente." },
+          { form: "vivam", meaning: "that you all live (life, experience)", pron: "VEE-vahng", example: "Tomara que vocês vivam felizes." },
         ],
         subjuntivo: [
           { form: "vivesse", meaning: "if I lived (life, experience)", pron: "vee-VEH-see", example: "Se eu vivesse até os cem, ia ver muita coisa." },
@@ -3671,6 +3991,12 @@ window.DATA_VERBS = {
           { form: "gostávamos", meaning: "we used to like", pron: "gohsh-TAH-vah-moosh", example: "Nós gostávamos de ir ao parque." },
           { form: "gostavam", meaning: "you all used to like", pron: "gohsh-TAH-vahng", example: "Vocês gostavam daquele professor?" },
         ],
+        "subjuntivo-presente": [
+          { form: "goste", meaning: "that I like", pron: "GOHSH-chee", example: "Espero que eu goste do filme." },
+          { form: "goste", meaning: "that you like", pron: "GOHSH-chee", example: "Tomara que você goste do presente." },
+          { form: "gostemos", meaning: "that we like", pron: "gohsh-TEH-moosh", example: "É possível que nós gostemos do bairro." },
+          { form: "gostem", meaning: "that you all like", pron: "GOHSH-teng", example: "Quero que vocês gostem da comida." },
+        ],
         subjuntivo: [
           { form: "gostasse", meaning: "if I liked", pron: "gohsh-TAH-see", example: "Se eu gostasse de festa, saía toda sexta." },
           { form: "gostasse", meaning: "if you liked", pron: "gohsh-TAH-see", example: "Queria que você gostasse de samba como eu gosto." },
@@ -3700,6 +4026,12 @@ window.DATA_VERBS = {
           { form: "amávamos", meaning: "we used to love / were loving", pron: "ah-MAH-vah-moosh", example: "Nós amávamos passar o domingo na praia." },
           { form: "amavam", meaning: "you all used to love / were loving", pron: "ah-MAH-vahng", example: "Vocês amavam esse lugar?" },
         ],
+        "subjuntivo-presente": [
+          { form: "ame", meaning: "that I love", pron: "AH-mee", example: "Tomara que eu ame o trabalho novo." },
+          { form: "ame", meaning: "that you love", pron: "AH-mee", example: "Espero que você ame o Rio como eu." },
+          { form: "amemos", meaning: "that we love", pron: "ah-MEH-moosh", example: "É bom que nós amemos o que fazemos." },
+          { form: "amem", meaning: "that you all love", pron: "AH-meng", example: "Quero que vocês amem essa cidade." },
+        ],
         subjuntivo: [
           { form: "amasse", meaning: "if I loved", pron: "ah-MAH-see", example: "Se eu amasse menos essa cidade, já tinha mudado." },
           { form: "amasse", meaning: "if you loved", pron: "ah-MAH-see", example: "Queria que você amasse esse time como eu amo." },
@@ -3728,6 +4060,12 @@ window.DATA_VERBS = {
           { form: "ajudava", meaning: "you used to help / were helping", pron: "ah-zhoo-DAH-vah", example: "Você ajudava os seus colegas na escola?" },
           { form: "ajudávamos", meaning: "we used to help / were helping", pron: "ah-zhoo-DAH-vah-moosh", example: "Nós ajudávamos a vizinha com as compras." },
           { form: "ajudavam", meaning: "you all used to help / were helping", pron: "ah-zhoo-DAH-vahng", example: "Vocês ajudavam na festa da escola?" },
+        ],
+        "subjuntivo-presente": [
+          { form: "ajude", meaning: "that I help", pron: "ah-ZHOO-djee", example: "Ela quer que eu ajude na cozinha." },
+          { form: "ajude", meaning: "that you help", pron: "ah-ZHOO-djee", example: "É importante que você ajude sua mãe." },
+          { form: "ajudemos", meaning: "that we help", pron: "ah-zhoo-DEH-moosh", example: "Talvez nós ajudemos na mudança." },
+          { form: "ajudem", meaning: "that you all help", pron: "ah-ZHOO-deng", example: "Espero que vocês ajudem o vizinho." },
         ],
         subjuntivo: [
           { form: "ajudasse", meaning: "if I helped", pron: "ah-zhoo-DAH-see", example: "Ela pediu que eu ajudasse na mudança no sábado." },
@@ -3988,6 +4326,12 @@ window.DATA_VERBS = {
           { form: "encontrávamos", meaning: "we used to meet / find", pron: "en-kohn-TRAH-vah-moosh", example: "Nós encontrávamos lugar para sentar." },
           { form: "encontravam", meaning: "you all used to meet / find", pron: "en-kohn-TRAH-vahng", example: "Vocês encontravam tempo para estudar?" },
         ],
+        "subjuntivo-presente": [
+          { form: "encontre", meaning: "that I find / meet", pron: "en-KOHN-tree", example: "Tomara que eu encontre minha carteira." },
+          { form: "encontre", meaning: "that you find / meet", pron: "en-KOHN-tree", example: "Espero que você encontre um bom apartamento." },
+          { form: "encontremos", meaning: "that we find / meet", pron: "en-kohn-TREH-moosh", example: "É possível que nós encontremos trânsito." },
+          { form: "encontrem", meaning: "that you all find / meet", pron: "en-KOHN-treng", example: "Quero que vocês encontrem o caminho sozinhos." },
+        ],
         subjuntivo: [
           { form: "encontrasse", meaning: "if I found / met", pron: "en-kohn-TRAH-see", example: "Se eu encontrasse suas chaves, te avisava na hora." },
           { form: "encontrasse", meaning: "if you found / met", pron: "en-kohn-TRAH-see", example: "Queria que você encontrasse um trabalho perto de casa." },
@@ -4016,6 +4360,12 @@ window.DATA_VERBS = {
           { form: "esperava", meaning: "you used to wait / hope", pron: "esh-peh-RAH-vah", example: "Você esperava a sua mãe na porta da escola?" },
           { form: "esperávamos", meaning: "we used to wait / hope", pron: "esh-peh-RAH-vah-moosh", example: "Nós esperávamos o filme começar." },
           { form: "esperavam", meaning: "you all used to wait / hope", pron: "esh-peh-RAH-vahng", example: "Vocês esperavam muito tempo no banco?" },
+        ],
+        "subjuntivo-presente": [
+          { form: "espere", meaning: "that I wait / hope", pron: "esh-PEH-ree", example: "Ele quer que eu espere lá fora." },
+          { form: "espere", meaning: "that you wait / hope", pron: "esh-PEH-ree", example: "É melhor que você espere um pouco." },
+          { form: "esperemos", meaning: "that we wait / hope", pron: "esh-peh-REH-moosh", example: "Talvez nós esperemos a chuva passar." },
+          { form: "esperem", meaning: "that you all wait / hope", pron: "esh-PEH-reng", example: "Quero que vocês esperem aqui." },
         ],
         subjuntivo: [
           { form: "esperasse", meaning: "if I waited / hoped", pron: "esh-peh-RAH-see", example: "Se eu esperasse mais um pouco, pegava o ônibus das oito." },

@@ -58,6 +58,7 @@ const TENSE_EN = {
   presente: 'present tense',
   perfeito: 'simple past',
   imperfeito: 'past habitual, “used to”',
+  'subjuntivo-presente': 'present subjunctive, “(I hope) that I…”',
   subjuntivo: 'imperfect subjunctive, “if I…”',
 };
 
@@ -283,7 +284,8 @@ function aboutHtml(v) {
 
   // 2. the tenses, in English, each with a quoted form and its meaning
   const pres = showcase(v, 'presente'), perf = showcase(v, 'perfeito'),
-        imp = showcase(v, 'imperfeito'), subj = showcase(v, 'subjuntivo');
+        imp = showcase(v, 'imperfeito'), subj = showcase(v, 'subjuntivo'),
+        subjp = showcase(v, 'subjuntivo-presente');
   if (pres && perf && imp) {
     let p2 = 'Three tenses do almost all the work in conversation. The presente covers the ' +
       'present and the near future: ' + cite(v, 'presente', pres) + '. The pretérito ' +
@@ -292,7 +294,9 @@ function aboutHtml(v) {
       cite(v, 'imperfeito', imp) + '.';
     if (subj) {
       p2 += ' Because ' + it(v.pt) + ' is one of the ' + N_SUBJ + ' most-used verbs, the ' +
-        'page also has the imperfeito do subjuntivo, the tense of hypotheticals and wishes: ' +
+        'page also has both subjunctives: the presente do subjuntivo, the mood of wishes, ' +
+        'doubts and “quero que…”' + (subjp ? ' — ' + cite(v, 'subjuntivo-presente', subjp) : '') +
+        ' — and the imperfeito do subjuntivo, the tense of hypotheticals: ' +
         cite(v, 'subjuntivo', subj) + '.';
     }
     paras.push(p2);
@@ -375,7 +379,7 @@ function indexPage() {
   const n = V.verbs.length;
   const title = 'Brazilian Portuguese verb conjugation — all ' + n + ' verbs | Fala Gringo';
   const description = 'Conjugation of the ' + n + ' most useful Brazilian Portuguese verbs ' +
-    '— presente, pretérito perfeito, imperfeito and imperfeito do subjuntivo — with ' +
+    '— presente, pretérito perfeito, imperfeito, presente and imperfeito do subjuntivo — with ' +
     'Rio pronunciation and spoken examples. Free, no sign-up.';
   let body =
     '<p class="vp-crumb"><a href="' + HOME + '">Fala Gringo</a> › Verbs</p>\n' +

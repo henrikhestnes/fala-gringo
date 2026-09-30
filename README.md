@@ -9,7 +9,7 @@ you actually hear in Rio, not textbook European Portuguese. It is aimed at an
 English speaker: you are shown English and type the Portuguese.
 
 Browse 162 verbs with their conjugations across three indicative tenses — plus the
-imperfect subjunctive on a 58-verb core — or drill any of twelve topics by typing
+present and imperfect subjunctive on a 58-verb core — or drill any of thirteen topics by typing
 the answer.
 
 **Static site, no build step, no required dependencies.** Optional sync and production-only usage analytics run separately from lessons. Open
@@ -23,7 +23,8 @@ the answer.
 | **Presente** | Verb drill, present tense | 638 |
 | **Perfeito** | Verb drill, pretérito perfeito | 636 |
 | **Imperfeito** | Verb drill, pretérito imperfeito | 637 |
-| **Subjuntivo** | Verb drill, imperfeito do subjuntivo — 58 core verbs | 228 |
+| **Subj. Presente** | Verb drill, presente do subjuntivo — 58 core verbs | 228 |
+| **Subj. Imperfeito** | Verb drill, imperfeito do subjuntivo — 58 core verbs | 228 |
 | **Nouns** | With gender and article — incl. family, body & mind | 139 |
 | **Adjectives** | With agreement | 80 |
 | **Adverbs** | Frequency, manner, place, time | 42 |
@@ -33,9 +34,25 @@ the answer.
 | **Sentences** | Full-sentence translation — incl. hypotheticals & wishes, real conditions (se + future subjunctive), verb + preposition, opinions | 129 |
 | **★ Daily** | 7 cards a day, one per topic, deterministic from the date, 5 attempts each, shareable result | 7 |
 
-2868 quiz cards in total.
+3096 quiz cards in total.
 
-### Se eu soubesse… — the imperfect subjunctive (Subjuntivo tab)
+### Espero que dê certo — the present subjunctive (Subj. Presente tab)
+
+*"I hope it works out" — the mood of wishes, doubts and everything you want someone
+else to do.*
+
+The forms derive from the presente **eu** form: drop the `-o`, add `-e / -e / -emos / -em`
+for -ar verbs and `-a / -a / -amos / -am` for the rest (falo → fale, tenho → tenha, faço →
+faça, peço → peça), an -ar stem keeping its sound (fico → fique, chego → chegue, começo →
+comece). Six verbs have no eu form in `-o` and keep their old forms: ser *seja*, estar
+*esteja*, ir *vá*, dar *dê*, saber *saiba*, querer *queira*. The data checks verify all 232
+stored forms against that rule.
+
+Every example embeds a trigger: `quero/espero que…`, `tomara que…`, `talvez…`, `é
+importante que…`, `não acho que…`, `duvido que…`, `caso…`. The drill accepts the bare
+form, `eu fale`, and `que eu fale`. Same 58-verb core as the imperfect below.
+
+### Se eu soubesse… — the imperfect subjunctive (Subj. Imperfeito tab)
 
 *"If only I knew…" — the tense of hindsight, and the feeling of every language
 learner.*
@@ -109,7 +126,7 @@ same data checks in the browser — just open it.
 162 verbs; 1944 forms with all three indicative tenses; every drilled form has a
 form, meaning, pronunciation and example; every regular verb matches an independent
 conjugation oracle (`js/conjugate.js`); every verb flagged irregular really is;
-58 complete subjunctive blocks whose forms all derive from the perfeito 3pl (a rule
+58 complete imperfect-subjunctive blocks whose forms all derive from the perfeito 3pl (a rule
 with no exceptions, so it verifies irregulars too) and whose examples all contain
 their form inside a trigger context; every card's answer is among its own accepted
 answers; and **no ambiguous prompts** — identical, distinguished only by word

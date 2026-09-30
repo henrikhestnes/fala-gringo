@@ -28,6 +28,40 @@ function subjImperfectFromPerfeito3pl(form3pl, infinitive) {
   return [stem + 'sse', stem + 'sse', accented + 'ssemos', stem + 'ssem'];
 }
 
+/* Present subjunctive, derived from the presente eu form — drop the -o, add
+   -e/-e/-emos/-em (-ar) or -a/-a/-amos/-am (-er/-ir): falo → fale, tenho → tenha,
+   faço → faça, peço → peça. An -ar stem keeps its sound (fico → fique, chego →
+   chegue, começo → comece). Six verbs have no eu form ending in -o and get the
+   forms they have had since Latin: ser seja, estar esteja, ir vá, dar dê, saber
+   saiba, querer queira (haver haja is not drilled). Verifies irregular verbs too. */
+const SUBJ_PRESENT_EXCEPTIONS = {
+  ser:    ['seja', 'seja', 'sejamos', 'sejam'],
+  estar:  ['esteja', 'esteja', 'estejamos', 'estejam'],
+  ir:     ['vá', 'vá', 'vamos', 'vão'],
+  dar:    ['dê', 'dê', 'demos', 'deem'],
+  saber:  ['saiba', 'saiba', 'saibamos', 'saibam'],
+  querer: ['queira', 'queira', 'queiramos', 'queiram'],
+  haver:  ['haja', 'haja', 'hajamos', 'hajam'],
+};
+function subjPresentFromPresente1sg(form1sg, infinitive) {
+  if (SUBJ_PRESENT_EXCEPTIONS[infinitive]) return SUBJ_PRESENT_EXCEPTIONS[infinitive].slice();
+  return subjPresentRegular(form1sg, infinitive);
+}
+/* The bare rule, exceptions ignored — what a regular verb WOULD give, which is what
+   the answer card compares against to highlight the irregular letters (seja vs sa). */
+function subjPresentRegular(form1sg, infinitive) {
+  if (!/o$/.test(form1sg)) return null;
+  let stem = form1sg.slice(0, -1);
+  if (infinitive.slice(-2) === 'ar') {
+    const last = stem.slice(-1), base = stem.slice(0, -1);
+    if (last === 'c') stem = base + 'qu';
+    else if (last === 'g') stem = base + 'gu';
+    else if (last === 'ç') stem = base + 'c';
+    return [stem + 'e', stem + 'e', stem + 'emos', stem + 'em'];
+  }
+  return [stem + 'a', stem + 'a', stem + 'amos', stem + 'am'];
+}
+
 function conjugateRegular(verb) {
   const ending = verb.slice(-2);
   const stem = verb.slice(0, -2);

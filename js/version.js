@@ -133,7 +133,11 @@
 //         consertar, suar, reparar, gritar — 162 verbs), 5 pronominal verbs (se acostumar, se adaptar, se mudar, se queixar,
 //         se arrumar) + 8 object-pronoun phrases, and three new Sentences groups: real conditions (se + futuro do subjuntivo),
 //         verb + preposition (sonhar com, contar com, torcer pro…) and opinions & stances (que eu saiba, seja como for…)
-const APP_VERSION = '1.28.7';
+// 1.29.0: the Presente do Subjuntivo tab (Subj. Presente, tier 3, id subjuntivo-presente) on the same 58-verb core as the
+//         imperfect — 228 cards, forms derived from the presente eu form (falo → fale, faço → faça; ser/estar/ir/dar/saber/
+//         querer listed), the rule in conjugate.js and checked like the perfeito-3pl one, every example inside a trigger
+//         (quero que, tomara que, talvez…), "que eu fale" accepted; the Subjuntivo tab is now Subj. Imperfeito
+const APP_VERSION = '1.29.0';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

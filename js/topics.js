@@ -74,6 +74,12 @@ function regularExpectation(verb, tense) {
     return typeof subjImperfectFromPerfeito3pl === 'function'
       ? subjImperfectFromPerfeito3pl(oracle.perfeito[3], verb.pt) : null;
   }
+  // the present subjunctive: what a REGULAR presente eu form would derive to
+  // (fazer → fazo → faza, so faça shows its "ç"; ser → so → sa, so seja is all irregular)
+  if (tense === 'subjuntivo-presente') {
+    return typeof subjPresentRegular === 'function'
+      ? subjPresentRegular(oracle.presente[0], verb.pt) : null;
+  }
   return oracle[tense] || null;
 }
 
@@ -162,6 +168,10 @@ function verbInfer(verb, tense, i, form) {
   if (tense === 'subjuntivo') {
     const perf = verb.tenses.perfeito && verb.tenses.perfeito[3];
     regular = !!perf && oracle.perfeito[3] === perf.form;
+  } else if (tense === 'subjuntivo-presente') {
+    // regular whenever the presente eu form it derives from is
+    const pres = verb.tenses.presente && verb.tenses.presente[0];
+    regular = !!pres && oracle.presente[0] === pres.form;
   } else {
     regular = !!oracle[tense] && oracle[tense][i] === form;
   }
@@ -182,8 +192,9 @@ function buildVerbCards(tense, tenseLabel) {
       const person = row.person || V.personsShort[i];   // acontecer: "isso", "as coisas"
       const full = person + ' ' + row.form;
       const accepted = [row.form, full];
-      // the imperfect subjunctive is usually cited with its trigger word
+      // the subjunctives are usually cited with their trigger word
       if (tense === 'subjuntivo') accepted.push('se ' + full, 'que ' + full);
+      if (tense === 'subjuntivo-presente') accepted.push('que ' + full);
 
       // genuine BR synonyms (pôr/botar/colocar, caminhar/andar) accept each other;
       // each also brings its own face (answer, pron, table) for when it is the
@@ -197,6 +208,7 @@ function buildVerbCards(tense, tenseLabel) {
         const f = orow.form, ofull = person + ' ' + f;
         const own = [f, ofull];
         if (tense === 'subjuntivo') own.push('se ' + ofull, 'que ' + ofull);
+        if (tense === 'subjuntivo-presente') own.push('que ' + ofull);
         accepted.push(...own);
         variants.push({
           accepted: own,
@@ -486,7 +498,9 @@ const TOPICS = [
   { id: 'connecting', label: 'Connecting', kind: 'quiz', tier: 2,
     groups: () => window.DATA_CONNECTING.groups, build: buildConnectingCards },
 
-  { id: 'subjuntivo', label: 'Subjuntivo', kind: 'quiz', tier: 3, groups: VERB_GROUPS,
+  { id: 'subjuntivo-presente', label: 'Subj. Presente', kind: 'quiz', tier: 3, groups: VERB_GROUPS,
+    build: () => buildVerbCards('subjuntivo-presente', 'Presente do Subjuntivo') },
+  { id: 'subjuntivo', label: 'Subj. Imperfeito', kind: 'quiz', tier: 3, groups: VERB_GROUPS,
     build: () => buildVerbCards('subjuntivo', 'Imperfeito do Subjuntivo') },
   { id: 'sentences',  label: 'Sentences',  kind: 'quiz', tier: 3,
     groups: () => window.DATA_SENTENCES.groups,  build: buildSentenceCards },

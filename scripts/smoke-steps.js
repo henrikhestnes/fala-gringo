@@ -26,17 +26,17 @@ step('Browse defers conjugations until a row is expanded, then preserves irregul
   return '162 lazy panels; semantic audio buttons and expanded states';
 });
 
-step('tab strip lists all 14 tabs, captioned by tier', function () {
+step('tab strip lists all 15 tabs, captioned by tier', function () {
   var tabs = (registry.tabs.innerHTML.match(/data-tab="/g) || []).length;
-  if (tabs !== 14) throw new Error('got ' + tabs + ' tabs');
+  if (tabs !== 15) throw new Error('got ' + tabs + ' tabs');
   var labels = registry.tabs.innerHTML.match(/tier-label" data-tier="(\d)"[^>]*>([^<]*)</g) || [];
   if (labels.length !== 3) throw new Error(labels.length + ' tier captions: ' + labels.join(' | '));
   if (!/data-tier="1"[^>]*>Iniciante<\/span><button class="tab" role="tab"[^>]*data-tab="presente"/.test(registry.tabs.innerHTML))
     throw new Error('Iniciante caption not right before Presente');
   if (!/Intermediário<\/span><button[^>]*data-tab="perfeito"/.test(registry.tabs.innerHTML) ||
-      !/Avançado<\/span><button[^>]*data-tab="subjuntivo"/.test(registry.tabs.innerHTML))
+      !/Avançado<\/span><button[^>]*data-tab="subjuntivo-presente"/.test(registry.tabs.innerHTML))
     throw new Error('Intermediário / Avançado captions misplaced');
-  return '14 tabs incl. Browse + Daily; captions before Presente, Perfeito, Subjuntivo';
+  return '15 tabs incl. Browse + Daily; captions before Presente, Perfeito, Subj. Presente';
 });
 
 step('first-card help is dismissible and stays dismissed across mounts', function () {
@@ -321,6 +321,24 @@ step('subjuntivo drill accepts the trigger-prefixed answer', function () {
   return '"se ' + card.answer + '" accepted';
 });
 
+step('subjuntivo-presente drill accepts the "que"-prefixed answer and flags seja', function () {
+  goTo('#subjuntivo-presente');
+  var card = shownCard('subjuntivo-presente');
+  registry.answerInput.value = 'que ' + card.answer;
+  registry.actionBtn.fire('click');
+  if (!/✓/.test(registry.feedback.innerHTML))
+    throw new Error('rejected "que ' + card.answer + '"');
+  var cards = topicCards(topicById('subjuntivo-presente'));
+  var seja = cards.filter(function (c) { return c.id === 'ser|0'; })[0];
+  var faca = cards.filter(function (c) { return c.id === 'fazer|0'; })[0];
+  var fale = cards.filter(function (c) { return c.id === 'falar|0'; })[0];
+  if (!seja || seja.flag !== 'irregular') throw new Error('seja not flagged irregular');
+  if (!faca || !/fa<mark class="irr">ç<\/mark>a/.test(faca.reveal)) throw new Error('faça: ' + (faca && faca.reveal));
+  if (!fale || fale.flag || /mark class="irr"/.test(fale.reveal)) throw new Error('fale shows irregularity markup');
+  if (cards.length !== 228) throw new Error('expected 228 cards, got ' + cards.length);
+  return '"que ' + card.answer + '" accepted; seja flagged, faça → "ç", fale silent; 228 cards';
+});
+
 step('pronominal drill accepts every declared answer variant', function () {
   goTo('#pronominal');
   var card = shownCard('pronominal');
@@ -519,7 +537,7 @@ step('equally overdue reviews are shuffled, not served in data order', function 
 });
 
 step('inference: a known word + a known pattern makes an unseen regular form a "verify" card', function () {
-  ['presente', 'perfeito', 'imperfeito', 'subjuntivo'].forEach(function (t) { Store.resetTopic(t); });
+  ['presente', 'perfeito', 'imperfeito', 'subjuntivo-presente', 'subjuntivo'].forEach(function (t) { Store.resetTopic(t); });
   var cards = topicCards(topicById('presente'));
   var today = Store.today();
   // the regular -ar "vocês" forms, one per verb, in data order
@@ -699,7 +717,7 @@ step('spoken answers match by sound, guarded by the conjugation', function () {
 });
 
 step('implied reviews: one form of a known-pattern verb is asked, a clean hit confirms the rest', function () {
-  ['presente', 'perfeito', 'imperfeito', 'subjuntivo'].forEach(function (t) { Store.resetTopic(t); });
+  ['presente', 'perfeito', 'imperfeito', 'subjuntivo-presente', 'subjuntivo'].forEach(function (t) { Store.resetTopic(t); });
   var cards = topicCards(topicById('presente'));
   var today = Store.today();
   var snap = Store.snapshot();
@@ -1048,7 +1066,7 @@ step('every drill tab carries a tier from 1 to 3', function () {
   var bad = TOPICS.filter(function (t) { return t.kind === 'quiz' && !(t.tier >= 1 && t.tier <= 3); });
   if (bad.length) throw new Error('no tier: ' + bad.map(function (t) { return t.id; }).join(', '));
   var order = TOPICS.filter(function (t) { return t.kind === 'quiz'; }).map(function (t) { return t.tier; }).join('');
-  if (order !== '111122222233') throw new Error('tabs not stacked by tier: ' + order);
+  if (order !== '1111222222333') throw new Error('tabs not stacked by tier: ' + order);
   if (TOPICS[0].id !== 'browse' || TOPICS[TOPICS.length - 1].id !== 'daily') throw new Error('Browse/Daily moved');
   var byTier = [1, 2, 3].map(function (n) {
     return n + ': ' + TOPICS.filter(function (t) { return t.tier === n; }).map(function (t) { return t.id; }).join(' ');
@@ -1317,7 +1335,7 @@ step('milestones are earned once with a toast, and the goal ring opens the progr
   snap.mastered.presente[lastP.id] = 1;
   snap.strength.presente[lastP.id] = { s: 5, m: 0, l: 5, t: d, i: d - 200 };
   snap.dailyDone = {}; snap.dailyDone['20260901'] = 7;
-  ['presente', 'perfeito', 'imperfeito', 'subjuntivo'].forEach(function (tid) {
+  ['presente', 'perfeito', 'imperfeito', 'subjuntivo-presente', 'subjuntivo'].forEach(function (tid) {
     snap.mastered[tid] = snap.mastered[tid] || {}; snap.strength[tid] = snap.strength[tid] || {};
     topicCards(topicById(tid)).filter(function (c) { return c.id.indexOf('ser|') === 0; }).forEach(function (c) {
       snap.mastered[tid][c.id] = 1; snap.strength[tid][c.id] = { s: 3, m: 0, l: 3, t: d - 1, i: d - 30 };
@@ -1485,7 +1503,7 @@ step('the mic chip only re-renders the card: the run (cards cleared, errors) sur
 });
 
 step('reclaimed implied reviews come up right after the lead, and the due count grows by what was added', function () {
-  ['presente', 'perfeito', 'imperfeito', 'subjuntivo'].forEach(function (t) { Store.resetTopic(t); });
+  ['presente', 'perfeito', 'imperfeito', 'subjuntivo-presente', 'subjuntivo'].forEach(function (t) { Store.resetTopic(t); });
   var cards = topicCards(topicById('presente'));
   var today = Store.today();
   var snap = Store.snapshot();
