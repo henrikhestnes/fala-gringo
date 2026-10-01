@@ -10,8 +10,19 @@
 // (ProgressState.merge: union of mastered, misses kept, streak and level the
 // lower of the two, so a shaky card can never graduate out of Foco by syncing;
 // reset generations so a reset on one device is not undone by another's stale
-// snapshot). Pushes send the merged state, throttled to one a minute, with a
-// best-effort attempt when the tab hides. Two devices pushing within the same
+// snapshot). Pushes send the merged state.
+//
+// The request budget (1.31.1) is set by the worker's free tier, which meters
+// every request and, on KV, allows only a thousand writes a day: a scheduled
+// round (one GET, at most one PUT) runs at most once per PUSH_INTERVAL while
+// the learner keeps answering; hiding the tab uploads at most once per
+// WRITE_GAP; a returning tab re-pulls at most once per PULL_GAP; the PUT body
+// goes as text/plain so the browser sends no CORS preflight (a second request
+// per upload). A round only ever follows a LOCAL change: applying a pulled
+// state saves too, but that save is the module's own and must not schedule
+// another round — it did, and when the merge kept finding a difference the
+// client polled the worker every 2.5 s, for ever. A typical session therefore
+// costs a GET on load and one or two uploads. Two devices pushing within the same
 // minute can still overwrite each other on the server — the loser's answers
 // live on locally and heal on its next pull, because every sync merges. A
 // failed GET never leads to a push (an HTTP error is not an empty remote).
@@ -52,10 +63,14 @@ const Sync = (function () {
   // any app uses ('noruegues', 9 chars) — generated codes are 32 anyway
   const MAX_CODE = 64 - 9;
 
-  const PUSH_INTERVAL = 60 * 1000;          // at most one upload a minute while drilling
+  const PUSH_INTERVAL = 10 * 60 * 1000;     // scheduled rounds: at most one per ten minutes while drilling
+  const WRITE_GAP = 2 * 60 * 1000;          // a hide/online push uploads at most once per two minutes
+  const PULL_GAP = 5 * 60 * 1000;           // a returning tab (or a reconnect) re-pulls at most once per five minutes
   const PAUSED_INTERVAL = 10 * 60 * 1000;   // while paused (a newer client wrote the blob) poll rarely
   let pushTimer = 0;
-  let lastPushAt = 0;
+  let lastRoundAt = 0;   // when the last round began — any round, not only one that uploaded
+  let lastPutAt = 0;     // when the last upload was sent (the hide/online pushes keep WRITE_GAP from it)
+  let applying = false;  // Store.applySynced in progress: its save() is ours, not a local change
   let lastPushed = '';   // stable JSON of the state known to be on the server; skips no-op pushes
   let status = 'ok';     // 'ok' | 'error' — meaningful only while sync is on
   let lastSyncAt = 0;
@@ -147,6 +162,7 @@ const Sync = (function () {
   function synchronize(upload) {
     if (!enabled()) return Promise.resolve(false);
     if (inFlight) { if (upload) dirty = true; return inFlight; }
+    lastRoundAt = Date.now();
     const gen = generation, url = endpoint();
     const current = () => gen === generation && enabled() && endpoint() === url;
     async function attempt() {
@@ -164,18 +180,19 @@ const Sync = (function () {
       delete merged.prefs; delete merged.prefTimes;   // preferences belong to this device
       const body = stable(merged);
       if (body !== stable(local)) {
-        Store.applySynced(merged);
+        applying = true;
+        try { Store.applySynced(merged); } finally { applying = false; }
         if (window.App && App.refreshProgress) App.refreshProgress();
         toast(STR.syncPulled);
       }
       if (remote !== null && body === stable(remote)) { lastPushed = body; markOk(); return true; }
       if (!upload) { dirty = true; markOk(); return true; }
       if (!current()) return false;
-      lastPushAt = Date.now();
-      const put = await fetch(url, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(merged), cache: 'no-store'
-      });
+      lastPutAt = Date.now();
+      // no Content-Type header on purpose: a string body goes as text/plain, a
+      // "simple" request the browser sends without an OPTIONS preflight — one
+      // worker request per upload, not two (the worker parses the body itself)
+      const put = await fetch(url, { method: 'PUT', body: JSON.stringify(merged), cache: 'no-store' });
       if (!current()) return false;
       if (!put.ok) throw new Error('http ' + put.status);
       lastPushed = body; markOk(); return true;
@@ -183,7 +200,9 @@ const Sync = (function () {
     inFlight = attempt().catch(() => { if (current()) { dirty = true; markError(); } return false; })
       .then(ok => {
         inFlight = null;
-        if (enabled() && (dirty || stable(Store.snapshot()) !== lastPushed)) schedulePush();
+        // only a local change that arrived meanwhile (or a server still behind, see
+        // `dirty` above) earns another round — never the round's own apply
+        if (enabled() && dirty) schedulePush();
         return ok;
       });
     return inFlight;
@@ -191,26 +210,41 @@ const Sync = (function () {
   function pull() { return synchronize(false); }
   function push() { if (pushTimer) clearTimeout(pushTimer); pushTimer = 0; dirty = false; return synchronize(true); }
   /* Throttle, don't debounce: the first change after a quiet spell uploads in
-     2.5 s; further changes ride along until PUSH_INTERVAL has passed. After a
-     failure wait a full interval; while paused poll rarely — the answer will
-     not change until this device reloads. */
+     2.5 s; further changes ride along until PUSH_INTERVAL has passed since the
+     last round began (a GET counts as much as a PUT — the worker's free tier is
+     metered per request; the load-time pull is a round too, so a session's
+     first upload usually waits the full interval or the tab hiding, whichever
+     comes first). After a failure wait a full interval; while paused poll
+     rarely — the answer will not change until this device reloads. */
   function schedulePush() {
     dirty = true;
     if (!enabled() || pushTimer || inFlight) return;
     const base = paused ? PAUSED_INTERVAL : status === 'error' ? PUSH_INTERVAL : 2500;
-    const wait = Math.max(base, lastPushAt + PUSH_INTERVAL - Date.now());
+    const wait = Math.max(base, lastRoundAt + PUSH_INTERVAL - Date.now());
     pushTimer = setTimeout(push, wait);
   }
+  // Store.save() calls this through Store.onChange; a save made by this
+  // module's own applySynced is not a local change and schedules nothing
+  function onLocalChange() { if (!applying) schedulePush(); }
   // Local storage is authoritative on close. A GET + PUT is not guaranteed to
   // finish while the page hides, but it is safe to try (a truncated attempt
   // changes nothing) and it usually lands; the next visit reconciles anyway.
   // No `keepalive`: the fetch spec caps keepalive bodies at 64 KiB and a
   // learner's blob outgrows that (1.23.x silently lost every push past it).
+  // Both directions are gated: a tab hidden and shown every minute must not
+  // cost a request each time — what is skipped rides on the next scheduled
+  // round, the next hide past WRITE_GAP, or the next show past PULL_GAP.
+  const unsynced = () => dirty || pushTimer || stable(Store.snapshot()) !== lastPushed;
+  function pullIfStale() {
+    if (!enabled()) return;
+    if (Date.now() - lastRoundAt >= PULL_GAP) push();
+    else if (unsynced()) schedulePush();
+  }
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') { Store.refreshStorage(); push(); }
-    else if (document.visibilityState === 'hidden' && enabled() && (dirty || pushTimer || stable(Store.snapshot()) !== lastPushed)) push();
+    if (document.visibilityState === 'visible') { Store.refreshStorage(); pullIfStale(); }
+    else if (document.visibilityState === 'hidden' && enabled() && unsynced() && Date.now() - lastPutAt >= WRITE_GAP) push();
   });
-  window.addEventListener('online', () => push());
+  window.addEventListener('online', pullIfStale);
   window.addEventListener('storage', e => {
     if (e.key === CODE_KEY) { generation++; lastPushed = ''; lastSyncAt = 0; paused = false; updateButton(); pull(); }
   });
@@ -265,7 +299,7 @@ const Sync = (function () {
   pull();   // merge in whatever the other devices did since last time
 
   return {
-    onLocalChange: schedulePush,   // Store.save() calls this through Store.onChange (below)
+    onLocalChange: onLocalChange,  // Store.save() calls this through Store.onChange (below)
     manage: manage,
     canOfferSetup: () => !!SYNC_URL && canFetch && !code(),
     _merge: mergeStates,           // exposed for the checks

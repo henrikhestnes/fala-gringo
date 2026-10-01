@@ -3,7 +3,9 @@
 // The `v2`/`v3` migration pair records that a Durable Object class named
 // SyncState existed for a few hours on 2026-09-11 and was then deleted — the
 // history must stay so wrangler can reconcile the live namespace; do not
-// remove it. The KV namespace is the store; its id is not a credential.
+// remove it. The store is the R2 bucket when the r2_buckets binding below is
+// enabled (preferred: see README.md, "Free tier"), else the KV namespace; the
+// ids are not credentials.
 {
   "name": "fala-gringo-sync",
   "account_id": "2d9cd71eed7053be2a3685407e9035a5",
@@ -14,5 +16,8 @@
     { "tag": "v2", "new_sqlite_classes": ["SyncState"] },
     { "tag": "v3", "deleted_classes": ["SyncState"] }
   ],
-  "kv_namespaces": [{ "binding": "SYNC", "id": "9014f52e474248a5bfb344afdc2021b7" }]
+  "kv_namespaces": [{ "binding": "SYNC", "id": "9014f52e474248a5bfb344afdc2021b7" }],
+  // the store since 2026-10-01 (bucket created that day); KV stays bound so codes
+  // not yet in the bucket are still read from it — the next PUT lands in R2
+  "r2_buckets": [{ "binding": "SYNC_R2", "bucket_name": "fala-gringo-sync" }]
 }
