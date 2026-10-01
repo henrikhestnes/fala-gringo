@@ -160,6 +160,13 @@
 //         written to the covered cards — and the deck, the goal, graduation and the statistics all follow it.
 //         Irregular forms keep their own clock. The due tier asks first for the answers that confirm the most;
 //         an answer that covers other due cards drops them live ("N implied"), a miss can bring them back
+// 1.31.1: fix: "Progress synced" every 2.5 s — applying a pulled state saved, the save reached the sync module's own
+//         change listener and scheduled another round; when the merge kept finding a difference the client polled
+//         the worker for ever (an upload's one-minute throttle paused it, hence "it stops after an answer"). The
+//         module ignores its own applies. And a request budget for the worker's free tier: scheduled rounds ten
+//         minutes apart, a hide-push at most every two minutes, a re-pull on return at most every five, no CORS
+//         preflight on uploads — a session costs a GET on load and one or two uploads; the worker can store in R2
+//         (33,000 writes a day free) instead of KV (1,000), reading KV for codes not yet migrated
 // 1.32.0: a second opinion on the verdict — under a miss, "I knew it — just a typo" re-grades it as a slip (the card
 //         clears, the ladder does not climb on the learner's word); under a forgiven slip or a by-sound spoken match,
 //         "actually, I got that wrong" re-grades it as a miss (the card goes back into the deck). The store puts the
