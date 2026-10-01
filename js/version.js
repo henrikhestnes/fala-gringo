@@ -150,7 +150,11 @@
 //         a backlog paid off after a break jumps forward; near-misses and implied confirmations earn the span
 //         without the climb. Make-up: never-missed cards confirmed across a span are lifted to the level the
 //         ladder would have given, on every load/sync
-const APP_VERSION = '1.30.2';
+// 1.30.3: fix: the make-up reached none of the cards learned before September — their first-correct day was
+//         backfilled weeks late and they carry no intake day. A never-missed card without an intake day has
+//         been known since before the learner's earliest Foco intake, so that horizon now bounds its span
+//         (at most the 30-day rung from that evidence alone)
+const APP_VERSION = '1.30.3';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

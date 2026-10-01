@@ -519,5 +519,31 @@ step('make-up for the flattened ladder: a never-missed card confirmed across a s
   if (Store.reviewLevel(t.id, ids[0]) !== 4) throw new Error('a flattened pull was not lifted again');
   if (Store.snapshot().strength[t.id][ids[0]].u !== 10) throw new Error('the make-up must not look like an event');
   Store.resetAll();
-  return 'levels 4 2 1 1 5 from spans 59/19/4/(missed)/already 5; re-lifted after a flattening pull';
+  // 1.30.3: a card with no intake day was known before the learner's earliest
+  // intake anywhere — that horizon bounds its span when `f` is a late backfill
+  const t2 = TOPICS.filter(t => t.kind === 'quiz')[1], ids2 = topicCards(t2).slice(0, 2).map(c => c.id);
+  const seed2 = Store.snapshot();
+  seed2.mastered[t.id] = {}; seed2.strength[t.id] = {}; seed2.mastered[t2.id] = {}; seed2.strength[t2.id] = {};
+  const rows2 = [
+    [t.id, ids[0], { s: 1, m: 0, l: 1, t: d - 2, f: d - 8, u: 10 }, 3],              // f backfilled 6 days before t; the horizon (d - 60) gives 58 days — level 4 by the ladder, capped at 3
+    [t.id, ids[1], { s: 1, m: 0, l: 1, t: d - 2, u: 10 }, 3],                        // no f at all (confirmed only before 1.24): the horizon still bounds it
+    [t.id, ids[2], { s: 1, m: 0, l: 1, t: d - 2, f: d - 8, i: d - 8, u: 10 }, 1],    // has its own intake day: no horizon, 6 days is too short
+    [t.id, ids[3], { s: 1, m: 1, l: 1, t: d - 2, f: d - 8, u: 10 }, 1],              // missed: never lifted
+    [t2.id, ids2[0], { s: 1, m: 0, l: 1, t: d - 20, f: d - 60, i: d - 60, u: 10 }, 3] // the earliest intake, in another topic, sets the horizon; its own 40-day span is uncapped
+  ];
+  rows2.forEach(r => { seed2.mastered[r[0]][r[1]] = 1; seed2.strength[r[0]][r[1]] = r[2]; });
+  seedState(seed2);
+  rows2.forEach((r, i) => { if (Store.reviewLevel(r[0], r[1]) !== r[3]) throw new Error('horizon row ' + i + ' level ' + Store.reviewLevel(r[0], r[1]) + ', expected ' + r[3]); });
+  if (Store.cardState(t.id, ids[0]) !== 'ok' || Store.dueIn(t.id, ids[0]) !== 28) throw new Error('horizon-lifted card not scheduled at its rung');
+  // with no intake day anywhere there is no horizon: the late backfill alone decides
+  const seed3 = Store.snapshot();
+  delete seed3.strength[t2.id]; delete seed3.mastered[t2.id];
+  seed3.strength[t.id][ids[0]] = { s: 1, m: 0, l: 1, t: d - 2, f: d - 8, u: 10 };
+  seed3.strength[t.id][ids[1]] = { s: 1, m: 0, l: 1, t: d - 2, u: 10 };
+  delete seed3.strength[t.id][ids[2]].i;
+  Store.resetAll();
+  seedState(seed3);
+  if (Store.reviewLevel(t.id, ids[0]) !== 1 || Store.reviewLevel(t.id, ids[1]) !== 1) throw new Error('a store without intake days must not invent a horizon');
+  Store.resetAll();
+  return 'levels 4 2 1 1 5 from spans 59/19/4/(missed)/already 5; re-lifted after a flattening pull; horizon 3 3 1 1 3 (capped at 3), none without intake days';
 });

@@ -520,8 +520,9 @@ step('review level grows only across distinct days and climbs the interval ladde
   if (Store.reviewLevel('adverbs', id) !== 0 || Store.cardState('adverbs', id) !== 'shaky')
     throw new Error('miss did not reset: level ' + Store.reviewLevel('adverbs', id) + ', ' + Store.cardState('adverbs', id));
   // a pre-1.12 record (no `l`) with a last-correct day counts as level 1
+  // (a miss in its history, so the 1.30.3 make-up floor stays out of it)
   var snap = Store.snapshot();
-  snap.strength.adverbs[id] = { s: 3, m: 0, t: Store.today() - REVIEW_INTERVALS[0] - 1 };
+  snap.strength.adverbs[id] = { s: 3, m: 1, t: Store.today() - REVIEW_INTERVALS[0] - 1 };
   seedState(snap);
   if (Store.reviewLevel('adverbs', id) !== 1 || Store.cardState('adverbs', id) !== 'due')
     throw new Error('legacy record: level ' + Store.reviewLevel('adverbs', id) + ', ' + Store.cardState('adverbs', id));
@@ -537,7 +538,8 @@ step('the Foco deck puts due reviews before new cards, most overdue first', func
   var due = cards.slice(-5);                        // the LAST five in data order, so intake order can't mask it
   due.forEach(function (c, i) {
     snap.mastered.nouns[c.id] = 1;
-    snap.strength.nouns[c.id] = { s: 1, m: 0, l: 1, t: today - REVIEW_INTERVALS[0] - i };   // c[4] most overdue
+    var day = today - REVIEW_INTERVALS[0] - i;                                               // c[4] most overdue
+    snap.strength.nouns[c.id] = { s: 1, m: 0, l: 1, t: day, i: day };                        // met and confirmed that day: no span to credit
   });
   seedState(snap);
   goTo('#browse'); goTo('#nouns');
@@ -746,7 +748,7 @@ step('typed near-misses: one unambiguous slip is accepted, an ambiguous one is a
   if (Store.reviewLevel('presente', falo.id) !== 1) throw new Error('first near-miss level is ' + Store.reviewLevel('presente', falo.id));
   // a near-miss on a due card confirms it WITHOUT climbing the ladder
   var snap2 = Store.snapshot();
-  snap2.strength.presente[falo.id] = { s: 1, m: 0, l: 2, t: today - REVIEW_INTERVALS[1] };
+  snap2.strength.presente[falo.id] = { s: 1, m: 0, l: 2, t: today - REVIEW_INTERVALS[1], i: today - REVIEW_INTERVALS[1] };
   seedState(snap2);
   goTo('#browse'); goTo('#presente');
   if (shownCard('presente').id !== falo.id) throw new Error('due falo not shown');
@@ -788,7 +790,8 @@ step('implied reviews: one form of a known-pattern verb is asked, a clean hit co
   snap.mastered.presente = {}; snap.strength.presente = {};
   cards.forEach(function (c) {                       // the whole tab mastered a week+ ago: all due
     snap.mastered.presente[c.id] = 1;
-    snap.strength.presente[c.id] = { s: 1, m: c.id === 'falar|2' ? 2 : 0, l: 1, t: today - REVIEW_INTERVALS[0] - (c.id.indexOf('falar|') === 0 ? 2 : 1) };
+    var day = today - REVIEW_INTERVALS[0] - (c.id.indexOf('falar|') === 0 ? 2 : 1);
+    snap.strength.presente[c.id] = { s: 1, m: c.id === 'falar|2' ? 2 : 0, l: 1, t: day, i: day };
   });
   seedState(snap);
   goTo('#browse'); goTo('#presente');
@@ -804,7 +807,9 @@ step('implied reviews: one form of a known-pattern verb is asked, a clean hit co
   // falar: the most-missed form leads, its three siblings ride along
   var falarAsked = cards.filter(function (c) { return c.infer && c.infer.lexeme === 'falar' && Quiz._tierOf(c.id) === 'due'; });
   if (falarAsked.length !== 1 || falarAsked[0].id !== 'falar|2') throw new Error('falar lead is ' + falarAsked.map(function (c) { return c.id; }).join(','));
-  // walk the deck: a clean hit on the falar lead confirms falar|0/1/3 (clock reset, level kept)
+  // walk the deck: a clean hit on the falar lead confirms falar|0/1/3 (clock reset; the implication itself
+  // does not climb — the siblings' level 2 is the 1.30.2 make-up floor reading the 9-day span from intake to
+  // clock, the cumulative twin of the overdue credit, and the regression steps pin the no-climb rule itself)
   var seen = 0, guard = 0, missLead = null;
   while (registry.answerInput && guard++ < 600) {
     var c = shownCard('presente');
@@ -812,7 +817,8 @@ step('implied reviews: one form of a known-pattern verb is asked, a clean hit co
       registry.answerInput.value = c.answer; registry.actionBtn.fire('click');
       ['falar|0', 'falar|1', 'falar|3'].forEach(function (id) {
         if (Store.cardState('presente', id) !== 'ok') throw new Error(id + ' not confirmed by implication: ' + Store.cardState('presente', id));
-        if (Store.reviewLevel('presente', id) !== 1) throw new Error(id + ' climbed to level ' + Store.reviewLevel('presente', id));
+        if (Store.reviewLevel('presente', id) !== 2) throw new Error(id + ' is level ' + Store.reviewLevel('presente', id) + ', expected the span floor 2');
+        if (Store.dueIn('presente', id) !== REVIEW_INTERVALS[1]) throw new Error(id + ' next due in ' + Store.dueIn('presente', id));
       });
       if (Store.reviewLevel('presente', 'falar|2') !== 2) throw new Error('the asked lead did not climb');
       seen++;
@@ -885,7 +891,9 @@ step('a missed form defers its unseen siblings', function () {
 step('a mastered card comes back for review once it goes stale', function () {
   var cards = topicCards(topicById('imperfeito'));
   var snap = Store.snapshot();
-  snap.strength.imperfeito[cards[5].id].t -= (REVIEW_INTERVALS[0] + 1);
+  var stale = snap.strength.imperfeito[cards[5].id];
+  stale.t -= (REVIEW_INTERVALS[0] + 1);
+  stale.f = stale.i = stale.t; stale.l = 1;   // met, first right and last confirmed on that one day: no span for the make-up floor to credit
   seedState(snap);
   goTo('#browse'); goTo('#imperfeito');
   var total = parseInt(registry.statTotal.textContent, 10);
@@ -1588,7 +1596,7 @@ step('reclaimed implied reviews come up right after the lead, and the due count 
   var siblings = Quiz._impliedOf(lead.id).slice();
   var due = Quiz._counts().due, total = parseInt(registry.statTotal.textContent, 10);
   registry.answerInput.value = 'zzz-wrong'; registry.actionBtn.fire('click');
-  if (Quiz._counts().due !== due + 3) throw new Error('due count ' + due + ' -> ' + Quiz._counts().due + ', expected +3');
+  if (Quiz._counts().due !== due + 3) throw new Error('due count ' + due + ' -> ' + Quiz._counts().due + ', expected +3 (lead ' + lead.id + ', siblings ' + siblings.map(function (id) { return id + ':' + Store.cardState('presente', id) + ':' + Quiz._tierOf(id); }).join(' ') + ')');
   if (parseInt(registry.statTotal.textContent, 10) !== total + 3) throw new Error('deck did not grow by 3');
   var seen = [];
   for (var i = 0; i < 3; i++) {

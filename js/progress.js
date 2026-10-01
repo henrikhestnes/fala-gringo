@@ -205,16 +205,31 @@ const Store = (function () {
     return r;
   }
   /* The level the ladder would have reached for a card never missed: first
-     right on `f`, confirmed on every due day up to its clock `t` (7 + 14 + 30 +
-     60 days to the top). A floor, never a ceiling — see repairLevels. */
-  function spanLevel(e) {
-    if (!e || e.m || !e.f || !e.t || e.t <= e.f) return 0;
+     right on the day it has been known since, confirmed on every due day up to
+     its clock `t` (7 + 14 + 30 + 60 days to the top). A floor, never a ceiling
+     — see repairLevels. Known since: the earlier of its first-correct day `f`
+     (1.24 — backfilled on the next hit for older records, so often far too
+     late) and its intake day `i` (1.12). A card with NO intake day was met
+     before the learner's first Foco intake on 1.12 or later, so the earliest
+     intake day anywhere in the store (`horizon`) bounds it too (1.30.3). A card
+     met only in the Daily, or with Foco off, has no intake day either and
+     takes the same bound — circumstantial, so a horizon-derived span earns
+     at most HORIZON_LEVEL: the over-credit on such a card (never missed, by
+     definition) is one 30-day wait instead of a 7-day one. */
+  const HORIZON_LEVEL = 3;
+  function spanLevel(e, horizon) {
+    if (!e || e.m || !e.t) return 0;
+    let first = Infinity, cap = REVIEW_INTERVALS.length;
+    if (e.f) first = e.f;
+    if (e.i) first = Math.min(first, e.i);
+    else if (horizon && horizon < first) { first = horizon; cap = HORIZON_LEVEL; }
+    if (e.t <= first) return 0;
     let level = 1, at = 0;
     for (let i = 0; i < REVIEW_INTERVALS.length - 1; i++) {
       at += REVIEW_INTERVALS[i];
-      if (e.t - e.f >= at) level = i + 2;
+      if (e.t - first >= at) level = i + 2;
     }
-    return level;
+    return Math.min(level, cap);
   }
   /* Make-up for the flattened ladder (1.30.2): until then the sync merge took
      the lower level of two copies, so with two devices a card never rose above
@@ -227,10 +242,15 @@ const Store = (function () {
      next pull; records with a miss in their history carry no day for it and
      are left to the overdue credit of their next due hit (recordAnswer). */
   function repairLevels() {
-    Object.keys(state.strength).forEach(topic => {
+    const topics = Object.keys(state.strength);
+    let horizon = 0;   // the learner's earliest Foco intake day — `i` merges by the earliest, so every device agrees
+    topics.forEach(topic => {
+      Object.values(state.strength[topic]).forEach(e => { if (e.i && (!horizon || e.i < horizon)) horizon = e.i; });
+    });
+    topics.forEach(topic => {
       const rows = state.strength[topic];
       Object.keys(rows).forEach(id => {
-        const e = rows[id], floor = spanLevel(e);
+        const e = rows[id], floor = spanLevel(e, horizon);
         if (floor > levelOf(e)) e.l = floor;
       });
     });
