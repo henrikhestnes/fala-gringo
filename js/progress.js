@@ -136,6 +136,7 @@ const Store = (function () {
     try {
       const disk = readDisk();
       if (disk) state = ProgressState.merge(state, disk);
+      repairLevels();
       readFailed = false;
     } catch (e) { readFailed = true; storageError = true; notifyStorage(); }
   }
@@ -195,6 +196,45 @@ const Store = (function () {
     const i = Math.min(Math.max(level, 1), REVIEW_INTERVALS.length) - 1;
     return REVIEW_INTERVALS[i];
   }
+  /* The rung a retention span earns: the highest level whose interval fits in
+     `days` (0 below the first rung). A card remembered across 21 days has shown
+     what the 14-day rung asks for, whatever rung it was sitting on. */
+  function rungFor(days) {
+    let r = 0;
+    REVIEW_INTERVALS.forEach((n, i) => { if (days >= n) r = i + 1; });
+    return r;
+  }
+  /* The level the ladder would have reached for a card never missed: first
+     right on `f`, confirmed on every due day up to its clock `t` (7 + 14 + 30 +
+     60 days to the top). A floor, never a ceiling — see repairLevels. */
+  function spanLevel(e) {
+    if (!e || e.m || !e.f || !e.t || e.t <= e.f) return 0;
+    let level = 1, at = 0;
+    for (let i = 0; i < REVIEW_INTERVALS.length - 1; i++) {
+      at += REVIEW_INTERVALS[i];
+      if (e.t - e.f >= at) level = i + 2;
+    }
+    return level;
+  }
+  /* Make-up for the flattened ladder (1.30.2): until then the sync merge took
+     the lower level of two copies, so with two devices a card never rose above
+     the rung they last agreed on, however often it was confirmed. The record
+     keeps no history of due confirmations, but a card never missed (m = 0) and
+     confirmed across a span of days has demonstrably been retained across it:
+     its level can be no lower than what the ladder yields for that span. Pure
+     and idempotent, applied whenever data enters the store (load, another tab,
+     sync, a backup), so a stale copy flattening it again is lifted again on the
+     next pull; records with a miss in their history carry no day for it and
+     are left to the overdue credit of their next due hit (recordAnswer). */
+  function repairLevels() {
+    Object.keys(state.strength).forEach(topic => {
+      const rows = state.strength[topic];
+      Object.keys(rows).forEach(id => {
+        const e = rows[id], floor = spanLevel(e);
+        if (floor > levelOf(e)) e.l = floor;
+      });
+    });
+  }
 
   const api = {
     today: today,
@@ -244,7 +284,8 @@ const Store = (function () {
          t  the review clock — the day (epoch days) of the last DUE confirmation
             (or implied one); the next review is due intervalFor(l) days later
          l  the review level: due confirmations since the last miss (the
-            REVIEW_INTERVALS ladder); early or same-day practice does not raise it
+            REVIEW_INTERVALS ladder), each first credited with the rung the span
+            since `t` earns (1.30.2); early or same-day practice does not raise it
             and does not move `t` — a miss resets it to 0
          i  the day Foco first introduced the card     a  the day of the last
             direct correct answer (today's goal)        f  the day of the FIRST
@@ -268,7 +309,15 @@ const Store = (function () {
         if (!implied) s.c = (s.c || 0) + 1;
         let l = levelOf(s);
         const wasDue = !s.t || l === 0 || day - s.t >= intervalFor(l);
-        if (wasDue && !near) l = Math.min(l + 1, REVIEW_INTERVALS.length);     // only a due confirmation advances the ladder
+        if (wasDue) {
+          // Overdue credit (1.30.2): the card was retained for every day since
+          // its clock, so a hit three weeks after a 7-day review has earned
+          // the 14-day rung before this answer climbs one more — a backlog
+          // paid off after a break stops coming back a week later. Not after
+          // a miss (the span since the clock contains it).
+          if (l > 0 && s.t) l = Math.max(l, rungFor(day - s.t));
+          if (!near) l = Math.min(l + 1, REVIEW_INTERVALS.length);   // only a due confirmation advances the ladder
+        }
         if (l < 1) l = 1;                          // …but a hit after a miss is always back on rung one
         if (minLevel && l < minLevel) l = minLevel;  // inferred-known cards start higher (js/infer.js)
         s.s += 1; s.l = l;

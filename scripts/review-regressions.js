@@ -447,3 +447,77 @@ step('with no fresh word left, the extra batch admits held-back siblings, one pe
     Store.setPref('newPerDay', NEW_PER_DAY); Store.resetAll();
   }
 });
+
+step('a climb survives the merge with a stale copy; an offline miss on the other side still floors it at rung one', function () {
+  const d = Store.today();
+  const stale   = { s: 3, m: 0, l: 1, t: d - 7, u: 50 };
+  const climbed = { s: 4, m: 0, l: 2, t: d,     u: 60 };
+  const wrap = r => ({ strength: { topic: { card: r } } });
+  [ProgressState.merge(wrap(stale), wrap(climbed)), ProgressState.merge(wrap(climbed), wrap(stale))].forEach(m => {
+    const r = m.strength.topic.card;
+    if (r.l !== 2 || r.s !== 4 || r.t !== d) throw new Error('the climb was merged away: ' + JSON.stringify(r));
+  });
+  // the other device missed the card offline (older stamp) and never saw the hit:
+  // chronologically miss → hit, so the card is recovered but on rung one
+  const missedOffline = { s: 0, m: 1, l: 0, t: d - 7, u: 55 };
+  [ProgressState.merge(wrap(missedOffline), wrap(climbed)), ProgressState.merge(wrap(climbed), wrap(missedOffline))].forEach(m => {
+    const r = m.strength.topic.card;
+    if (r.l !== 1 || r.s !== 1 || r.m !== 1) throw new Error('an unseen miss did not floor the merge: ' + JSON.stringify(r));
+  });
+  return 'climb 1→2 kept both ways; unseen offline miss → rung one, miss kept';
+});
+
+step('overdue credit: a due hit first earns the rung its retention span fits, then climbs; near/implied earn without climbing', function () {
+  Store.resetAll();
+  const t = TOPICS.find(t => t.kind === 'quiz'), ids = topicCards(t).slice(0, 12).map(c => c.id), d = Store.today();
+  const seed = Store.snapshot();
+  seed.mastered[t.id] = {}; seed.strength[t.id] = {};
+  const cases = [
+    // [record, args after `true`, expected level]
+    [{ s: 1, m: 0, l: 1, t: d - 7 },   [], 2],      // on the due day: as before
+    [{ s: 1, m: 0, l: 1, t: d - 13 },  [], 2],      // not yet two weeks: as before
+    [{ s: 1, m: 0, l: 1, t: d - 21 },  [], 3],      // retained 21 days → the 14-day rung, then +1
+    [{ s: 1, m: 0, l: 1, t: d - 45 },  [], 4],
+    [{ s: 1, m: 0, l: 1, t: d - 200 }, [], 5],      // capped at the top
+    [{ s: 2, m: 0, l: 3, t: d - 30 },  [], 4],      // a higher rung on its due day: +1
+    [{ s: 2, m: 0, l: 3, t: d - 70 },  [], 5],
+    [{ s: 1, m: 0, l: 1, t: d - 21 },  [0, true], 2],        // near-miss: the span's rung, no climb
+    [{ s: 1, m: 0, l: 1, t: d - 21 },  [0, true, true], 2],  // implied confirmation: the same
+    [{ s: 0, m: 1, l: 0, t: d - 21 },  [], 1],      // after a miss: back on rung one, no credit
+    [{ s: 2, m: 0, l: 2, t: d },       [], 2],      // same day: nothing moves
+    [{ s: 1, m: 0, l: 1, t: d - 21 },  [3], 3]      // verify floor still applies
+  ];
+  cases.forEach((c, i) => { seed.mastered[t.id][ids[i]] = 1; seed.strength[t.id][ids[i]] = c[0]; });
+  seedState(seed);
+  const got = cases.map((c, i) => { Store.recordAnswer.apply(Store, [t.id, ids[i], true].concat(c[1])); return Store.reviewLevel(t.id, ids[i]); });
+  cases.forEach((c, i) => { if (got[i] !== c[2]) throw new Error('case ' + i + ' ' + JSON.stringify(c[0]) + ' → level ' + got[i] + ', expected ' + c[2]); });
+  if (Store.dueIn(t.id, ids[2]) !== 30) throw new Error('the clock did not move to today at the new rung');
+  Store.resetAll();
+  return 'levels ' + got.join(' ') + '; a 21-day-old 7-day card is next due in 30';
+});
+
+step('make-up for the flattened ladder: a never-missed card confirmed across a span is lifted to the rung the span earns, on every ingest', function () {
+  Store.resetAll();
+  const t = TOPICS.find(t => t.kind === 'quiz'), ids = topicCards(t).slice(0, 5).map(c => c.id), d = Store.today();
+  const seed = Store.snapshot();
+  seed.mastered[t.id] = {}; seed.strength[t.id] = {};
+  const rows = [
+    [{ s: 1, m: 0, l: 1, t: d - 1, f: d - 60, u: 10 }, 4],   // 59 days of confirmed retention: 7 + 14 + 30 fit
+    [{ s: 1, m: 0, l: 1, t: d - 1, f: d - 20, u: 10 }, 2],   // 19 days: only the first rung fits
+    [{ s: 1, m: 0, l: 1, t: d - 1, f: d - 5,  u: 10 }, 1],   // too short
+    [{ s: 1, m: 1, l: 1, t: d - 1, f: d - 60, u: 10 }, 1],   // a miss in its history: no span to trust
+    [{ s: 1, m: 0, l: 5, t: d - 1, f: d - 60, u: 10 }, 5]    // never lowered
+  ];
+  rows.forEach((r, i) => { seed.mastered[t.id][ids[i]] = 1; seed.strength[t.id][ids[i]] = r[0]; });
+  seedState(seed);
+  rows.forEach((r, i) => { if (Store.reviewLevel(t.id, ids[i]) !== r[1]) throw new Error('row ' + i + ' level ' + Store.reviewLevel(t.id, ids[i]) + ', expected ' + r[1]); });
+  if (Store.cardState(t.id, ids[0]) !== 'ok' || Store.dueIn(t.id, ids[0]) !== 59) throw new Error('lifted card not scheduled at its rung');
+  // a device still on the old merge flattens it back to 1 and pushes — the next pull lifts it again
+  const flat = Store.snapshot();
+  flat.strength[t.id][ids[0]] = { s: 1, m: 0, l: 1, t: d - 1, f: d - 60, u: 10 };
+  Store.applySynced(flat);
+  if (Store.reviewLevel(t.id, ids[0]) !== 4) throw new Error('a flattened pull was not lifted again');
+  if (Store.snapshot().strength[t.id][ids[0]].u !== 10) throw new Error('the make-up must not look like an event');
+  Store.resetAll();
+  return 'levels 4 2 1 1 5 from spans 59/19/4/(missed)/already 5; re-lifted after a flattening pull';
+});

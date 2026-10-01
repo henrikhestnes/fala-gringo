@@ -186,12 +186,24 @@
         // on rung one, exactly as one device would have recorded it. Without
         // this the min took the streak of the copy that still held the miss,
         // and a correctly answered card came back shaky on every sync round,
-        // for ever (1.26.2). Records without stamps (pre-1.24) keep the
-        // pessimistic view.
+        // for ever (1.26.2). The same record also keeps its CLIMB (1.30.2):
+        // a due hit that took the card from rung 1 to 2 on one device was
+        // merged back to 1 by the other device's stale copy on its next pull,
+        // so with two devices no card ever rose above the rung they last
+        // agreed on and the whole deck came due every week. The newer record
+        // is the truth as one device would hold it — unless the OTHER side
+        // carries a miss the newer never saw (its `m` is higher: an offline
+        // miss, chronologically before the hit), where only the floor of rung
+        // one is safe. Records without stamps (pre-1.24) keep the pessimistic
+        // view.
         if (!sa || !sb) { t[card] = sa || sb; return; }
         const merged = { s: Math.min(sa.s || 0, sb.s || 0), m: Math.max(sa.m || 0, sb.m || 0), l: Math.min(lvl(sa), lvl(sb)) };
         const newer = (sa.u || 0) > (sb.u || 0) ? sa : (sb.u || 0) > (sa.u || 0) ? sb : null;
-        if (newer && (newer.s || 0) > 0) { merged.s = Math.max(merged.s, 1); merged.l = Math.max(merged.l, 1); }
+        if (newer && (newer.s || 0) > 0) {
+          const other = newer === sa ? sb : sa;
+          if ((other.m || 0) > (newer.m || 0)) { merged.s = Math.max(merged.s, 1); merged.l = Math.max(merged.l, 1); }
+          else { merged.s = newer.s; merged.l = lvl(newer); }
+        }
         if (sa.t || sb.t) merged.t = Math.max(sa.t || 0, sb.t || 0);   // a card never confirmed has no clock
         if (sa.i || sb.i) merged.i = Math.min(sa.i || Infinity, sb.i || Infinity);
         if (sa.f || sb.f) merged.f = Math.min(sa.f || Infinity, sb.f || Infinity);

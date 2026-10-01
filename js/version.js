@@ -143,7 +143,14 @@
 //         on the tab it was closed on (pref lastTab, per device and per app)
 // 1.30.1: fix: on a drill tab the level buttons did nothing — every redraw re-derived the open level from the selected
 //         tab; the level now follows the tab only on navigation, a tap's choice survives sync pulls and % updates
-const APP_VERSION = '1.30.1';
+// 1.30.2: fix: the sync merge took the lower review level of two copies, so with two devices no card ever climbed
+//         past the rung they last agreed on and the whole deck came due every week — the newer record now keeps
+//         its climb (an offline miss the other side holds still floors it). Overdue credit: a due hit first earns
+//         the rung the span since the clock fits (a 7-day card right after 21 days → the 14-day rung, then +1), so
+//         a backlog paid off after a break jumps forward; near-misses and implied confirmations earn the span
+//         without the climb. Make-up: never-missed cards confirmed across a span are lifted to the level the
+//         ladder would have given, on every load/sync
+const APP_VERSION = '1.30.2';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name
