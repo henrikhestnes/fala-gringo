@@ -191,10 +191,12 @@
       escapeHtml(t.label) + extra + '</button>';
   }
 
+  /* The level the lower row shows. route() moves it to the selected tab's
+     level on every navigation; between navigations it is the learner's own
+     choice (showTier), which a redraw — a sync pull, a % update on a tab of
+     another level — must not undo. */
   function currentTier() {
     const tiers = tiersInUse();
-    const topic = statsRoute() ? null : topicById(currentTopicId());
-    if (topic && topic.kind === 'quiz' && topic.tier) shownTier = topic.tier;
     if (tiers.indexOf(shownTier) < 0) {
       const last = topicById(Store.getPref('lastTab', ''));
       shownTier = (last && last.kind === 'quiz' && last.tier) || learnerTier() || tiers[0] || 0;
@@ -207,6 +209,10 @@
     if (tiersInUse().indexOf(tier) < 0) return;
     shownTier = tier;
     renderTabs();
+  }
+
+  function followTier(topic) {
+    if (topic && topic.kind === 'quiz' && topic.tier) shownTier = topic.tier;
   }
 
   function renderTabs() {
@@ -589,6 +595,7 @@
       return;
     }
     const topic = topicById(currentTopicId());
+    followTier(topic);   // the level row opens the selected tab's level
     if (Store.getPref('lastTab', '') !== topic.id) Store.setPref('lastTab', topic.id);
     // a bare URL landed on the remembered tab: let the address say so, without a history entry
     if (!(location.hash || '').replace(/^#/, '') && window.history && typeof history.replaceState === 'function') {

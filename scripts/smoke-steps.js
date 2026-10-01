@@ -56,9 +56,25 @@ step('tab strip: a level row (Browse · 3 levels · Daily) over the tabs of one 
   if (!/data-tier-tab="3"[^>]*aria-pressed="true"/.test(html) || !/aria-selected="true"[^>]*data-tab="sentences"/.test(html)) throw new Error('level 3 should open for Sentences');
   goTo('#daily');
   if (!/data-tier-tab="3"[^>]*aria-pressed="true"/.test(registry.tabs.innerHTML)) throw new Error('the Daily should leave the level where it was');
+  // from a drill tab, another level can be looked at — and a redraw must not snap back
+  goTo('#presente');
+  if (!/data-tier-tab="1"[^>]*aria-pressed="true"/.test(registry.tabs.innerHTML)) throw new Error('level 1 should open for Presente');
+  App.showTier(2);
+  html = registry.tabs.innerHTML;
+  if (!/data-tier-tab="2"[^>]*aria-pressed="true"/.test(html)) throw new Error('could not open level 2 while on Presente');
+  if (/data-tab="presente"/.test(html) || !/data-tab="perfeito"/.test(html)) throw new Error('lower row should show level 2: ' + html);
+  if (registry.view.dataset.topic !== 'presente') throw new Error('navigated away from presente');
+  App.refreshProgress();                                         // a sync pull redraws the strip
+  if (!/data-tier-tab="2"[^>]*aria-pressed="true"/.test(registry.tabs.innerHTML)) throw new Error('a redraw snapped the level back');
+  App.updateTabPct('presente');                                  // a % update on a tab of another level
+  if (!/data-tier-tab="2"[^>]*aria-pressed="true"/.test(registry.tabs.innerHTML)) throw new Error('a % update snapped the level back');
+  goTo('#perfeito');
+  if (!/aria-selected="true"[^>]*data-tab="perfeito"/.test(registry.tabs.innerHTML)) throw new Error('Perfeito not selected');
+  goTo('#presente');
+  if (!/data-tier-tab="1"[^>]*aria-pressed="true"/.test(registry.tabs.innerHTML)) throw new Error('navigating back should reopen level 1');
   goTo('#browse');
   App.showTier(1);
-  return 'Browse · Iniciante Intermediário Avançado · Daily over 4 / 6 / 3 tabs; a level tap turns the row, a tab sets the level';
+  return 'Browse · Iniciante Intermediário Avançado · Daily over 4 / 6 / 3 tabs; a level tap turns the row (from a drill tab too, and survives redraws), a tab sets the level';
 });
 
 step('the app reopens on the tab it was closed on (pref lastTab), the URL saying so', function () {

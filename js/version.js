@@ -141,7 +141,9 @@
 //         combined %) over the tabs of the open level only, so a laptop sees one short line instead of fifteen pills
 //         wrapping mid-tier (the subpages, with 2 and 5 drill tabs, keep the captioned single row); the app reopens
 //         on the tab it was closed on (pref lastTab, per device and per app)
-const APP_VERSION = '1.30.0';
+// 1.30.1: fix: on a drill tab the level buttons did nothing — every redraw re-derived the open level from the selected
+//         tab; the level now follows the tab only on navigation, a tap's choice survives sync pulls and % updates
+const APP_VERSION = '1.30.1';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name
