@@ -106,7 +106,7 @@ const Quiz = (function () {
   let counts = null;        // Foco tier sizes of the current deck (+ cards waiting behind the cap)
   let tierOf = new Map();   // card id -> 'due' | 'shaky' | 'verify' | 'new' (Foco decks only)
   let missed = new Set();   // card ids missed in this run (they read as shaky on the chip)
-  let impliedBy = new Map(); // lead card id -> due sibling ids a clean hit on the lead confirms (js/infer.js)
+  let dropped = new Set();   // due cards this run's answers covered through their word and pattern (js/infer.js)
   let extraHeld = new Map(); // held-back siblings the extra-batch button admitted: id -> 'verify' | 'new'
 
   /* mic mode (the 🎤 chip): hands-free spoken answers */
@@ -244,9 +244,12 @@ const Quiz = (function () {
        verify  likely-known unseen forms, sharing the daily new-card allowance
        new     unseen cards, at most one form per word per day, in data order
      All eligible reviews are included; the daily goal does not limit the deck.
-     Failed implied reviews can reclaim their siblings for immediate practice.
-     Reviews come before new material so a short session still does what matters.
-     Switching the chip off drills the whole topic.
+     A regular verb form is due only while its word or its pattern has no
+     fresher confirmation anywhere (the derived schedule, js/infer.js), so an
+     answer in this run can cover other due cards: syncDeck() drops them and
+     the chip counts them as "implied"; a miss that takes their cover away
+     brings them back. Reviews come before new material so a short session
+     still does what matters. Switching the chip off drills the whole topic.
 
      focoPlan() is the pure part — it reads the store and touches nothing, so
      the top bar can ask what every active tab would put in front of the
@@ -262,27 +265,24 @@ const Quiz = (function () {
 
     const { intake, likely, waiting } = newIntake(topicId, cards, false);
 
-    // reviews thinned by evidence: of a verb's due regular forms in a known
-    // pattern only the weakest is asked, the rest ride on its answer (js/infer.js)
-    const thinned = (window.Infer && Infer.implyDue) ? Infer.implyDue(topicId, cards, due) : { ask: due, implied: new Map() };
-
-    // leeches first, then most overdue, then the worst lifetime miss ratio;
-    // shuffle BEFORE the (stable) sort so cards equal on all three — most of
-    // them, on any given day — don't come out in data order
+    // leeches first, then the answers that confirm the most waiting words and
+    // patterns (js/infer.js coverage), then most overdue, then the worst
+    // lifetime miss ratio; shuffle BEFORE the (stable) sort so cards equal on
+    // all of these — most of them, on any given day — don't come out in data order
     const harder = (a, b) => Store.missRatio(topicId, b.id) - Store.missRatio(topicId, a.id);
-    const dueOrdered = shuffle(thinned.ask).sort((a, b) =>
+    const cover = (window.Infer && Infer.coverage) ? c => Infer.coverage(topicId, c) : () => 0;
+    const dueOrdered = shuffle(due).sort((a, b) =>
       (Number(Store.isLeech(topicId, b.id)) - Number(Store.isLeech(topicId, a.id))) ||
+      (cover(b) - cover(a)) ||
       (Store.overdue(topicId, b.id) - Store.overdue(topicId, a.id)) || harder(a, b));
-    return { due: dueOrdered, implied: thinned.implied, shaky: shuffle(shaky).sort(harder),
+    return { due: dueOrdered, shaky: shuffle(shaky).sort(harder),
              verify: shuffle(intake.filter(c => likely.has(c.id))),
              intake: shuffle(intake.filter(c => !likely.has(c.id))), waiting: waiting };
   }
 
   function focusDeck(cards) {
     const plan = focoPlan(topic.id, cards);
-    impliedBy = plan.implied;
-    let impliedN = 0;
-    impliedBy.forEach(ids => { impliedN += ids.length; });
+    dropped = new Set();
 
     // siblings the extra-batch button let past the one-form rule, while unanswered
     const planned = new Set(plan.verify.concat(plan.intake).map(c => c.id));
@@ -297,7 +297,7 @@ const Quiz = (function () {
     tierOf = new Map();
     const out = [];
     tiers.forEach(([name, list]) => list.forEach(c => { tierOf.set(c.id, name); out.push(c); }));
-    counts = { due: plan.due.length, implied: impliedN, shaky: plan.shaky.length, verify: plan.verify.length,
+    counts = { due: plan.due.length, implied: 0, shaky: plan.shaky.length, verify: plan.verify.length,
                new: plan.intake.length, waiting: plan.waiting };
 
     // Only admitted cards spend intake, including inferred confirmations.
@@ -313,7 +313,7 @@ const Quiz = (function () {
     if (focusOn()) return focusDeck(cards);
     counts = null;
     tierOf = new Map();
-    impliedBy = new Map();
+    dropped = new Set();
     return shuffle(cards);
   }
 
@@ -468,7 +468,7 @@ const Quiz = (function () {
     answered = false;
     counts = null;
     tierOf = new Map();
-    impliedBy = new Map();
+    dropped = new Set();
     rivalCache.clear();
   }
 
@@ -478,12 +478,11 @@ const Quiz = (function () {
      its tier, a card missed this run counts as shaky until it is cleared. */
   function liveCounts() {
     if (!counts) return null;
-    const live = { due: 0, implied: 0, shaky: 0, verify: 0, new: 0, waiting: counts.waiting };
+    const live = { due: 0, implied: counts.implied, shaky: 0, verify: 0, new: 0, waiting: counts.waiting };
     deck.forEach((c, i) => {
       if (known.has(i)) return;
       const tier = missed.has(c.id) ? 'shaky' : (tierOf.get(c.id) || 'new');
       live[tier]++;
-      if (impliedBy.has(c.id)) live.implied += impliedBy.get(c.id).length;   // still riding on this lead
     });
     return live;
   }
@@ -753,31 +752,38 @@ const Quiz = (function () {
 
   /* ---------------------------------------------------------------- answer */
 
-  /* Implied reviews (js/infer.js implyDue): the due siblings riding on a lead. */
-  function confirmImplied(lead) {
-    const ids = impliedBy.get(lead.id);
-    if (!ids) return;
-    ids.forEach(id => Store.recordAnswer(topic.id, id, true, 0, true, true));   // near=true: clock reset, no climb
-    impliedBy.delete(lead.id);
-  }
-  function reclaimImplied(lead) {
-    const ids = impliedBy.get(lead.id);
-    if (!ids) return;
-    impliedBy.delete(lead.id);
-    const byId = new Map(topicCards(topic).map(c => [c.id, c]));
-    const add = [];
-    ids.forEach(id => {
-      const c = byId.get(id);
-      if (!c || deck.some(d => d.id === id)) return;
-      tierOf.set(id, 'due');
-      add.push(c);
+  /* The deck follows the derived schedule (js/infer.js) after every answer:
+     a due review whose word and pattern the answers so far have confirmed
+     is no longer due — it leaves the deck and the chip counts it as implied;
+     a miss can take that cover away again (the missed form vouches for
+     nothing), and the reviews it uncovers come back right after the current
+     card, ahead of the new material. Only Foco decks; nothing is written. */
+  function syncDeck() {
+    if (!counts) return;
+    const drop = new Set();
+    deck.forEach((c, i) => {
+      if (known.has(i) || i === current || missed.has(c.id) || tierOf.get(c.id) !== 'due') return;
+      if (Store.cardState(topic.id, c.id) === 'ok') drop.add(i);
     });
-    if (!add.length) return;
-    // they are reviews, so they come up next — right after the lead, ahead of
-    // the new cards queued behind it (not at the end of the deck)
-    deck.splice(current + 1, 0, ...add);
-    known = new Set(Array.from(known).map(i => i > current ? i + add.length : i));   // indices past the insert shift
-    if (counts) counts.due += add.length;   // only what was actually added
+    if (drop.size) {
+      const shift = i => i - Array.from(drop).filter(d => d < i).length;
+      known = new Set(Array.from(known).filter(i => !drop.has(i)).map(shift));
+      current = shift(current);
+      deck = deck.filter((c, i) => { if (!drop.has(i)) return true; dropped.add(c.id); tierOf.delete(c.id); return false; });
+      counts.implied += drop.size;
+    }
+    const back = [];
+    dropped.forEach(id => {
+      if (Store.cardState(topic.id, id) !== 'due') return;
+      const c = topicCards(topic).find(x => x.id === id);
+      if (c) back.push(c);
+    });
+    if (back.length) {
+      back.forEach(c => { dropped.delete(c.id); tierOf.set(c.id, 'due'); });
+      deck.splice(current + 1, 0, ...back);
+      known = new Set(Array.from(known).map(i => i > current ? i + back.length : i));   // indices past the insert shift
+      counts.implied -= back.length;
+    }
   }
 
   /* "also eu ponho · eu boto": the synonyms the card would equally have taken. */
@@ -889,14 +895,12 @@ const Quiz = (function () {
         ? '≈ ' + tfill(QUIZ_STRINGS.nearIs, { typed: escapeHtml(input.value.trim()) }) + ' ' + answerHtml + pron + say
         : '✓ ' + praiseWord() + ' ' + answerHtml + pron + say;
       revealArea.innerHTML = face.reveal || '';
-      // a clean hit on a lead confirms the verb's other due forms by implication
-      // (clock reset, no climb); a slip is not evidence enough — ask them after all
-      if (near) reclaimImplied(card); else confirmImplied(card);
+      syncDeck();   // this answer may have covered other due forms of the word and the pattern
       checkGraduation();
       updateStats();
     } else {
       stats.errors++;
-      reclaimImplied(card);   // the verb is not as known as it looked: ask its other due forms too
+      syncDeck();   // the missed form vouches for nothing now: reviews it covered come back
       perfect = false;
       input.classList.add('wrong', 'shake');
       setTimeout(() => input.classList.remove('shake'), 340);
@@ -980,7 +984,7 @@ const Quiz = (function () {
     nextTopic: nextTopic,
     _counts: () => counts,     // exposed for the smoke checks
     _tierOf: id => tierOf.get(id),
-    _impliedOf: id => impliedBy.get(id) || []
+    _dropped: () => Array.from(dropped)
   };
 })();
 

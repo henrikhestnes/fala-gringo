@@ -639,7 +639,7 @@ step('inference: a known word + a known pattern makes an unseen regular form a "
   registry.answerInput.value = first.answer;
   registry.actionBtn.fire('click');
   if (!/✓/.test(registry.feedback.innerHTML)) throw new Error('verify card rejected: ' + registry.feedback.innerHTML);
-  if (Store.reviewLevel('presente', target.id) !== 2) throw new Error('verify hit landed at level ' + Store.reviewLevel('presente', target.id));
+  if (Store.rawReviewLevel('presente', target.id) !== 2) throw new Error('verify hit landed at level ' + Store.rawReviewLevel('presente', target.id));   // the record's own rung (the derived level can read higher)
   // a shaky pattern stops qualifying: miss two of the five confirmed forms -> 3/5 solid < 80%
   var snap2 = Store.snapshot();
   voces.slice(0, 2).forEach(function (c) { snap2.strength.presente[c.id] = { s: 0, m: 1, l: 0, t: today }; });
@@ -745,16 +745,18 @@ step('typed near-misses: one unambiguous slip is accepted, an ambiguous one is a
   if (!/^≈ Close! You typed “eu fali”/.test(registry.feedback.innerHTML)) throw new Error('near feedback: ' + registry.feedback.innerHTML);
   if (registry.feedback.className !== 'feedback ok near') throw new Error('feedback class "' + registry.feedback.className + '"');
   if (!Store.isMastered('presente', falo.id)) throw new Error('near-miss did not clear the card');
-  if (Store.reviewLevel('presente', falo.id) !== 1) throw new Error('first near-miss level is ' + Store.reviewLevel('presente', falo.id));
+  if (Store.rawReviewLevel('presente', falo.id) !== 1) throw new Error('first near-miss level is ' + Store.rawReviewLevel('presente', falo.id));   // the record's own rung
   // a near-miss on a due card confirms it WITHOUT climbing the ladder
+  // (falo alone in the store: with its pattern mates fresh it would be covered by them and not due at all, 1.31)
   var snap2 = Store.snapshot();
-  snap2.strength.presente[falo.id] = { s: 1, m: 0, l: 2, t: today - REVIEW_INTERVALS[1], i: today - REVIEW_INTERVALS[1] };
+  snap2.mastered.presente = {}; snap2.mastered.presente[falo.id] = 1;
+  snap2.strength.presente = {}; snap2.strength.presente[falo.id] = { s: 1, m: 0, l: 2, t: today - REVIEW_INTERVALS[1], i: today - REVIEW_INTERVALS[1] };
   seedState(snap2);
   goTo('#browse'); goTo('#presente');
   if (shownCard('presente').id !== falo.id) throw new Error('due falo not shown');
   registry.answerInput.value = 'eu fali';
   registry.actionBtn.fire('click');
-  if (Store.reviewLevel('presente', falo.id) !== 2) throw new Error('near-miss raised the level to ' + Store.reviewLevel('presente', falo.id));
+  if (Store.rawReviewLevel('presente', falo.id) !== 2) throw new Error('near-miss raised the level to ' + Store.rawReviewLevel('presente', falo.id));
   if (Store.cardState('presente', falo.id) !== 'ok') throw new Error('near-miss did not restart the clock: ' + Store.cardState('presente', falo.id));
   return '"eu fali" ≈ eu falo (level kept at 2); "eu fala" / "vocês fala" / "fali" / "fale" rejected; only neighbouring keys slip; sentences take two edits';
 });
@@ -782,63 +784,97 @@ step('spoken answers match by sound, guarded by the conjugation', function () {
   return 'falão→falam, fasso→faço, falar→fala by sound; fala≠falo guarded; exact hypothesis wins';
 });
 
-step('implied reviews: one form of a known-pattern verb is asked, a clean hit confirms the rest', function () {
+step('derived schedule: a regular form is due only while its word or its pattern has no fresher confirmation anywhere', function () {
   ['presente', 'perfeito', 'imperfeito', 'subjuntivo-presente', 'subjuntivo'].forEach(function (t) { Store.resetTopic(t); });
   var cards = topicCards(topicById('presente'));
   var today = Store.today();
   var snap = Store.snapshot();
   snap.mastered.presente = {}; snap.strength.presente = {};
-  cards.forEach(function (c) {                       // the whole tab mastered a week+ ago: all due
+  cards.forEach(function (c) {                       // the whole tab mastered 9 days ago: every clock has run out
     snap.mastered.presente[c.id] = 1;
-    var day = today - REVIEW_INTERVALS[0] - (c.id.indexOf('falar|') === 0 ? 2 : 1);
-    snap.strength.presente[c.id] = { s: 1, m: c.id === 'falar|2' ? 2 : 0, l: 1, t: day, i: day };
+    snap.strength.presente[c.id] = { s: 1, m: 0, l: 1, t: today - 9, i: today - 9 };
+  });
+  // Perfeito: cheguei confirmed yesterday at level 2 (vouches for chegar for 13 more days), morei missed
+  // (vouches for nothing), fiz confirmed (vouches for fazer — but faço is irregular, a fact of its own)
+  snap.mastered.perfeito = { 'chegar|0': 1, 'morar|0': 1, 'fazer|0': 1 };
+  snap.strength.perfeito = { 'chegar|0': { s: 1, m: 0, l: 2, t: today - 1, i: today - 1 },
+                             'morar|0':  { s: 0, m: 1, l: 0, t: today - 1, i: today - 1 },
+                             'fazer|0':  { s: 1, m: 0, l: 2, t: today - 1, i: today - 1 } };
+  // Subj. Presente: one chegar form, due — its pattern has no five verbs behind it, so no cover applies
+  snap.mastered['subjuntivo-presente'] = { 'chegar|0': 1 };
+  snap.strength['subjuntivo-presente'] = { 'chegar|0': { s: 1, m: 0, l: 1, t: today - 9, i: today - 9 } };
+  seedState(snap);
+  var st = function (id, t) { return Store.cardState(t || 'presente', id); };
+  if (st('chegar|0') !== 'due') throw new Error('chego with its pattern unconfirmed reads ' + st('chegar|0'));
+  Store.recordAnswer('presente', 'falar|0', true);   // eu falo: the -ar / eu / presente pattern is confirmed for 14 days
+  if (st('chegar|0') !== 'ok') throw new Error('chego after cheguei + falo reads ' + st('chegar|0'));
+  if (Store.dueIn('presente', 'chegar|0') !== 13) throw new Error('chego next due in ' + Store.dueIn('presente', 'chegar|0') + ', expected 13 (the word runs out first)');
+  if (Store.reviewLevel('presente', 'chegar|0') !== 2) throw new Error('chego level ' + Store.reviewLevel('presente', 'chegar|0') + ', expected 2 (word 2, pattern 2)');
+  if (Store.overdue('presente', 'chegar|0') !== 0) throw new Error('a covered card is not overdue');
+  if (st('chegar|1') !== 'due') throw new Error('chega (the você pattern unconfirmed) reads ' + st('chegar|1'));
+  if (st('morar|0') !== 'due') throw new Error('moro (morei missed, no other form confirmed) reads ' + st('morar|0'));
+  if (st('fazer|0') !== 'due') throw new Error('faço (irregular) reads ' + st('fazer|0'));
+  if (st('chegar|0', 'subjuntivo-presente') !== 'due') throw new Error('a pattern not yet known covers nothing: ' + st('chegar|0', 'subjuntivo-presente'));
+  if (Infer.coverage('presente', cards.filter(function (c) { return c.id === 'chegar|1'; })[0]) !== 1) throw new Error('chega should cover its pattern only');
+  if (Infer.coverage('presente', cards.filter(function (c) { return c.id === 'morar|1'; })[0]) !== 2) throw new Error('mora should cover its word and its pattern');
+  Store.recordAnswer('presente', 'falar|0', false);  // the vouching form is missed: its cover is gone
+  if (st('chegar|0') !== 'due') throw new Error('chego after falo was missed reads ' + st('chegar|0'));
+  if (Store.rawCardState('presente', 'chegar|0') !== 'due' || Store.rawReviewLevel('presente', 'chegar|0') !== 1) throw new Error('the raw record must not change');
+  return 'cheguei + falo cover chego (due in 13, level 2); chega, moro, faço and the unknown subjunctive pattern stay due; missing falo uncovers chego; records untouched';
+});
+
+step('the Foco deck follows the derived schedule: a hit covers other due forms live, a miss on the covering form brings them back', function () {
+  ['presente', 'perfeito', 'imperfeito', 'subjuntivo-presente', 'subjuntivo'].forEach(function (t) { Store.resetTopic(t); });
+  var cards = topicCards(topicById('presente'));
+  var today = Store.today();
+  var snap = Store.snapshot();
+  snap.mastered.presente = {}; snap.strength.presente = {}; snap.mastered.perfeito = {}; snap.strength.perfeito = {};
+  cards.forEach(function (c) {                       // every presente clock has run out …
+    snap.mastered.presente[c.id] = 1;
+    snap.strength.presente[c.id] = { s: 1, m: 0, l: 1, t: today - 9, i: today - 9 };
+  });
+  var vouched = {};                                  // … and every word with a perfeito was confirmed there yesterday (one form each)
+  topicCards(topicById('perfeito')).forEach(function (c) {
+    if (!c.infer || vouched[c.infer.lexeme]) return;
+    vouched[c.infer.lexeme] = true;
+    snap.mastered.perfeito[c.id] = 1;
+    snap.strength.perfeito[c.id] = { s: 1, m: 0, l: 2, t: today - 1, i: today - 1 };
   });
   seedState(snap);
   goTo('#browse'); goTo('#presente');
-  var counts = Quiz._counts();
-  var regular = cards.filter(function (c) { return c.infer && c.infer.regular; }).length;
-  var irregular = cards.length - regular;
-  var full = Infer.implyDue('presente', cards, cards);
-  var impliedTotal = 0; full.implied.forEach(function (ids) { impliedTotal += ids.length; });
-  if (full.ask.length + impliedTotal !== cards.length) throw new Error('inference lost forms');
-  if (!(impliedTotal > regular / 2) || full.ask.length < irregular) throw new Error('inference coverage changed');
-  if (counts.due + counts.implied !== cards.length) throw new Error('Foco omitted eligible due reviews');
-  if (!/· \d+ due · \d+ implied$/.test(registry.focoChip.innerHTML)) throw new Error('chip reads "' + registry.focoChip.innerHTML + '"');
-  // falar: the most-missed form leads, its three siblings ride along
-  var falarAsked = cards.filter(function (c) { return c.infer && c.infer.lexeme === 'falar' && Quiz._tierOf(c.id) === 'due'; });
-  if (falarAsked.length !== 1 || falarAsked[0].id !== 'falar|2') throw new Error('falar lead is ' + falarAsked.map(function (c) { return c.id; }).join(','));
-  // walk the deck: a clean hit on the falar lead confirms falar|0/1/3 (clock reset; the implication itself
-  // does not climb — the siblings' level 2 is the 1.30.2 make-up floor reading the 9-day span from intake to
-  // clock, the cumulative twin of the overdue credit, and the regression steps pin the no-climb rule itself)
-  var seen = 0, guard = 0, missLead = null;
-  while (registry.answerInput && guard++ < 600) {
-    var c = shownCard('presente');
-    if (c.id === 'falar|2') {
-      registry.answerInput.value = c.answer; registry.actionBtn.fire('click');
-      ['falar|0', 'falar|1', 'falar|3'].forEach(function (id) {
-        if (Store.cardState('presente', id) !== 'ok') throw new Error(id + ' not confirmed by implication: ' + Store.cardState('presente', id));
-        if (Store.reviewLevel('presente', id) !== 2) throw new Error(id + ' is level ' + Store.reviewLevel('presente', id) + ', expected the span floor 2');
-        if (Store.dueIn('presente', id) !== REVIEW_INTERVALS[1]) throw new Error(id + ' next due in ' + Store.dueIn('presente', id));
-      });
-      if (Store.reviewLevel('presente', 'falar|2') !== 2) throw new Error('the asked lead did not climb');
-      seen++;
-    } else if (!missLead && c.infer && c.infer.lexeme !== 'falar' && Quiz._impliedOf(c.id).length === 3) {
-      // miss another lead carrying three implied siblings: they must come back into the deck
-      missLead = c;
-      var before = parseInt(registry.statTotal.textContent, 10);
-      registry.answerInput.value = 'zzz-wrong'; registry.actionBtn.fire('click');
-      var after = parseInt(registry.statTotal.textContent, 10);
-      if (after !== before + 3) throw new Error('missing the lead "' + c.id + '" grew the deck ' + before + ' -> ' + after + ', expected +3');
-      if (Quiz._impliedOf(c.id).length) throw new Error('reclaimed siblings still listed as implied');
-      seen++;
-    } else {
-      registry.answerInput.value = c.answer; registry.actionBtn.fire('click');
-    }
-    registry.actionBtn.fire('click');                // advance
-    if (seen === 2) break;
-  }
-  if (seen !== 2) throw new Error('did not reach both leads in ' + guard + ' rounds');
-  return counts.due + ' asked, ' + counts.implied + ' implied of ' + cards.length + '; falar|2 (most missed) led and confirmed its siblings at level 1; a missed lead reclaimed +3';
+  var total = parseInt(registry.statTotal.textContent, 10);
+  if (Quiz._counts().due !== cards.length || Quiz._counts().implied !== 0) throw new Error('plan: ' + JSON.stringify(Quiz._counts()));
+  if (/implied/.test(registry.focoChip.innerHTML)) throw new Error('nothing is implied before an answer: ' + registry.focoChip.innerHTML);
+  var lead = shownCard('presente');
+  if (!lead.infer || !lead.infer.regular) throw new Error('the first card should confirm a pattern, got ' + lead.id);
+  var pattern = cards.filter(function (c) {          // its pattern mates whose word is covered from Perfeito
+    return c.infer && c.infer.regular && c.infer.pattern === lead.infer.pattern && c.id !== lead.id && vouched[c.infer.lexeme];
+  });
+  registry.answerInput.value = lead.answer; registry.actionBtn.fire('click');
+  var live = Quiz._counts(), after = parseInt(registry.statTotal.textContent, 10);
+  if (live.implied !== pattern.length) throw new Error('hit on ' + lead.id + ' implied ' + live.implied + ', expected its ' + pattern.length + ' pattern mates');
+  if (after !== total - pattern.length) throw new Error('deck ' + total + ' -> ' + after + ', expected -' + pattern.length);
+  if (!new RegExp('· ' + pattern.length + ' implied').test(registry.focoChip.innerHTML)) throw new Error('chip reads "' + registry.focoChip.innerHTML + '"');
+  pattern.forEach(function (c) {
+    if (Store.cardState('presente', c.id) !== 'ok' || Quiz._tierOf(c.id)) throw new Error(c.id + ' still ' + Store.cardState('presente', c.id) + ' / tier ' + Quiz._tierOf(c.id));
+  });
+  if (Quiz._dropped().length !== pattern.length) throw new Error('dropped ' + Quiz._dropped().length);
+  // the covering form is missed (in another tab, say): the next answer here — a miss, so it covers nothing itself —
+  // brings its mates back, right after the current card
+  Store.recordAnswer('presente', lead.id, false);
+  registry.actionBtn.fire('click');                 // advance
+  var next = shownCard('presente');
+  registry.answerInput.value = 'zzz-wrong'; registry.actionBtn.fire('click');
+  if (Quiz._counts().implied !== 0) throw new Error('implied still ' + Quiz._counts().implied + ' after the cover was lost');
+  if (parseInt(registry.statTotal.textContent, 10) !== after + pattern.length) throw new Error('deck did not grow back by ' + pattern.length);
+  var ids = pattern.map(function (c) { return c.id; });
+  registry.actionBtn.fire('click');                 // advance: a returned mate comes first
+  var mate = shownCard('presente');
+  if (ids.indexOf(mate.id) === -1) throw new Error('the card after the uncovering was ' + mate.id + ', not a returned mate');
+  if (Quiz._tierOf(mate.id) !== 'due') throw new Error(mate.id + ' came back in tier ' + Quiz._tierOf(mate.id));
+  registry.answerInput.value = mate.answer; registry.actionBtn.fire('click');   // …and its hit covers the rest again
+  if (Quiz._counts().implied !== pattern.length - 1) throw new Error('after the mate was hit, implied is ' + Quiz._counts().implied + ', expected ' + (pattern.length - 1));
+  return lead.id + ' covered ' + pattern.length + ' pattern mates (deck ' + total + ' -> ' + after + '); missing it brought them back next; one mate re-covered the rest';
 });
 
 step('a miss makes only that form shaky; one right answer clears it', function () {
@@ -890,15 +926,17 @@ step('a missed form defers its unseen siblings', function () {
 
 step('a mastered card comes back for review once it goes stale', function () {
   var cards = topicCards(topicById('imperfeito'));
+  // an irregular form: its own clock decides (a regular one would be covered by its word's other forms, 1.31)
+  var card = cards.filter(function (c) { return c.infer && !c.infer.regular; })[0];
   var snap = Store.snapshot();
-  var stale = snap.strength.imperfeito[cards[5].id];
+  var stale = snap.strength.imperfeito[card.id];
   stale.t -= (REVIEW_INTERVALS[0] + 1);
   stale.f = stale.i = stale.t; stale.l = 1;   // met, first right and last confirmed on that one day: no span for the make-up floor to credit
   seedState(snap);
   goTo('#browse'); goTo('#imperfeito');
   var total = parseInt(registry.statTotal.textContent, 10);
   if (total !== 1) throw new Error('expected exactly the stale card, got ' + total);
-  return '"' + cards[5].id + '" resurfaced after ' + REVIEW_INTERVALS[0] + '+ days';
+  return '"' + card.id + '" resurfaced after ' + REVIEW_INTERVALS[0] + '+ days';
 });
 
 step('sync is inert without a code, survives its own init saves, and shows the off state', function () {
@@ -1572,42 +1610,6 @@ step('the mic chip only re-renders the card: the run (cards cleared, errors) sur
   Quiz.toggleMic();
   if (registry.statKnown.textContent !== '1' || window._activeRec) throw new Error('toggle back reset the run or kept listening');
   return 'known stayed 1 of ' + total + ' across mic on/off';
-});
-
-step('reclaimed implied reviews come up right after the lead, and the due count grows by what was added', function () {
-  ['presente', 'perfeito', 'imperfeito', 'subjuntivo-presente', 'subjuntivo'].forEach(function (t) { Store.resetTopic(t); });
-  var cards = topicCards(topicById('presente'));
-  var today = Store.today();
-  var snap = Store.snapshot();
-  snap.mastered.presente = {}; snap.strength.presente = {};
-  cards.forEach(function (c) {
-    snap.mastered.presente[c.id] = 1;
-    snap.strength.presente[c.id] = { s: 1, m: 0, l: 1, t: today - REVIEW_INTERVALS[0] - 1 };
-  });
-  seedState(snap);
-  goTo('#browse'); goTo('#presente');
-  var guard = 0, lead = null;
-  while (registry.answerInput && guard++ < 400) {
-    var c = shownCard('presente');
-    if (Quiz._impliedOf(c.id).length === 3) { lead = c; break; }
-    registry.answerInput.value = c.answer; registry.actionBtn.fire('click'); registry.actionBtn.fire('click');
-  }
-  if (!lead) throw new Error('no lead with three implied siblings reached');
-  var siblings = Quiz._impliedOf(lead.id).slice();
-  var due = Quiz._counts().due, total = parseInt(registry.statTotal.textContent, 10);
-  registry.answerInput.value = 'zzz-wrong'; registry.actionBtn.fire('click');
-  if (Quiz._counts().due !== due + 3) throw new Error('due count ' + due + ' -> ' + Quiz._counts().due + ', expected +3 (lead ' + lead.id + ', siblings ' + siblings.map(function (id) { return id + ':' + Store.cardState('presente', id) + ':' + Quiz._tierOf(id); }).join(' ') + ')');
-  if (parseInt(registry.statTotal.textContent, 10) !== total + 3) throw new Error('deck did not grow by 3');
-  var seen = [];
-  for (var i = 0; i < 3; i++) {
-    registry.actionBtn.fire('click');                       // advance
-    var nxt = shownCard('presente');
-    seen.push(nxt.id);
-    registry.answerInput.value = nxt.answer; registry.actionBtn.fire('click');
-  }
-  if (seen.slice().sort().join('|') !== siblings.slice().sort().join('|'))
-    throw new Error('the next three cards were ' + seen.join(', ') + ', not the reclaimed ' + siblings.join(', '));
-  return 'missed ' + lead.id + ' → ' + siblings.join(', ') + ' asked next; due +3, deck +3';
 });
 
 step('the goal celebration runs once a day, not after every miss→fix once the goal is done', function () {

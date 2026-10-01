@@ -154,7 +154,13 @@
 //         backfilled weeks late and they carry no intake day. A never-missed card without an intake day has
 //         been known since before the learner's earliest Foco intake, so that horizon now bounds its span
 //         (at most the 30-day rung from that evidence alone)
-const APP_VERSION = '1.30.3';
+// 1.31.0: the derived schedule — a regular verb form is due only while its WORD or its PATTERN has no fresher
+//         confirmation anywhere ("cheguei" in Perfeito keeps chegar covered in Presente; "falo" keeps the -ar / eu
+//         ending covered for every regular verb). Both are derived from the records on every read — nothing is
+//         written to the covered cards — and the deck, the goal, graduation and the statistics all follow it.
+//         Irregular forms keep their own clock. The due tier asks first for the answers that confirm the most;
+//         an answer that covers other due cards drops them live ("N implied"), a miss can bring them back
+const APP_VERSION = '1.31.0';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

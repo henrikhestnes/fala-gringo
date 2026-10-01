@@ -132,16 +132,20 @@ const Store = (function () {
     }
     return disk;
   }
+  /* Bumped whenever the state can have changed (a write, a merge from disk):
+     the derived schedule in js/infer.js caches against it. */
+  let rev = 0;
   function reconcile() {
     try {
       const disk = readDisk();
-      if (disk) state = ProgressState.merge(state, disk);
+      if (disk) { state = ProgressState.merge(state, disk); rev++; }
       repairLevels();
       readFailed = false;
     } catch (e) { readFailed = true; storageError = true; notifyStorage(); }
   }
   function save() {
     reconcile();
+    rev++;
     if (readFailed) { notifyStorage(); if (listener) listener(); return; }   // never overwrite what could not be read
     try {
       const raw = JSON.stringify(state);
@@ -256,10 +260,46 @@ const Store = (function () {
     });
   }
 
+  /* --- the card's OWN schedule: what its record says, and nothing else --- */
+  function rawCardState(topicId, cardId) {
+    const e = state.strength[topicId] && state.strength[topicId][cardId];
+    const m = state.mastered[topicId];
+    if (!(m && m[cardId])) return (e && e.m > 0) ? 'shaky' : 'new';
+    if (e && e.m > 0 && e.s < FOCUS_STREAK) return 'shaky';
+    if (!e || !e.t) return 'due';                           // mastered pre-1.1, no record
+    return today() - e.t >= intervalFor(levelOf(e)) ? 'due' : 'ok';
+  }
+  function rawDueIn(topicId, cardId) {
+    const e = state.strength[topicId] && state.strength[topicId][cardId];
+    if (!e || !e.t) return null;
+    return e.t + intervalFor(levelOf(e)) - today();
+  }
+  function rawReviewLevel(topicId, cardId) {
+    const e = state.strength[topicId] && state.strength[topicId][cardId];
+    return e ? levelOf(e) : 0;
+  }
+  /* The derived schedule (1.31, js/infer.js): for a regular verb form the
+     knowledge is the WORD plus the PATTERN, both confirmed by other cards, so
+     the form is due only while its own clock has run out AND one of the two
+     has no fresher confirmation anywhere. The deriver answers
+     { dueIn, level, implied } for such a card, or null to leave the record's
+     own schedule in force. It is a pure view over the records: nothing is
+     written, nothing synced, and the raw readers above stay the truth of what
+     was answered. Installed by infer.js where it loads; absent elsewhere. */
+  let deriver = null;
+  function derived(topicId, cardId) {
+    return deriver ? deriver(topicId, cardId) : null;
+  }
+
   const api = {
     today: today,
     storageFailed: () => storageError,
     refreshStorage: reconcile,
+    revision: () => rev,
+    setDeriver(fn) { deriver = fn; },
+    rawCardState: rawCardState,
+    rawDueIn: rawDueIn,
+    rawReviewLevel: rawReviewLevel,
 
     /* --- mastery: a card counts as mastered once answered correctly --- */
     isMastered(topicId, cardId) {
@@ -365,25 +405,23 @@ const Store = (function () {
          due   — mastered, and its review interval has run out
          ok    — mastered and fresh */
     cardState(topicId, cardId) {
-      const e = state.strength[topicId] && state.strength[topicId][cardId];
-      const m = state.mastered[topicId];
-      if (!(m && m[cardId])) return (e && e.m > 0) ? 'shaky' : 'new';
-      if (e && e.m > 0 && e.s < FOCUS_STREAK) return 'shaky';
-      if (!e || !e.t) return 'due';                           // mastered pre-1.1, no record
-      return today() - e.t >= intervalFor(levelOf(e)) ? 'due' : 'ok';
+      const st = rawCardState(topicId, cardId);
+      if (st !== 'due') return st;                            // new and shaky are the card's own business
+      const d = derived(topicId, cardId);
+      return d && d.dueIn > 0 ? 'ok' : 'due';                 // its word and pattern vouch for it elsewhere
     },
     needsWork(topicId, cardId) {
       return this.cardState(topicId, cardId) !== 'ok';
     },
     /* Days past its review date (0 when not due) — orders the review tier. */
     overdue(topicId, cardId) {
-      const e = state.strength[topicId] && state.strength[topicId][cardId];
-      if (!e || !e.t) return 0;
-      return Math.max(0, today() - e.t - intervalFor(levelOf(e)));
+      const d = this.dueIn(topicId, cardId);
+      return d === null ? 0 : Math.max(0, -d);
     },
     reviewLevel(topicId, cardId) {
-      const e = state.strength[topicId] && state.strength[topicId][cardId];
-      return e ? levelOf(e) : 0;
+      const own = rawReviewLevel(topicId, cardId);
+      const d = derived(topicId, cardId);
+      return d && d.level > own ? d.level : own;
     },
     misses(topicId, cardId) {
       const e = state.strength[topicId] && state.strength[topicId][cardId];
@@ -434,9 +472,10 @@ const Store = (function () {
     /* Days until the card's next scheduled review (0 or less: due now); null
        for a card never confirmed. The statistics page's forecast. */
     dueIn(topicId, cardId) {
-      const e = state.strength[topicId] && state.strength[topicId][cardId];
-      if (!e || !e.t) return null;
-      return e.t + intervalFor(levelOf(e)) - today();
+      const own = rawDueIn(topicId, cardId);
+      if (own === null) return null;
+      const d = derived(topicId, cardId);
+      return d ? d.dueIn : own;
     },
     /* Consecutive days practised, counted back from today — or from yesterday
        when today is not yet done, so the flame does not go out at midnight.
