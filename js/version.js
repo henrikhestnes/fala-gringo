@@ -160,7 +160,12 @@
 //         written to the covered cards — and the deck, the goal, graduation and the statistics all follow it.
 //         Irregular forms keep their own clock. The due tier asks first for the answers that confirm the most;
 //         an answer that covers other due cards drops them live ("N implied"), a miss can bring them back
-const APP_VERSION = '1.31.0';
+// 1.32.0: a second opinion on the verdict — under a miss, "I knew it — just a typo" re-grades it as a slip (the card
+//         clears, the ladder does not climb on the learner's word); under a forgiven slip or a by-sound spoken match,
+//         "actually, I got that wrong" re-grades it as a miss (the card goes back into the deck). The store puts the
+//         last record back and records the new verdict afresh (Store.amendAnswer), so tally, ladder, day log and
+//         goal read as if it had been the first; mastery the amended answer earned goes with it
+const APP_VERSION = '1.32.0';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

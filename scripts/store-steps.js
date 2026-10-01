@@ -203,3 +203,39 @@ step('the day log (1.28) also counts correct answers per day; merged by max, res
   if (Store.rightOn(d) !== undefined || Store.answeredOn(d)) throw new Error('reset kept the day log');
   return '1 right of 2 today; implied not counted; merge by max; dueIn 7';
 });
+
+step('a second opinion re-records the last answer (1.32): a miss becomes a slip, a slip becomes a miss, nothing else moves', function () {
+  Store.resetAll();
+  var q = firstQuizCards(), t = q.topic.id, id = q.cards[0].id, d = Store.today();
+  // a due card on rung 2, missed — then "I knew it, just a typo"
+  var snap = Store.snapshot();
+  snap.mastered[t] = {}; snap.mastered[t][id] = 1;
+  snap.strength[t] = {}; snap.strength[t][id] = { s: 3, m: 0, l: 2, t: d - 20, i: d - 20, f: d - 20, c: 3 };   // a 20-day span: below the make-up floor's third rung
+  seedState(snap);
+  Store.recordAnswer(t, id, false);
+  if (Store.rawCardState(t, id) !== 'shaky' || Store.answeredOn(d) !== 1 || Store.rightOn(d) !== 0) throw new Error('the miss did not land');
+  if (!Store.amendAnswer(t, id, true, 0, true)) throw new Error('amend refused');
+  var rec = Store.snapshot().strength[t][id];
+  if (rec.m !== 0 || rec.w) throw new Error('the miss was not taken back: ' + JSON.stringify(rec));
+  if (rec.l !== 2 || rec.t !== d || rec.s !== 4 || rec.c !== 4) throw new Error('not graded as a near-miss on a due card: ' + JSON.stringify(rec));
+  if (Store.rawCardState(t, id) !== 'ok') throw new Error('card still ' + Store.rawCardState(t, id));
+  if (Store.answeredOn(d) !== 1 || Store.rightOn(d) !== 1) throw new Error('day log ' + Store.answeredOn(d) + ' / ' + Store.rightOn(d));
+  if (Store.amendAnswer(t, id, true, 0, true)) throw new Error('the same verdict amended twice');
+  // a new card cleared by a near-miss — then "actually, I got that wrong"
+  var id2 = q.cards[1].id;
+  Store.markMastered(t, id2);
+  Store.recordAnswer(t, id2, true, 0, true);
+  if (!Store.isMastered(t, id2) || Store.rawCardState(t, id2) !== 'ok') throw new Error('the slip did not clear the card');
+  if (!Store.amendAnswer(t, id2, false)) throw new Error('amend to a miss refused');
+  var rec2 = Store.snapshot().strength[t][id2];
+  if (Store.isMastered(t, id2)) throw new Error('mastery earned by the amended answer was kept');
+  if (rec2.m !== 1 || rec2.w !== 1 || rec2.c || rec2.l !== 0 || rec2.f) throw new Error('not re-recorded as a miss: ' + JSON.stringify(rec2));
+  if (Store.rawCardState(t, id2) !== 'shaky') throw new Error('card reads ' + Store.rawCardState(t, id2));
+  if (Store.answeredOn(d) !== 2 || Store.rightOn(d) !== 1) throw new Error('day log ' + Store.answeredOn(d) + ' / ' + Store.rightOn(d));
+  // only the latest answer can be amended, and only on its card
+  if (Store.amendAnswer(t, id, false)) throw new Error('an earlier card\'s answer was amended');
+  var keys = Object.keys(rec).sort().join(',');
+  if (Object.values(rec).some(function (v) { return typeof v !== 'number'; }) || Object.keys(rec).length > 10) throw new Error('record grew: ' + keys);
+  Store.resetAll();
+  return 'miss → slip: m 0, level kept at 2, clock reset, 1 of 1 right today; slip → miss: unmastered, m 1; earlier card refused';
+});

@@ -900,6 +900,56 @@ step('a miss makes only that form shaky; one right answer clears it', function (
   return 'miss -> 1 shaky card (fresh siblings left alone); one hit -> level 1, deck empty';
 });
 
+step('a second opinion on the verdict (1.32): "just a typo" clears a missed card, "I got that wrong" puts a forgiven slip back', function () {
+  var cards = topicCards(topicById('presente'));
+  var falo = cards.filter(function (c) { return c.id === 'falar|0'; })[0];
+  Store.resetTopic('presente');
+  var snap = Store.snapshot(), today = Store.today();
+  snap.mastered.presente = {}; snap.strength.presente = {};
+  cards.forEach(function (c) {    // a fresh topic whose only unseen card is falo
+    if (c.id === falo.id) return;
+    snap.mastered.presente[c.id] = 1;
+    snap.strength.presente[c.id] = { s: 1, m: 0, l: 3, t: today - 1 };
+  });
+  seedState(snap);
+  goTo('#browse'); goTo('#presente');
+  if (shownCard('presente').id !== falo.id) throw new Error('deck did not isolate falo');
+  // a plain miss offers "I knew it — just a typo"
+  registry.answerInput.value = 'zzz';
+  registry.actionBtn.fire('click');
+  if (!/^✗ /.test(registry.feedback.innerHTML)) throw new Error('not a miss: ' + registry.feedback.innerHTML);
+  if (!registry.overrideBtn || !/just a typo/.test(registry.overrideArea.innerHTML)) throw new Error('no typo button: ' + registry.overrideArea.innerHTML);
+  if (Store.rawCardState('presente', falo.id) !== 'shaky' || registry.statLeft.textContent !== '1') throw new Error('the miss did not land');
+  registry.overrideBtn.fire('click');
+  if (!/^≈ Counted as a slip — the answer is <strong[^>]*>eu falo<\/strong>/.test(registry.feedback.innerHTML)) throw new Error('override feedback: ' + registry.feedback.innerHTML);
+  if (registry.feedback.className !== 'feedback ok near') throw new Error('feedback class "' + registry.feedback.className + '"');
+  if (registry.overrideArea.innerHTML !== '') throw new Error('the button survived its own click');
+  if (!Store.isMastered('presente', falo.id) || Store.rawCardState('presente', falo.id) !== 'ok' || Store.misses('presente', falo.id) !== 0)
+    throw new Error('not re-graded as a slip: ' + Store.rawCardState('presente', falo.id) + ', misses ' + Store.misses('presente', falo.id));
+  if (registry.statKnown.textContent !== '1' || registry.statLeft.textContent !== '0') throw new Error('run stats: known ' + registry.statKnown.textContent + ', left ' + registry.statLeft.textContent);
+  registry.actionBtn.fire('click');   // next: the run is over, and it was a perfect one
+  if (!/Perfeito!/.test(registry.cardArea.innerHTML)) throw new Error('an amended miss spoiled the perfect run: ' + registry.cardArea.innerHTML.slice(0, 120));
+  // a forgiven slip offers "actually, I got that wrong"
+  seedState(snap);
+  goTo('#browse'); goTo('#presente');
+  registry.answerInput.value = 'eu fali';
+  registry.actionBtn.fire('click');
+  if (!/^≈ Close!/.test(registry.feedback.innerHTML)) throw new Error('not a near-miss: ' + registry.feedback.innerHTML);
+  if (!registry.overrideBtn || !/I got that wrong/.test(registry.overrideArea.innerHTML)) throw new Error('no wrong button: ' + registry.overrideArea.innerHTML);
+  registry.overrideBtn.fire('click');
+  if (!/^✗ Counted as a miss — the answer is/.test(registry.feedback.innerHTML) || registry.feedback.className !== 'feedback err') throw new Error('override feedback: ' + registry.feedback.innerHTML);
+  if (Store.isMastered('presente', falo.id) || Store.rawCardState('presente', falo.id) !== 'shaky') throw new Error('not re-graded as a miss: ' + Store.rawCardState('presente', falo.id));
+  if (registry.statKnown.textContent !== '0' || !/· 1 shaky$/.test(registry.focoChip.innerHTML)) throw new Error('run stats: known ' + registry.statKnown.textContent + ', chip "' + registry.focoChip.innerHTML + '"');
+  registry.actionBtn.fire('click');   // next: the card comes straight back
+  if (!registry.answerInput || shownCard('presente').id !== falo.id) throw new Error('the card did not return to the deck');
+  if (registry.overrideArea.innerHTML !== '') throw new Error('a fresh card carries a stale button');
+  // a plain exact hit offers nothing
+  registry.answerInput.value = 'eu falo';
+  registry.actionBtn.fire('click');
+  if (registry.overrideArea.innerHTML !== '') throw new Error('an exact hit offered a second opinion: ' + registry.overrideArea.innerHTML);
+  return '"zzz" ✗ → typo → ≈ eu falo, mastered, perfect run; "eu fali" ≈ → wrong → ✗ shaky, back in the deck; "eu falo" ✓ offers nothing';
+});
+
 step('a missed form defers its unseen siblings', function () {
   var cards = topicCards(topicById('imperfeito'));
   var missed = cards[0];

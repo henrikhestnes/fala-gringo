@@ -726,6 +726,23 @@ main { max-width: 880px; width: 100%; margin: 0 auto; padding: 1.1rem 1rem 4rem;
 .feedback.err { color: var(--red-ink); }
 .feedback strong { font-family: var(--mono); }
 
+/* the learner's second opinion on the verdict ("I knew it — just a typo" /
+   "actually, I got that wrong"): a quiet text button under the feedback line */
+.override:empty { display: none; }
+.override { margin-top: .45rem; }
+.override-btn {
+  border: 0;
+  background: none;
+  padding: .1rem 0;
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--text-3);
+  text-decoration: underline dotted;
+  text-underline-offset: .2em;
+  cursor: pointer;
+}
+.override-btn:hover, .override-btn:focus-visible { color: var(--text); }
+
 .pron-tag {
   font-family: var(--mono);
   font-size: .74rem;

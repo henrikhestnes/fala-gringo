@@ -291,6 +291,51 @@ const Store = (function () {
     return deriver ? deriver(topicId, cardId) : null;
   }
 
+  /* The last directly recorded answer, with the card's record as it was before
+     it — what amendAnswer puts back. In memory only: a second opinion is
+     given on the spot, never across a reload. */
+  let lastAnswer = null;
+  let freshMastery = null;   // "topic\ncard" of a mastery markMastered just granted — the next record is what earned it
+  function record(topicId, cardId, correct, minLevel, near, implied) {
+    if (!state.strength[topicId]) state.strength[topicId] = {};
+    const had = state.strength[topicId][cardId];
+    const s = had || { s: 0, m: 0 };
+    if (!implied) {
+      lastAnswer = { topicId: topicId, cardId: cardId, day: today(), correct: !!correct, near: !!near,
+                     before: had ? Object.assign({}, had) : null,
+                     mastered: freshMastery === topicId + '\n' + cardId };
+      freshMastery = null;
+    }
+    if (correct) {
+      const day = today();
+      if (!implied) s.c = (s.c || 0) + 1;
+      let l = levelOf(s);
+      const wasDue = !s.t || l === 0 || day - s.t >= intervalFor(l);
+      if (wasDue) {
+        // Overdue credit (1.30.2): the card was retained for every day since
+        // its clock, so a hit three weeks after a 7-day review has earned
+        // the 14-day rung before this answer climbs one more — a backlog
+        // paid off after a break stops coming back a week later. Not after
+        // a miss (the span since the clock contains it).
+        if (l > 0 && s.t) l = Math.max(l, rungFor(day - s.t));
+        if (!near) l = Math.min(l + 1, REVIEW_INTERVALS.length);   // only a due confirmation advances the ladder
+      }
+      if (l < 1) l = 1;                          // …but a hit after a miss is always back on rung one
+      if (minLevel && l < minLevel) l = minLevel;  // inferred-known cards start higher (js/infer.js)
+      s.s += 1; s.l = l;
+      // Extra practice does not postpone the next scheduled review.
+      if (wasDue || implied) s.t = day;
+      if (!implied) { s.a = day; if (!s.f) s.f = day; }
+      else s.a = s.a || 0;
+    } else {
+      s.s = 0; s.m += 1; s.l = 0;
+      s.w = (s.w || 0) + 1;   // the tally's misses (since 1.28.1); `m` is lifetime and decides shaky
+    }
+    state.strength[topicId][cardId] = s;
+    s.u = stamp();
+    if (!implied) logDay(correct);   // inferred siblings are scheduling, not learner activity
+  }
+
   const api = {
     today: today,
     storageFailed: () => storageError,
@@ -310,6 +355,7 @@ const Store = (function () {
       if (!state.mastered[topicId]) state.mastered[topicId] = {};
       if (state.mastered[topicId][cardId]) return false;
       state.mastered[topicId][cardId] = 1;
+      freshMastery = topicId + '\n' + cardId;   // the answer recorded next is what earned it (amendAnswer)
       save();
       return true;
     },
@@ -362,37 +408,39 @@ const Store = (function () {
        day counts as level 1 on the current schedule; records before 1.27 have
        no `c` and count their corrects from now on. --- */
     recordAnswer(topicId, cardId, correct, minLevel, near, implied) {
-      if (!state.strength[topicId]) state.strength[topicId] = {};
-      const s = state.strength[topicId][cardId] || { s: 0, m: 0 };
-      if (correct) {
-        const day = today();
-        if (!implied) s.c = (s.c || 0) + 1;
-        let l = levelOf(s);
-        const wasDue = !s.t || l === 0 || day - s.t >= intervalFor(l);
-        if (wasDue) {
-          // Overdue credit (1.30.2): the card was retained for every day since
-          // its clock, so a hit three weeks after a 7-day review has earned
-          // the 14-day rung before this answer climbs one more — a backlog
-          // paid off after a break stops coming back a week later. Not after
-          // a miss (the span since the clock contains it).
-          if (l > 0 && s.t) l = Math.max(l, rungFor(day - s.t));
-          if (!near) l = Math.min(l + 1, REVIEW_INTERVALS.length);   // only a due confirmation advances the ladder
-        }
-        if (l < 1) l = 1;                          // …but a hit after a miss is always back on rung one
-        if (minLevel && l < minLevel) l = minLevel;  // inferred-known cards start higher (js/infer.js)
-        s.s += 1; s.l = l;
-        // Extra practice does not postpone the next scheduled review.
-        if (wasDue || implied) s.t = day;
-        if (!implied) { s.a = day; if (!s.f) s.f = day; }
-        else s.a = s.a || 0;
-      } else {
-        s.s = 0; s.m += 1; s.l = 0;
-        s.w = (s.w || 0) + 1;   // the tally's misses (since 1.28.1); `m` is lifetime and decides shaky
-      }
-      state.strength[topicId][cardId] = s;
-      s.u = stamp();
-      if (!implied) logDay(correct);   // inferred siblings are scheduling, not learner activity
+      record(topicId, cardId, correct, minLevel, near, implied);
       save();
+    },
+    /* The learner's second opinion on the answer just recorded (1.32): "I knew
+       it — a typo" on a miss, or "that was actually wrong" on a near-miss or a
+       by-sound spoken match. The last record is put back as it was before that
+       answer — the strength record, the day log and the mastery the answer had
+       just earned — and the new verdict is recorded afresh, so the ladder, the
+       tally and today's goal read as if it had been the first. Only the latest
+       answer, on the same card, on the same local day; false when there is
+       nothing to amend. A self-reported "I knew it" is graded as a near-miss:
+       the card clears and keeps its clock, but the ladder does not climb on
+       the learner's word alone. */
+    amendAnswer(topicId, cardId, correct, minLevel, near) {
+      const last = lastAnswer;
+      if (!last || last.topicId !== topicId || last.cardId !== cardId || last.day !== today()) return false;
+      if (last.correct === !!correct && last.near === !!near) return false;   // nothing to change
+      const rows = state.strength[topicId] || (state.strength[topicId] = {});
+      if (last.before) rows[cardId] = Object.assign({}, last.before); else delete rows[cardId];
+      if (state.days[last.day]) state.days[last.day] -= 1;
+      if (last.correct && state.right[last.day]) state.right[last.day] -= 1;
+      const wasMastered = !!(state.mastered[topicId] && state.mastered[topicId][cardId]) && !last.mastered;
+      if (correct) {
+        if (!state.mastered[topicId]) state.mastered[topicId] = {};
+        state.mastered[topicId][cardId] = 1;
+      } else if (last.mastered && state.mastered[topicId]) {
+        delete state.mastered[topicId][cardId];   // the only answer that ever cleared it was this one
+      }
+      record(topicId, cardId, correct, minLevel, near);
+      lastAnswer.before = last.before;              // a further amend goes back to the same starting point
+      lastAnswer.mastered = !!correct && !wasMastered;
+      save();
+      return true;
     },
     isShaky(topicId, cardId) {
       const t = state.strength[topicId];
@@ -698,7 +746,7 @@ const Store = (function () {
   };
   // Refresh before mutations as well as before writes, so a tab's stale object
   // cannot hide a newer miss, reset or preference change.
-  ['markMastered', 'resetTopic', 'resetAll', 'recordAnswer', 'markDrilled', 'markGraduated', 'markMilestone',
+  ['markMastered', 'resetTopic', 'resetAll', 'recordAnswer', 'amendAnswer', 'markDrilled', 'markGraduated', 'markMilestone',
    'markIntroduced', 'setPref', 'setDaily', 'setDailyDone'].forEach(name => {
     const fn = api[name];
     api[name] = function () { reconcile(); return fn.apply(api, arguments); };

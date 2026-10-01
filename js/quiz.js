@@ -63,6 +63,10 @@ const QUIZ_STRINGS = Object.assign({
   graduatedToast: '🎓 {label} graduated! Next: {next}',
   graduatedToastLast: '🎓 {label} graduated — every tab is!',
   nearIs: 'Close! You typed “{typed}” — the answer is',
+  overrideKnew: 'I knew it — just a typo',          // on a miss: re-grade as a slip (Store.amendAnswer)
+  overrideWrong: 'Actually, I got that wrong',      // on a near-miss or by-sound spoken match: re-grade as a miss
+  overrodeKnew: 'Counted as a slip — the answer is',
+  overrodeWrong: 'Counted as a miss — the answer is',
   dailyRollover: 'A new day has started — here is today’s Daily.',
   listening: 'Ouvindo… fala aí',
   listeningEmpty: ' — diga “nada” se nada falta na lacuna',
@@ -101,6 +105,7 @@ const Quiz = (function () {
   let known = new Set();
   let answered = false;
   let perfect = true;
+  let skipped = false;      // a skip spoils the perfect run for good; an amended miss does not
   let stats = { errors: 0, hardSolved: 0 };
   let activeGroups = null;
   let counts = null;        // Foco tier sizes of the current deck (+ cards waiting behind the cap)
@@ -408,6 +413,7 @@ const Quiz = (function () {
     known = new Set();
     answered = false;
     perfect = true;
+    skipped = false;
     stats = { errors: 0, hardSolved: 0 };
     missed = new Set();
     render();
@@ -626,6 +632,7 @@ const Quiz = (function () {
         '</div>' +
         (micOn() ? '<div class="mic-status" id="micStatus" role="status"></div>' : '') +
         '<div class="feedback" id="feedback" role="status" aria-live="polite" aria-atomic="true"></div>' +
+        '<div class="override" id="overrideArea"></div>' +
         '<div id="firstRunNotice"></div>' +
         '<div id="revealArea" lang="' + UI_LANG + '"></div>' +
       '</div>' +
@@ -794,6 +801,63 @@ const Quiz = (function () {
            others.map(a => '<b lang="' + TARGET_LANG + '">' + escapeHtml(a) + '</b>').join(' · ') + '</span>';
   }
 
+  /* The answer line after the verdict word: the answer in the language being
+     learnt, then the pronunciation hint (written for the reader's ear —
+     English-based here, aportuguesado on the subpages — so it keeps the
+     chrome's language), the irregular flag, the tally tags, the speak button
+     and the "also" line. Built again after a second opinion: the tally moves. */
+  function answerLine(card, face) {
+    return '<strong lang="' + TARGET_LANG + '">' + escapeHtml(face.answer) + '</strong>' +
+      (face.pron ? '<span class="pron-tag" lang="' + UI_LANG + '">' + escapeHtml(face.pron) + '</span>' : '') +
+      (face.flag ? '<span class="pron-tag flag-tag">' + escapeHtml(face.flag) + '</span>' : '') +
+      tallyTags(topic.id, card.id) +
+      (face.speak ? speakButton(face.speak, face.answer) : '') + alsoLine(card, face);
+  }
+
+  /* The learner's second opinion on the verdict just given (1.32): "I knew it —
+     just a typo" turns a miss into a slip (the card clears, graded as a
+     near-miss: no climb on the learner's word alone), "actually, I got that
+     wrong" turns a forgiven slip or a by-sound spoken match into a miss (the
+     card goes back into the deck). The store re-records the answer as if the
+     second verdict had been the first (Store.amendAnswer); the run's own
+     bookkeeping — cleared cards, errors, the perfect run — follows. Once per
+     answer; the deck does not move until the learner goes on. */
+  function overrideAnswer(card, face, toCorrect, freshMiss) {
+    if (!answered || deck[current] !== card) return;
+    if (!Store.amendAnswer(topic.id, card.id, toCorrect, 0, toCorrect)) return;
+    if (micOn()) stopVoice();   // a changed verdict is read, not auto-advanced over
+    const input = document.getElementById('answerInput');
+    const feedback = document.getElementById('feedback');
+    const btn = document.getElementById('actionBtn');
+    document.getElementById('overrideArea').innerHTML = '';
+    if (toCorrect) {
+      known.add(current);
+      if (freshMiss) missed.delete(card.id);
+      stats.errors = Math.max(0, stats.errors - 1);
+      if (Mode.hard) stats.hardSolved++;
+      if (!stats.errors && !skipped) perfect = true;
+      input.classList.remove('wrong'); input.classList.add('correct');
+      btn.classList.remove('go-red'); btn.classList.add('go-green');
+      feedback.className = 'feedback ok near';
+      feedback.innerHTML = '≈ ' + QUIZ_STRINGS.overrodeKnew + ' ' + answerLine(card, face);
+      syncDeck();   // the form vouches for its word and pattern again
+      checkGraduation();
+    } else {
+      known.delete(current);
+      missed.add(card.id);
+      stats.errors++;
+      perfect = false;
+      if (Mode.hard) stats.hardSolved = Math.max(0, stats.hardSolved - 1);
+      input.classList.remove('correct'); input.classList.add('wrong');
+      btn.classList.remove('go-green'); btn.classList.add('go-red');
+      feedback.className = 'feedback err';
+      feedback.innerHTML = '✗ ' + QUIZ_STRINGS.overrodeWrong + ' ' + answerLine(card, face);
+      syncDeck();   // the missed form vouches for nothing now
+    }
+    updateStats();
+    btn.focus();
+  }
+
   function handleAction() {
     if (answered) { advance(); return; }
     checkAnswer();
@@ -867,9 +931,9 @@ const Quiz = (function () {
     // the answer is in the language being learnt; the pronunciation hint is
     // written for the reader's ear (English-based here, aportuguesado on the
     // subpages), so it keeps the chrome's language
-    const answerHtml = '<strong lang="' + TARGET_LANG + '">' + escapeHtml(face.answer) + '</strong>';
     // the record is written first so the tags can read this answer's tally
     const near = ok && res.grade === 'near';
+    const freshMiss = !ok && !missed.has(card.id);   // what a "just a typo" afterwards takes back
     if (ok) {
       known.add(current);
       Store.markMastered(topic.id, card.id);
@@ -880,10 +944,7 @@ const Quiz = (function () {
       missed.add(card.id);
       Store.recordAnswer(topic.id, card.id, false);
     }
-    const pron = (face.pron ? '<span class="pron-tag" lang="' + UI_LANG + '">' + escapeHtml(face.pron) + '</span>' : '') +
-                 (face.flag ? '<span class="pron-tag flag-tag">' + escapeHtml(face.flag) + '</span>' : '') +
-                 tallyTags(topic.id, card.id);
-    const say = (face.speak ? speakButton(face.speak, face.answer) : '') + alsoLine(card, face);
+    const line = answerLine(card, face);
     if (ok) {
       // a near-miss (one slip, unambiguous) clears the card but earns no review
       // level: it comes back on its current interval instead of a longer one
@@ -892,8 +953,8 @@ const Quiz = (function () {
       btn.classList.add('go-green');
       feedback.className = 'feedback ok' + (near ? ' near' : '');
       feedback.innerHTML = near
-        ? '≈ ' + tfill(QUIZ_STRINGS.nearIs, { typed: escapeHtml(input.value.trim()) }) + ' ' + answerHtml + pron + say
-        : '✓ ' + praiseWord() + ' ' + answerHtml + pron + say;
+        ? '≈ ' + tfill(QUIZ_STRINGS.nearIs, { typed: escapeHtml(input.value.trim()) }) + ' ' + line
+        : '✓ ' + praiseWord() + ' ' + line;
       revealArea.innerHTML = face.reveal || '';
       syncDeck();   // this answer may have covered other due forms of the word and the pattern
       checkGraduation();
@@ -906,10 +967,18 @@ const Quiz = (function () {
       setTimeout(() => input.classList.remove('shake'), 340);
       btn.classList.add('go-red');
       feedback.className = 'feedback err';
-      feedback.innerHTML = '✗ ' + missWord() + ' ' + QUIZ_STRINGS.answerIs + ' ' + answerHtml + pron + say;
+      feedback.innerHTML = '✗ ' + missWord() + ' ' + QUIZ_STRINGS.answerIs + ' ' + line;
       revealArea.innerHTML = face.reveal || '';
       updateStats();   // the chip now shows this card as shaky
     }
+    // the learner's second opinion: a miss can be a typo, a forgiven slip or a
+    // by-sound spoken match can be a real mistake (overrideAnswer)
+    const second = ok ? ((near || res.phonetic) ? 'wrong' : '') : 'knew';
+    document.getElementById('overrideArea').innerHTML = second
+      ? '<button class="override-btn" id="overrideBtn" type="button">' +
+        escapeHtml(second === 'knew' ? QUIZ_STRINGS.overrideKnew : QUIZ_STRINGS.overrideWrong) + '</button>' : '';
+    if (second) document.getElementById('overrideBtn').addEventListener('click',
+      () => overrideAnswer(card, face, second === 'knew', freshMiss));
 
     const checkpoint = firstRunFeedback(ok, ok && res.grade === 'near', feedback);
     requestAnimationFrame(() => {
@@ -942,6 +1011,7 @@ const Quiz = (function () {
     // a skip clears the card from this run but is not recorded as mastered
     known.add(current);
     perfect = false;
+    skipped = true;
     updateStats();
     advance();
   }
