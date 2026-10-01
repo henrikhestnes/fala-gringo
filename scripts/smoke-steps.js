@@ -159,6 +159,20 @@ step('Hard Mode hides the hint, Easy Mode shows it, and the pref persists', func
   return 'hint appears only in Easy Mode; pref round-trips through the store';
 });
 
+step('Hard Mode gives away no noun gender: the meta says only "noun", the article chip carries it in Easy Mode', function () {
+  Mode.hard = true;
+  goTo('#nouns');
+  var html = registry.cardArea.innerHTML;
+  if (/feminine|masculine|card-hint/.test(html)) throw new Error('gender leaked in Hard Mode');
+  if (!/card-meta"><span>noun<\/span>/.test(html)) throw new Error('noun meta missing');
+  registry.modeBtn.fire('click');
+  html = registry.cardArea.innerHTML;
+  if (!/card-hint[^>]*>[ao] … \((feminine|masculine)\)</.test(html)) throw new Error('Easy Mode lost the article + gender hint');
+  registry.modeBtn.fire('click');
+  if (!Mode.hard) throw new Error('did not toggle back to Hard');
+  return 'Hard Mode: "noun" only; Easy Mode: "a … (feminine)" / "o … (masculine)"';
+});
+
 step('a correct answer is accepted and marks the card mastered', function () {
   goTo('#nouns');
   var before = Store.masteredCount('nouns');
@@ -310,7 +324,10 @@ step('daily: four misses count down, the fifth reveals the answer', function () 
   registry.actionBtn.fire('click');
   if (!/The answer is/.test(registry.feedback.innerHTML))
     throw new Error('fifth miss did not reveal: ' + registry.feedback.innerHTML);
-  return 'four "tries left" messages, then a reveal';
+  // the answered box is disabled, so Enter can only advance if focus moved to the → button
+  flushTimers();
+  if (document.activeElement !== registry.actionBtn) throw new Error('focus did not move to the → button after the answer');
+  return 'four "tries left" messages, then a reveal; focus on → so Enter advances';
 });
 
 step('daily progress survives a reload', function () {
@@ -328,6 +345,31 @@ step('daily is deterministic for a given day', function () {
   var b = registry.view.innerHTML;
   if (a !== b) throw new Error('two mounts produced different challenges');
   return 'same 7 cards on repeated mounts';
+});
+
+step('daily: an answer typed without accents or the final period is accepted', function () {
+  // the Daily's rule is exact match after normalize() — the reported case, deterministically
+  var sent = topicCards(topicById('sentences')).find(function (c) { return c.answer === 'Você fala português.'; });
+  if (!sent) throw new Error('the "Você fala português." sentence card is gone');
+  var set = new Set(sent.accepted.map(normalize));
+  ['Voce fala portugues', 'voce fala Portugues', 'Você fala português'].forEach(function (v) {
+    if (!set.has(normalize(v))) throw new Error('"' + v + '" rejected for "' + sent.answer + '"');
+  });
+  // and today's pending card through the real check path
+  var d = new Date();
+  var key = String(d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate());
+  var rec = Store.getDaily(key);
+  if (!rec || !rec.cards) throw new Error('no daily record for ' + key);
+  var i = rec.cards.findIndex(function (c, n) { return !rec.solved[n] && !rec.failed[n]; });
+  if (i < 0) throw new Error('no pending card');
+  var card = topicCards(topicById(rec.cards[i].topic)).find(function (c) { return c.id === rec.cards[i].id; });
+  if (!card) throw new Error('card not found: ' + JSON.stringify(rec.cards[i]));
+  var bare = card.answer.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[.!?]+$/, '');
+  registry.answerInput.value = bare;
+  registry.actionBtn.fire('click');
+  if (!/✓/.test(registry.feedback.innerHTML))
+    throw new Error('"' + bare + '" for "' + card.answer + '" was not accepted: ' + registry.feedback.innerHTML);
+  return '"' + bare + '" accepted for "' + card.answer + '"';
 });
 
 step('theme cycles auto -> light -> dark -> auto', function () {

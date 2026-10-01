@@ -310,6 +310,7 @@ const Daily = (function () {
         const t = document.querySelector('.conj-table-wrapper');
         if (t) t.classList.add('visible');
       });
+      focusNext();
     } else if (attempts[current] >= MAX_ATTEMPTS) {
       failCard();          // records the miss
     } else {
@@ -360,6 +361,15 @@ const Daily = (function () {
       const t = document.querySelector('.conj-table-wrapper');
       if (t) t.classList.add('visible');
     });
+    focusNext();
+  }
+
+  /* The answered box is disabled, and a disabled input neither keeps focus nor
+     fires keydown — so Enter went nowhere. Focus moves to the → button, as in
+     the drills: Enter then clicks it natively and advances. */
+  function focusNext() {
+    const btn = document.getElementById('actionBtn');
+    if (btn) setTimeout(() => btn.focus(), 0);
   }
 
   function renderDots() {

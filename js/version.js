@@ -172,7 +172,11 @@
 //         "actually, I got that wrong" re-grades it as a miss (the card goes back into the deck). The store puts the
 //         last record back and records the new verdict afresh (Store.amendAnswer), so tally, ladder, day log and
 //         goal read as if it had been the first; mastery the amended answer earned goes with it
-const APP_VERSION = '1.32.0';
+// 1.32.1: fix: on the Daily, Enter after an answer did nothing — the answered box is disabled and a disabled input
+//         fires no keydown; focus now moves to the → button as in the drills, so Enter advances
+// 1.32.2: fix: Modo Raiz gave the noun's gender away — the meta read "noun · feminine" while only the article chip
+//         was hidden; the gender now rides in the chip ("a … (feminine)") and the meta says just "noun"
+const APP_VERSION = '1.32.2';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

@@ -334,8 +334,10 @@ function buildNounCards() {
   return window.DATA_NOUNS.cards.map(c => ({
     id: c.pt,
     group: c.group,
-    meta: c.gender === 'feminine' ? 'noun · feminine' : 'noun · masculine',
-    hint: c.gender === 'feminine' ? 'a …' : 'o …',
+    // The gender lives in the hint, not the meta: Hard Mode shows the meta and
+    // hides the hint, and the article IS the answer being drilled.
+    meta: 'noun',
+    hint: c.gender === 'feminine' ? 'a … (feminine)' : 'o … (masculine)',
     prompt: escapeHtml(c.en),
     sub: 'Type the Portuguese, including the article',
     accepted: [c.pt].concat(c.alts || []),
