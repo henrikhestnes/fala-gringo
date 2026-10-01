@@ -147,40 +147,105 @@
     return { text: pct + '%', title: t.tier ? tfill(APP_STR.tierTitle, { tier: tierName(t.tier) }) : '' };
   }
 
-  /* The strip is stacked by tier, and says so: a small caption opens each
-     tier's run of tabs (Iniciante · Presente Nouns … | Intermediário · …), so a
-     newcomer sees where to start and what comes after without a tooltip. The
-     captions are presentational — the tabs themselves carry the level in their
-     title, and the learner's own level sits by the flame. */
+  /* The strip is stacked by tier, and says so. A small registry (the two
+     subpages, 2 and 5 drill tabs) gets one row with a caption opening each
+     tier's run (Iniciante · Presente Nouns … | Intermediário · …). A large one
+     (the root's 13 drill tabs, TIER_ROWS_FROM or more) gets two rows: a level
+     row — Browse · INICIANTE · INTERMEDIÁRIO · AVANÇADO · ★ Daily, each level
+     with its tabs' combined % — and under it the tabs of one level only, so the
+     strip is one line of at most six tabs on a laptop instead of fifteen pills
+     wrapping mid-tier. The level shown follows the selected tab; on Browse,
+     the Daily or the stats page it stays where the learner left it (shownTier,
+     first the remembered tab's level, else the learner's own, else the lowest).
+     Tapping a level only turns the lower row — nothing navigates until a tab is
+     tapped, so a drill in progress is not torn down by a look around. */
   /* The statistics page (js/stats.js) is a route of its own, not a topic: no
      tab is selected while it is open, and the tabs still lead out of it. */
   const statsRoute = () => (location.hash || '') === '#stats' && !!window.Stats;
+  const TIER_ROWS_FROM = 8;
+  const drillTabs = () => TOPICS.filter(t => t.kind === 'quiz');
+  const tieredStrip = () => drillTabs().length >= TIER_ROWS_FROM;
+  const tiersInUse = () => drillTabs().reduce((a, t) => (t.tier && a.indexOf(t.tier) < 0 ? a.concat(t.tier) : a), []).sort();
+  let shownTier = 0;
+
+  /* The level row's badge: the level's tabs taken together — 🎓 once every one
+     of them has graduated, else their combined mastery %. */
+  function tierBadge(tier) {
+    const tabs = drillTabs().filter(t => t.tier === tier);
+    if (tabs.length && tabs.every(t => Quiz.graduation(t).qualifies)) return '🎓';
+    let total = 0, done = 0;
+    tabs.forEach(t => { total += topicCards(t).length; done += Store.masteredCount(t.id); });
+    return (total ? Math.round(done / total * 100) : 0) + '%';
+  }
+
+  function tabHtml(t, activeId) {
+    let extra = '', title = '';
+    if (t.kind === 'quiz') {
+      const b = tabBadge(t);
+      extra = '<span class="pct">' + b.text + '</span>';
+      title = b.title;
+    }
+    return '<button class="tab' + (t.kind === 'daily' ? ' daily' : '') + '" role="tab" ' +
+      'id="tab-' + t.id + '" aria-controls="view" tabindex="' + (t.id === activeId ? '0' : '-1') + '" aria-selected="' + (t.id === activeId) + '" data-tab="' + t.id + '"' +
+      (title ? ' title="' + escapeHtml(title) + '"' : '') + '>' +
+      escapeHtml(t.label) + extra + '</button>';
+  }
+
+  function currentTier() {
+    const tiers = tiersInUse();
+    const topic = statsRoute() ? null : topicById(currentTopicId());
+    if (topic && topic.kind === 'quiz' && topic.tier) shownTier = topic.tier;
+    if (tiers.indexOf(shownTier) < 0) {
+      const last = topicById(Store.getPref('lastTab', ''));
+      shownTier = (last && last.kind === 'quiz' && last.tier) || learnerTier() || tiers[0] || 0;
+    }
+    if (tiers.indexOf(shownTier) < 0) shownTier = tiers[0] || 0;
+    return shownTier;
+  }
+
+  function showTier(tier) {
+    if (tiersInUse().indexOf(tier) < 0) return;
+    shownTier = tier;
+    renderTabs();
+  }
 
   function renderTabs() {
     const activeId = statsRoute() ? '' : currentTopicId();
-    let lastTier = 0;
-    document.getElementById('tabs').innerHTML = TOPICS.map(t => {
-      let extra = '', title = '', caption = '';
-      if (t.kind === 'quiz') {
-        const b = tabBadge(t);
-        extra = '<span class="pct">' + b.text + '</span>';
-        title = b.title;
-        if (t.tier && t.tier !== lastTier) {
+    const nav = document.getElementById('tabs');
+    const tiered = tieredStrip();
+    if (nav.classList) nav.classList[tiered ? 'add' : 'remove']('tiered');
+    let html;
+    if (tiered) {
+      const tier = currentTier();
+      const levels = tiersInUse().map(n =>
+        '<button class="tier-tab" type="button" data-tier-tab="' + n + '" data-tier="' + n + '" aria-pressed="' + (n === tier) + '"' +
+        ' title="' + escapeHtml(tfill(APP_STR.tierTitle, { tier: tierName(n) })) + '">' +
+        escapeHtml(tierName(n)) + '<span class="pct">' + tierBadge(n) + '</span></button>').join('');
+      const others = TOPICS.filter(t => t.kind !== 'quiz');
+      html = '<div class="tab-row tab-levels">' +
+        others.filter(t => t.kind === 'browse').map(t => tabHtml(t, activeId)).join('') + levels +
+        others.filter(t => t.kind !== 'browse').map(t => tabHtml(t, activeId)).join('') +
+        '</div><div class="tab-row tab-topics" data-tier="' + tier + '">' +
+        drillTabs().filter(t => t.tier === tier).map(t => tabHtml(t, activeId)).join('') + '</div>';
+    } else {
+      let lastTier = 0;
+      html = TOPICS.map(t => {
+        let caption = '';
+        if (t.kind === 'quiz' && t.tier && t.tier !== lastTier) {
           caption = '<span class="tier-label" data-tier="' + t.tier + '" aria-hidden="true">' +
             escapeHtml(tierName(t.tier)) + '</span>';
           lastTier = t.tier;
         }
-      }
-      return caption + '<button class="tab' + (t.kind === 'daily' ? ' daily' : '') + '" role="tab" ' +
-        'id="tab-' + t.id + '" aria-controls="view" tabindex="' + (t.id === activeId ? '0' : '-1') + '" aria-selected="' + (t.id === activeId) + '" data-tab="' + t.id + '"' +
-        (title ? ' title="' + escapeHtml(title) + '"' : '') + '>' +
-        escapeHtml(t.label) + extra + '</button>';
-    }).join('');
-    // on a phone the strip scrolls: keep the selected tab in view
-    const selected = document.getElementById('tab-' + activeId);
-    if (selected && typeof selected.scrollIntoView === 'function') {
-      try { selected.scrollIntoView({ inline: 'center', block: 'nearest' }); } catch (e) { /* old engines */ }
+        return caption + tabHtml(t, activeId);
+      }).join('');
     }
+    nav.innerHTML = html;
+    // on a phone the rows scroll: keep the selected tab (and level) in view
+    [document.getElementById('tab-' + activeId), nav.querySelector && nav.querySelector('.tier-tab[aria-pressed="true"]')].forEach(el => {
+      if (el && typeof el.scrollIntoView === 'function') {
+        try { el.scrollIntoView({ inline: 'center', block: 'nearest' }); } catch (e) { /* old engines */ }
+      }
+    });
   }
 
   /* The learner's title: the highest tier among the tabs they have taken up —
@@ -498,9 +563,13 @@
 
   function currentTopicId() {
     const id = (location.hash || '').replace(/^#/, '');
-    // fall back to the first registered topic ('browse' in the main app; the
-    // /ingles/ subpage has no browse tab, so its first drill is the default)
-    return topicById(id) ? id : TOPICS[0].id;
+    if (topicById(id)) return id;
+    // no (or a stale) hash: the tab the learner was on last time (pref lastTab,
+    // stamped by route — per device and per app, like every pref), else the
+    // first registered topic ('browse' in the main app; the /ingles/ subpage
+    // has no browse tab, so its first drill is the default)
+    const last = Store.getPref('lastTab', '');
+    return topicById(last) ? last : TOPICS[0].id;
   }
 
   function route() {
@@ -520,6 +589,11 @@
       return;
     }
     const topic = topicById(currentTopicId());
+    if (Store.getPref('lastTab', '') !== topic.id) Store.setPref('lastTab', topic.id);
+    // a bare URL landed on the remembered tab: let the address say so, without a history entry
+    if (!(location.hash || '').replace(/^#/, '') && window.history && typeof history.replaceState === 'function') {
+      try { history.replaceState(null, '', '#' + topic.id); } catch (e) { /* file:// in some engines */ }
+    }
     if (welcome) welcome.hidden = topic.kind !== 'browse';
     Quiz.stopVoice();   // leaving a drill must stop the mic + pending auto-advance
     if (topic.kind !== 'quiz') Quiz.unmount();   // Browse and the Daily: no drill deck may linger behind them
@@ -549,6 +623,9 @@
   document.addEventListener('click', e => {
     const tab = e.target.closest('[data-tab]');
     if (tab) { go(tab.dataset.tab); return; }
+
+    const level = e.target.closest('[data-tier-tab]');
+    if (level) { showTier(parseInt(level.dataset.tierTab, 10)); return; }
 
     if (e.target.closest('[data-sheet-close]')) { closeSheet(); return; }
 
@@ -668,5 +745,5 @@
 
   // sync.js re-renders through this after pulling remote progress
   const refreshProgress = () => { renderTabs(); renderGoal(); applyTheme(); updateModeButton(); if (statsRoute()) Stats.render(); };   // a pull re-draws an open stats page
-  window.App = { refresh: route, refreshProgress: refreshProgress, updateTabPct: updateTabPct, refreshGoal: renderGoal, openSheet: openSheet, closeSheet: closeSheet, heatmapHtml: heatmapHtml };
+  window.App = { refresh: route, refreshProgress: refreshProgress, updateTabPct: updateTabPct, showTier: showTier, refreshGoal: renderGoal, openSheet: openSheet, closeSheet: closeSheet, heatmapHtml: heatmapHtml };
 })();

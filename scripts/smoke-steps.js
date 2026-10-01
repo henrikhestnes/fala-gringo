@@ -26,17 +26,61 @@ step('Browse defers conjugations until a row is expanded, then preserves irregul
   return '162 lazy panels; semantic audio buttons and expanded states';
 });
 
-step('tab strip lists all 15 tabs, captioned by tier', function () {
-  var tabs = (registry.tabs.innerHTML.match(/data-tab="/g) || []).length;
-  if (tabs !== 15) throw new Error('got ' + tabs + ' tabs');
-  var labels = registry.tabs.innerHTML.match(/tier-label" data-tier="(\d)"[^>]*>([^<]*)</g) || [];
-  if (labels.length !== 3) throw new Error(labels.length + ' tier captions: ' + labels.join(' | '));
-  if (!/data-tier="1"[^>]*>Iniciante<\/span><button class="tab" role="tab"[^>]*data-tab="presente"/.test(registry.tabs.innerHTML))
-    throw new Error('Iniciante caption not right before Presente');
-  if (!/Intermediário<\/span><button[^>]*data-tab="perfeito"/.test(registry.tabs.innerHTML) ||
-      !/Avançado<\/span><button[^>]*data-tab="subjuntivo-presente"/.test(registry.tabs.innerHTML))
-    throw new Error('Intermediário / Avançado captions misplaced');
-  return '15 tabs incl. Browse + Daily; captions before Presente, Perfeito, Subj. Presente';
+step('tab strip: a level row (Browse · 3 levels · Daily) over the tabs of one level', function () {
+  var html = registry.tabs.innerHTML;
+  if (!registry.tabs.classList.contains('tiered')) throw new Error('13 drill tabs should get the two-row strip');
+  var rows = html.match(/<div class="tab-row[^"]*"[^>]*>/g) || [];
+  if (rows.length !== 2 || !/tab-levels/.test(rows[0]) || !/tab-topics" data-tier="1"/.test(rows[1]))
+    throw new Error('rows: ' + rows.join(' | '));
+  var levels = html.match(/class="tier-tab"[^>]*data-tier-tab="(\d)"[^>]*aria-pressed="(true|false)"[^>]*>([^<]*)</g) || [];
+  if (levels.length !== 3) throw new Error(levels.length + ' level buttons');
+  if (!/data-tier-tab="1"[^>]*aria-pressed="true"[^>]*>Iniciante<span class="pct">\d+%</.test(html))
+    throw new Error('Iniciante not open with its combined %: ' + html);
+  var order = (html.match(/data-tab="([^"]+)"/g) || []).map(function (m) { return m.slice(10, -1); }).join(' ');
+  if (order !== 'browse daily presente nouns numbers glossary') throw new Error('tabs rendered: ' + order);
+  if (!/<\/div><div class="tab-row tab-topics"/.test(html) || !/<button class="tab daily"[^>]*data-tab="daily"[^>]*>★ Daily<\/button><\/div>/.test(html))
+    throw new Error('Daily should close the level row');
+  // tapping a level turns the lower row only: nothing navigates
+  App.showTier(2);
+  html = registry.tabs.innerHTML;
+  if (!/data-tier-tab="2"[^>]*aria-pressed="true"/.test(html) || /data-tier-tab="1"[^>]*aria-pressed="true"/.test(html)) throw new Error('level 2 not open');
+  order = (html.match(/data-tab="([^"]+)"/g) || []).map(function (m) { return m.slice(10, -1); }).join(' ');
+  if (order !== 'browse daily perfeito imperfeito pronominal adjectives adverbs connecting') throw new Error('level 2 tabs: ' + order);
+  if (!/aria-selected="true"[^>]*data-tab="browse"/.test(html)) throw new Error('Browse should still be selected');
+  if (registry.view.dataset.topic && registry.view.dataset.topic !== 'browse') throw new Error('navigated to ' + registry.view.dataset.topic);
+  App.showTier(9);                                              // unknown level: ignored
+  if (!/data-tier-tab="2"[^>]*aria-pressed="true"/.test(registry.tabs.innerHTML)) throw new Error('unknown level changed the row');
+  // the open level follows the selected tab, and stays put on Browse / the Daily
+  goTo('#sentences');
+  html = registry.tabs.innerHTML;
+  if (!/data-tier-tab="3"[^>]*aria-pressed="true"/.test(html) || !/aria-selected="true"[^>]*data-tab="sentences"/.test(html)) throw new Error('level 3 should open for Sentences');
+  goTo('#daily');
+  if (!/data-tier-tab="3"[^>]*aria-pressed="true"/.test(registry.tabs.innerHTML)) throw new Error('the Daily should leave the level where it was');
+  goTo('#browse');
+  App.showTier(1);
+  return 'Browse · Iniciante Intermediário Avançado · Daily over 4 / 6 / 3 tabs; a level tap turns the row, a tab sets the level';
+});
+
+step('the app reopens on the tab it was closed on (pref lastTab), the URL saying so', function () {
+  goTo('#adverbs');
+  if (Store.getPref('lastTab', '') !== 'adverbs') throw new Error('route did not remember adverbs: ' + Store.getPref('lastTab', ''));
+  var replaced = [];
+  window.history = { replaceState: function (a, b, url) { replaced.push(url); } };
+  goTo('');                                                      // a bare URL, as on the next visit
+  if (registry.view.dataset.topic !== 'adverbs') throw new Error('bare URL landed on ' + registry.view.dataset.topic);
+  if (replaced.join() !== '#adverbs') throw new Error('address not updated: ' + replaced.join());
+  if (!/aria-selected="true"[^>]*data-tab="adverbs"/.test(registry.tabs.innerHTML)) throw new Error('adverbs tab not selected');
+  if (!/data-tier-tab="2"[^>]*aria-pressed="true"/.test(registry.tabs.innerHTML)) throw new Error('its level should be open');
+  goTo('#stats');                                                // the stats page is not a tab: not remembered
+  if (Store.getPref('lastTab', '') !== 'adverbs') throw new Error('stats page remembered as a tab');
+  goTo('#nowhere');                                              // a stale link falls back to the remembered tab too
+  if (registry.view.dataset.topic !== 'adverbs') throw new Error('stale hash landed on ' + registry.view.dataset.topic);
+  if (replaced.length !== 1) throw new Error('a stale hash must not be rewritten: ' + replaced.join());
+  Store.setPref('lastTab', 'gone');                              // a pref naming a removed tab: first topic
+  goTo('');
+  if (registry.view.dataset.topic !== 'browse') throw new Error('unknown remembered tab landed on ' + registry.view.dataset.topic);
+  delete window.history;
+  return 'bare URL -> adverbs (replaceState #adverbs); #stats not remembered; stale/unknown fall through';
 });
 
 step('first-card help is dismissible and stays dismissed across mounts', function () {
@@ -352,10 +396,14 @@ step('pronominal drill accepts every declared answer variant', function () {
   return '"' + card.accepted[card.accepted.length - 1] + '" accepted for "' + card.answer + '"';
 });
 
-step('an unknown hash falls back to Browse, "Verbos" the page heading', function () {
+step('an unknown hash falls back to the remembered tab, else to Browse ("Verbos" the page heading)', function () {
+  var last = Store.getPref('lastTab', '');
+  goTo('#nonsense');
+  if (registry.view.dataset.topic !== last) throw new Error('expected the remembered ' + last + ', got ' + registry.view.dataset.topic);
+  Store.setPref('lastTab', '');                                  // a first visit: nothing remembered yet
   goTo('#nonsense');
   if (!/<h1 lang="pt-BR">Verbos<\/h1>/.test(registry.view.innerHTML)) throw new Error('did not fall back: ' + registry.view.innerHTML.slice(0, 200));
-  return 'Browse; h1 = Verbos';
+  return 'remembered ' + last + ' first; nothing remembered -> Browse; h1 = Verbos';
 });
 
 /* The schedule is day-based, so steps move the clock: Date.now() is offset

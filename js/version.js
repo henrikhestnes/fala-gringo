@@ -137,7 +137,11 @@
 //         imperfect — 228 cards, forms derived from the presente eu form (falo → fale, faço → faça; ser/estar/ir/dar/saber/
 //         querer listed), the rule in conjugate.js and checked like the perfeito-3pl one, every example inside a trigger
 //         (quero que, tomara que, talvez…), "que eu fale" accepted; the Subjuntivo tab is now Subj. Imperfeito
-const APP_VERSION = '1.29.0';
+// 1.30.0: the tab strip is two rows — Browse · INICIANTE · INTERMEDIÁRIO · AVANÇADO · ★ Daily (each level with its tabs'
+//         combined %) over the tabs of the open level only, so a laptop sees one short line instead of fifteen pills
+//         wrapping mid-tier (the subpages, with 2 and 5 drill tabs, keep the captioned single row); the app reopens
+//         on the tab it was closed on (pref lastTab, per device and per app)
+const APP_VERSION = '1.30.0';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

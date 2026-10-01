@@ -388,6 +388,87 @@ button { cursor: pointer; touch-action: manipulation; }
 .tier-label[data-tier="2"] { color: var(--yellow-ink); }
 .tier-label[data-tier="3"] { color: var(--blue-ink); }
 
+/* The two-row strip of a large registry (the root's 13 drill tabs): a level
+   row — Browse · INICIANTE · INTERMEDIÁRIO · AVANÇADO · ★ Daily — and under it
+   the tabs of the chosen level only, so the strip is one short line on a laptop
+   and never wraps mid-tier. Each row scrolls on its own on a phone. */
+.tabs.tiered {
+  flex-direction: column;
+  align-items: stretch;
+  gap: .45rem;
+  overflow: visible;
+  padding-top: .5rem;
+}
+.tab-row {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  scroll-padding-inline: 1rem;
+  padding: 2px 0;          /* room for the selected tab's shadow */
+}
+.tab-row::-webkit-scrollbar { display: none; }
+.tab-levels { gap: .3rem; }
+/* The level buttons: the caption's uppercase voice, in the level's ink; the
+   open level sits on its soft colour, framed, and the lower row keys to it. */
+.tier-tab {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-3);
+  border-radius: 10px;
+  min-height: 40px;
+  padding: .45rem .6rem;
+  font-size: .64rem;
+  font-weight: 800;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  flex: none;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.tier-tab .pct {
+  display: inline-grid;
+  place-items: center;
+  min-width: 2.4em;
+  padding: .15rem .3rem;
+  border-radius: 5px;
+  background: var(--surface-3);
+  color: var(--text-2);
+  font-size: .62rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.25;
+}
+.tier-tab[data-tier="1"] { color: var(--green-ink); }
+.tier-tab[data-tier="2"] { color: var(--yellow-ink); }
+.tier-tab[data-tier="3"] { color: var(--blue-ink); }
+.tier-tab:hover { border-color: var(--border-strong); }
+.tier-tab[aria-pressed="true"] { border-color: currentColor; }
+.tier-tab[data-tier="1"][aria-pressed="true"] { background: var(--green-soft); }
+.tier-tab[data-tier="2"][aria-pressed="true"] { background: var(--yellow-soft); }
+.tier-tab[data-tier="3"][aria-pressed="true"] { background: var(--blue-soft); }
+.tier-tab[aria-pressed="true"] .pct { background: color-mix(in srgb, currentColor 14%, transparent); color: inherit; }
+/* a thin rule in the level's colour opens the lower row */
+.tab-topics { border-top: 1px solid var(--border); padding-top: .45rem; }
+.tab-topics[data-tier="1"] { border-top-color: color-mix(in srgb, var(--green-ink) 35%, var(--border)); }
+.tab-topics[data-tier="2"] { border-top-color: color-mix(in srgb, var(--yellow-ink) 35%, var(--border)); }
+.tab-topics[data-tier="3"] { border-top-color: color-mix(in srgb, var(--blue-ink) 35%, var(--border)); }
+@media (min-width: 640px) {
+  .tabs.tiered { width: auto; max-width: 880px; }
+  .tab-row { justify-content: center; flex-wrap: wrap; overflow-x: visible; }
+}
+@media (max-width: 639px) {
+  .tab-row { gap: .35rem; }
+  .tier-tab { min-height: 44px; font-size: .6rem; }
+  .tier-tab .pct { display: none; }   /* five items fit a phone without the badges */
+}
+
 .tab.daily {
   border-color: color-mix(in srgb, var(--yellow-ink) 25%, transparent);
   color: var(--yellow-ink);
