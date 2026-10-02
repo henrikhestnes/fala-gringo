@@ -161,16 +161,12 @@ each form without drifting.
 
 ## Credits
 
-The card content for the non-verb topics, and the hand-written verb
-pronunciations and example sentences, come from
-[gjermundbae/portuguese-verb-flashcards](https://github.com/gjermundbae/portuguese-verb-flashcards),
-whose typing-drill format this tool's quiz is modelled on.
-
-The two verb sets were merged into a 124-verb superset (22 spoken high-frequency verbs were added later, `acontecer` and `existir` third person only): 105 from this repo, 95
-from theirs, 76 in common. Every shared verb agreed on all three tenses. The 29
-verbs only this repo had needed pronunciations and examples written for them
-(348 forms), following their Rio-register conventions — **those are generated
-content and worth spot-checking**, especially stress placement.
+The content, the engine and the typing-drill format are this project's own.
+[gjermundbae/portuguese-verb-flashcards](https://github.com/gjermundbae/portuguese-verb-flashcards)
+is a sister project built on the same idea; the two verb lists were compared
+early on so that neither missed a common verb. The pronunciations and example
+sentences for 29 of the verbs (348 forms) are **generated content and worth
+spot-checking**, especially stress placement.
 
 
 ## v1.24: settings, backups and safe progress
@@ -184,3 +180,7 @@ The [review notes](docs/review-improvements.md) list every change with its reaso
 ## Launch analytics
 
 PostHog measures visits, submitted answers, practice days and return visits across the three languages. The footer offers a browser opt-out. Local development is excluded, and answers/audio/sync codes are never included. See [analytics setup and dashboard definitions](docs/analytics.md).
+
+## License
+
+[MIT](LICENSE).
