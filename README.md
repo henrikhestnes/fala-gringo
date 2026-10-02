@@ -183,4 +183,7 @@ PostHog measures visits, submitted answers, practice days and return visits acro
 
 ## License
 
-[MIT](LICENSE).
+The code is [MIT](LICENSE). The learning content — the card data in
+`js/data/`, `ingles/js/data/` and `noruegues/js/data/`, and the generated
+`verbs/` pages — is [CC BY-NC-SA 4.0](LICENSE-CONTENT): free to share and
+adapt for non-commercial use, with attribution, under the same terms.

@@ -1,0 +1,37 @@
+Content license
+===============
+
+The learning content of Fala Gringo is licensed under the
+Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International
+License (CC BY-NC-SA 4.0).
+
+Copyright (c) 2026 Henrik Larsson Hestnes
+
+You are free to share and adapt the content for non-commercial purposes,
+provided you give appropriate credit, indicate if changes were made, and
+distribute your contributions under the same license.
+
+Full license text: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+Human-readable summary: https://creativecommons.org/licenses/by-nc-sa/4.0/
+
+Scope
+-----
+
+This license covers the hand-maintained learning data and everything
+generated from it:
+
+  js/data/            the Portuguese cards: verbs, nouns, numbers, glossary,
+                      adjectives, adverbs, connecting words, pronominal verbs,
+                      sentences (forms, glosses, pronunciations, examples)
+  ingles/js/data/     the English-for-Brazilians cards
+  noruegues/js/data/  the Norwegian-for-Brazilians cards
+  verbs/              the generated per-verb pages
+
+The JavaScript that carries the data (object literals, `window.DATA_*`
+globals) is part of the content; the schema those files follow is not.
+
+Everything else in this repository — the drill engine, the registries, the
+sync worker, the check suites, the styles and the shells — is licensed under
+the MIT License in the file LICENSE.
+
+For a commercial license to the content, contact the author.
