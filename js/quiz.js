@@ -1098,10 +1098,13 @@ function focusAnswerInput(input) {
 }
 
 /* On a phone the keyboard takes half the screen, so when the answer box gains
-   focus on a touch device the drill moves to the top of the screen — the
-   first-card guide while it is showing, else the card — and the card, and
-   after the answer the reveal, get the room the keyboard leaves. The top bar
-   is static on narrow screens (app.css), so nothing covers the card there; a
+   focus on a touch device the drill moves to the top of the screen: the
+   total · known · left chips lead (1.32.8), with the progress bar, the
+   first-card guide while it shows, and the card under them, so the card, and
+   after the answer the reveal, get the room the keyboard leaves; the Daily
+   has no chips and leads with the card. focusAnswerInput() then corrects the
+   rare case where that leaves the box under the keyboard. The top bar is
+   static on narrow screens (app.css), so nothing covers the drill there; a
    flick up brings the tabs back. (1.32.6 hid a sticky bar on focus instead and
    it stuck: iOS's Done key hides the keyboard without blurring the box.) */
 (function () {
@@ -1110,8 +1113,9 @@ function focusAnswerInput(input) {
   document.addEventListener('focusin', e => {
     const input = e.target;
     if (!input || !input.classList || typeof input.classList.contains !== 'function' || !input.classList.contains('answer-input') || !coarse()) return;
+    const stats = document.querySelector('#view .stats');
     const guide = document.getElementById('answerGuide');
-    const top = (guide && !guide.hidden) ? guide : ((typeof input.closest === 'function' && input.closest('.card')) || input);
+    const top = stats || ((guide && !guide.hidden) ? guide : ((typeof input.closest === 'function' && input.closest('.card')) || input));
     if (typeof top.scrollIntoView === 'function') top.scrollIntoView({ block: 'start', behavior: 'auto' });
   });
 })();
