@@ -656,8 +656,8 @@ const Quiz = (function () {
     if (micOn()) {
       micRetries = 0;
       startMic();   // hands-free: no input focus, so no mobile keyboard pops up
-    } else if (!firstCard) {
-      focusAnswerInput(input);   // the first card keeps the keyboard down until the guide is read: "Got it" or a tap focuses the box
+    } else {
+      focusAnswerInput(input);
     }
   }
 
