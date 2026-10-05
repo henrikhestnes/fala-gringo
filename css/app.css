@@ -133,6 +133,10 @@ button { cursor: pointer; touch-action: manipulation; }
 
 /* ---------- top bar ---------- */
 
+/* While the answer box has focus on a touch device the bar steps aside (html.keyboard-up, set by
+   the Keyboard helper in quiz.js): the keyboard already has half the screen. */
+html.keyboard-up .topbar { display: none; }
+
 .topbar {
   position: sticky;
   top: 0;

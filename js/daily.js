@@ -295,6 +295,7 @@ const Daily = (function () {
       solved[current] = true;
       answered = true;
       input.disabled = true;
+      Keyboard.down();
       input.classList.add('correct');
       document.getElementById('actionBtn').classList.add('go-green');
       document.getElementById('actionBtn').setAttribute('aria-label', 'Next card');
@@ -349,6 +350,7 @@ const Daily = (function () {
     const input = document.getElementById('answerInput');
     const feedback = document.getElementById('feedback');
     if (input) { input.disabled = true; input.classList.add('wrong'); }
+    Keyboard.down();
     document.getElementById('actionBtn').classList.add('go-red');
     document.getElementById('actionBtn').setAttribute('aria-label', 'Next card');
     feedback.className = 'feedback err';

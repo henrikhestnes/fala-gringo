@@ -183,7 +183,10 @@
 //         instead of putting the card's top edge at the top of the screen (which on a phone hid the first-card
 //         guide, and hopped while the keyboard slid up)
 // 1.32.5: the first card takes focus like every other (1.32.4 had held it back until the guide was dismissed)
-const APP_VERSION = '1.32.5';
+// 1.32.6: on a phone, while the answer box has focus the sticky bar steps aside and the drill moves to the top of
+//         the screen (the first-card guide while it shows, else the card), so the card and the reveal get the room
+//         the keyboard leaves; the bar returns on blur, on the answer, on unmount and on navigation
+const APP_VERSION = '1.32.6';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name
