@@ -1058,13 +1058,31 @@ const Quiz = (function () {
   };
 })();
 
-/* Keep the answer box visible above the mobile keyboard. The engine re-renders
-   through innerHTML, so focus and scroll have to be re-established each time.
-   Carried over from the source repo's drill-common.js. */
+/* Keep the answer box visible — above the mobile keyboard, below the sticky
+   top bar. The engine re-renders through innerHTML, so focus has to be
+   re-established each time; the page only moves when the box is actually out
+   of view (1.32.3 — before, every render scrolled the card to the top of the
+   viewport unconditionally, which on a desktop, where the page below the card
+   is short, ran the page to its end and hid the stat chips under the bar). */
 function focusAnswerInput(input) {
   if (!input) return;
   const target = input.closest('.card') || input;
-  const scroll = () => target.scrollIntoView({ block: 'start', behavior: 'auto' });
+  const rect = el => (el && typeof el.getBoundingClientRect === 'function') ? el.getBoundingClientRect() : null;
+  const barBottom = () => { const r = rect(document.querySelector('.topbar')); return r ? r.bottom : 0; };
+  const outOfView = () => {
+    const r = rect(input);
+    if (!r) return false;   // no layout (the headless checks): nothing to correct
+    const bottom = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    return r.top < barBottom() || r.bottom > bottom;
+  };
+  const scroll = () => {
+    if (!outOfView()) return;
+    target.scrollIntoView({ block: 'start', behavior: 'auto' });
+    // scrollIntoView knows nothing of the sticky bar: nudge the card out from under it
+    const r = rect(target);
+    const over = r ? barBottom() + 12 - r.top : 0;
+    if (over > 0 && typeof window.scrollBy === 'function') window.scrollBy(0, -over);
+  };
   input.focus({ preventScroll: true });
   requestAnimationFrame(scroll);
   setTimeout(scroll, 100);

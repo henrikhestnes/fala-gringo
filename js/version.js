@@ -176,7 +176,10 @@
 //         fires no keydown; focus now moves to the → button as in the drills, so Enter advances
 // 1.32.2: fix: Modo Raiz gave the noun's gender away — the meta read "noun · feminine" while only the article chip
 //         was hidden; the gender now rides in the chip ("a … (feminine)") and the meta says just "noun"
-const APP_VERSION = '1.32.2';
+// 1.32.3: fix: every drill render scrolled the card to the top of the viewport, so on a desktop the first load ran
+//         the page to its end and hid the stat chips under the sticky bar; the page now moves only when the answer
+//         box is actually out of view (under the bar or the mobile keyboard), and lands below the bar when it does
+const APP_VERSION = '1.32.3';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name
