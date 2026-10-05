@@ -133,10 +133,6 @@ button { cursor: pointer; touch-action: manipulation; }
 
 /* ---------- top bar ---------- */
 
-/* While the answer box has focus on a touch device the bar steps aside (html.keyboard-up, set by
-   the Keyboard helper in quiz.js): the keyboard already has half the screen. */
-html.keyboard-up .topbar { display: none; }
-
 .topbar {
   position: sticky;
   top: 0;
@@ -144,6 +140,10 @@ html.keyboard-up .topbar { display: none; }
   background: color-mix(in srgb, var(--bg-topbar) 92%, transparent);
   backdrop-filter: saturate(1.4) blur(10px);
 }
+/* On a phone the brand and two rows of tabs are a quarter of the screen and the tabs are
+   touched once a session: the bar scrolls away with the page there, a flick up brings it back. */
+@media (max-width: 639px) { .topbar { position: static; } }
+
 /* The calçadão: a Copacabana-boardwalk wave band closes the header on every
    screen — the app's one piece of Rio scenery, doing the border's job. */
 .topbar::after {

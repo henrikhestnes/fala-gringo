@@ -468,7 +468,6 @@ const Quiz = (function () {
      card that is no longer on screen. The Daily has its own #answerInput. */
   function unmount() {
     stopVoice();
-    Keyboard.down();
     topic = null;
     deck = [];
     current = 0;
@@ -919,7 +918,6 @@ const Quiz = (function () {
     answered = true;
     btn.setAttribute('aria-label', QUIZ_STRINGS.nextLabel);
     input.disabled = true;
-    Keyboard.down();   // the bar comes back for the reveal (disabling a focused box fires no blur in Chrome)
     Store.markDrilled(topic.id);   // this tab is one of the learner's own (today's goal, js/app.js)
 
     const res = gradeTyped(card, input.value);
@@ -1099,31 +1097,21 @@ function focusAnswerInput(input) {
   }
 }
 
-/* On a phone the keyboard already takes half the screen. While the answer box
-   has focus on a touch device the sticky bar steps aside (html.keyboard-up in
-   app.css) and the drill moves to the top of the screen — the first-card guide
-   while it is showing, else the card — so the card, and after the answer the
-   reveal, has the room (1.32.6). The class comes off on blur, when an answer
-   disables the box (Chrome fires no blur for that), on unmount and on
-   navigation, so the bar can never stay hidden. */
-const Keyboard = (function () {
-  const root = typeof document !== 'undefined' ? document.documentElement : null;
+/* On a phone the keyboard takes half the screen, so when the answer box gains
+   focus on a touch device the drill moves to the top of the screen — the
+   first-card guide while it is showing, else the card — and the card, and
+   after the answer the reveal, get the room the keyboard leaves. The top bar
+   is static on narrow screens (app.css), so nothing covers the card there; a
+   flick up brings the tabs back. (1.32.6 hid a sticky bar on focus instead and
+   it stuck: iOS's Done key hides the keyboard without blurring the box.) */
+(function () {
+  if (typeof document === 'undefined' || typeof document.addEventListener !== 'function') return;
   const coarse = () => typeof window.matchMedia === 'function' && !!window.matchMedia('(pointer: coarse)').matches;
-  const isBox = el => !!(el && el.classList && typeof el.classList.contains === 'function' && el.classList.contains('answer-input'));
-  function up(input) {
-    if (!root || !root.classList || !coarse()) return;
-    root.classList.add('keyboard-up');
+  document.addEventListener('focusin', e => {
+    const input = e.target;
+    if (!input || !input.classList || typeof input.classList.contains !== 'function' || !input.classList.contains('answer-input') || !coarse()) return;
     const guide = document.getElementById('answerGuide');
     const top = (guide && !guide.hidden) ? guide : ((typeof input.closest === 'function' && input.closest('.card')) || input);
-    requestAnimationFrame(() => {   // after the bar has left the layout
-      if (typeof top.scrollIntoView === 'function') top.scrollIntoView({ block: 'start', behavior: 'auto' });
-    });
-  }
-  function down() { if (root && root.classList) root.classList.remove('keyboard-up'); }
-  if (root && typeof document.addEventListener === 'function') {
-    document.addEventListener('focusin', e => { if (isBox(e.target)) up(e.target); });
-    document.addEventListener('focusout', e => { if (isBox(e.target)) down(); });
-    if (typeof window.addEventListener === 'function') window.addEventListener('hashchange', down);
-  }
-  return { up: up, down: down };
+    if (typeof top.scrollIntoView === 'function') top.scrollIntoView({ block: 'start', behavior: 'auto' });
+  });
 })();
