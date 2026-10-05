@@ -179,7 +179,11 @@
 // 1.32.3: fix: every drill render scrolled the card to the top of the viewport, so on a desktop the first load ran
 //         the page to its end and hid the stat chips under the sticky bar; the page now moves only when the answer
 //         box is actually out of view (under the bar or the mobile keyboard), and lands below the bar when it does
-const APP_VERSION = '1.32.3';
+// 1.32.4: the drill scrolls by the least that brings the answer box into view — below the bar, above the keyboard —
+//         instead of putting the card's top edge at the top of the screen (which on a phone hid the first-card
+//         guide, and hopped while the keyboard slid up); the first card does not take focus until the guide is
+//         dismissed or the box tapped, so the keyboard does not cover what it explains
+const APP_VERSION = '1.32.4';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

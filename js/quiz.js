@@ -656,8 +656,8 @@ const Quiz = (function () {
     if (micOn()) {
       micRetries = 0;
       startMic();   // hands-free: no input focus, so no mobile keyboard pops up
-    } else {
-      focusAnswerInput(input);
+    } else if (!firstCard) {
+      focusAnswerInput(input);   // the first card keeps the keyboard down until the guide is read: "Got it" or a tap focuses the box
     }
   }
 
@@ -1058,30 +1058,33 @@ const Quiz = (function () {
   };
 })();
 
-/* Keep the answer box visible — above the mobile keyboard, below the sticky
-   top bar. The engine re-renders through innerHTML, so focus has to be
-   re-established each time; the page only moves when the box is actually out
-   of view (1.32.3 — before, every render scrolled the card to the top of the
-   viewport unconditionally, which on a desktop, where the page below the card
-   is short, ran the page to its end and hid the stat chips under the bar). */
+/* Keep the answer box visible — below the sticky top bar, above the mobile
+   keyboard. The engine re-renders through innerHTML, so focus has to be
+   re-established each time. The page moves by the least that brings the box
+   into the visible band, and not at all while it is already there (1.32.3/4 —
+   before, every render scrolled the card's top edge to the top of the
+   viewport: on a desktop, where the page below the card is short, that ran the
+   page to its end and hid the stat chips under the bar; on a phone it threw
+   away everything above the card, and the retries while the keyboard was still
+   sliding up made the box hop). The retries stay — the keyboard arrives late —
+   but each is a no-op once the box is in view. */
 function focusAnswerInput(input) {
   if (!input) return;
-  const target = input.closest('.card') || input;
+  const GAP = 12;
   const rect = el => (el && typeof el.getBoundingClientRect === 'function') ? el.getBoundingClientRect() : null;
-  const barBottom = () => { const r = rect(document.querySelector('.topbar')); return r ? r.bottom : 0; };
-  const outOfView = () => {
-    const r = rect(input);
-    if (!r) return false;   // no layout (the headless checks): nothing to correct
-    const bottom = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-    return r.top < barBottom() || r.bottom > bottom;
-  };
   const scroll = () => {
-    if (!outOfView()) return;
-    target.scrollIntoView({ block: 'start', behavior: 'auto' });
-    // scrollIntoView knows nothing of the sticky bar: nudge the card out from under it
-    const r = rect(target);
-    const over = r ? barBottom() + 12 - r.top : 0;
-    if (over > 0 && typeof window.scrollBy === 'function') window.scrollBy(0, -over);
+    const r = rect(input);
+    if (!r || typeof window.scrollBy !== 'function') return;   // no layout (the headless checks): nothing to correct
+    // the visible band: under the bar (sticky in the layout viewport) and inside the
+    // visual viewport (which the keyboard shrinks and iOS may offset)
+    const vv = window.visualViewport;
+    const vTop = vv ? vv.offsetTop : 0;
+    const vBottom = vTop + (vv ? vv.height : window.innerHeight);
+    const bar = rect(document.querySelector('.topbar'));
+    const top = Math.max(bar ? bar.bottom : 0, vTop) + GAP;
+    const bottom = vBottom - GAP;
+    if (r.bottom > bottom) window.scrollBy(0, Math.max(0, Math.min(r.bottom - bottom, r.top - top)));   // up, box to the keyboard's edge — never under the bar
+    else if (r.top < top) window.scrollBy(0, r.top - top);   // down, box out from under the bar
   };
   input.focus({ preventScroll: true });
   requestAnimationFrame(scroll);
