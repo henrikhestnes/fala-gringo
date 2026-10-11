@@ -190,7 +190,9 @@
 //         hides the keyboard without blurring the box); the drill still moves to the top of the screen when the box is
 //         focused on a touch device, and a flick up brings the tabs back
 // 1.32.8: on a phone the focused drill leads with the total · known · left chips at the top of the screen, the card under them
-const APP_VERSION = '1.32.8';
+// 1.32.9: fix: "Your progress isn't being saved" flashed on load — one refused localStorage access showed it at once and
+//         the next save took it away; the store now waits two seconds, retries the save, and warns only if that fails too
+const APP_VERSION = '1.32.9';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

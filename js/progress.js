@@ -78,6 +78,10 @@ const GRADUATE_SHARE = 0.8;
 const LEECH_MISSES = 4;
 const LEECH_SHARE = 0.4;
 
+/* How long a failed localStorage access may be a passing one before the
+   storage warning shows (the store retries the save once when it elapses). */
+const STORAGE_GRACE = 2000;
+
 const Store = (function () {
   let state;
   let listener = null;
@@ -97,9 +101,33 @@ const Store = (function () {
     Object.values(state.strength).forEach(t => Object.values(t).forEach(e => { clock = Math.max(clock, (e.u || 0) + 1); }));
     return clock;
   }
+  /* The storage warning (#storageWarning in every shell) says that progress
+     is NOT being kept on this device — an alarm, so it must not fire on a
+     single failed access: browsers do refuse localStorage for a moment
+     (a load racing a quota check, a tab restored from the back-forward cache,
+     another tab mid-write) and the very next save succeeds, which used to
+     flash the warning on load and take it away again. A failure now starts a
+     STORAGE_GRACE timer; when it fires the store tries the save once more
+     and only a failure THAT time shows the warning. A success in between
+     (any later save) cancels it. Recovery always hides it at once. */
+  let storageTimer = 0;
+  let storageRetry = false;   // the retry's own save must not schedule another timer
   function notifyStorage() {
     const el = typeof document !== 'undefined' && document.getElementById('storageWarning');
-    if (el) el.hidden = !storageError;
+    if (!el) return;
+    if (!storageError) {
+      if (storageTimer) { clearTimeout(storageTimer); storageTimer = 0; }
+      el.hidden = true;
+      return;
+    }
+    if (storageRetry || !el.hidden || storageTimer) return;   // the retry decides, or it already shows, or it is pending
+    if (typeof setTimeout !== 'function') { el.hidden = false; return; }
+    storageTimer = setTimeout(() => {
+      storageTimer = 0;
+      storageRetry = true;
+      try { save(); } finally { storageRetry = false; }
+      el.hidden = !storageError;
+    }, STORAGE_GRACE);
   }
   /* Read the canonical blob; null when unchanged since the last read/write.
      An unparseable blob is quarantined, never overwritten. Leftover per-tab

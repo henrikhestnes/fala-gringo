@@ -97,13 +97,24 @@ step('backup round-trip validates language and malformed data; storage failure i
   try { Store.importBackup(JSON.stringify(broken)); } catch (_) { rejected++; }
   if (rejected !== 2) throw new Error('invalid backup accepted');
   const write = localStorage.setItem;
+  // a passing failure: the warning waits for the retry, and a write that works by then cancels it
   localStorage.setItem = () => { throw new Error('quota'); };
   Store.setPref('test-storage', true);
+  if (!Store.storageFailed()) throw new Error('failure not recorded');
+  if (!registry.storageWarning.hidden) throw new Error('warning flashed on a single failed write');
+  localStorage.setItem = write;
+  flushTimers();   // the grace period elapses; the retry succeeds
+  if (Store.storageFailed() || !registry.storageWarning.hidden) throw new Error('a recovered write still warned');
+  // a lasting failure: the retry fails too, and only then does the warning show
+  localStorage.setItem = () => { throw new Error('quota'); };
+  Store.setPref('test-storage', 2);
+  if (!registry.storageWarning.hidden) throw new Error('warning shown before the retry');
+  flushTimers();
   if (!Store.storageFailed() || registry.storageWarning.hidden) throw new Error('failure not visible');
   localStorage.setItem = write;
   Store.setPref('test-storage', false);
   if (Store.storageFailed() || !registry.storageWarning.hidden) throw new Error('recovery not reflected');
-  return 'secret-free export; invalid imports rejected; storage warning recovers';
+  return 'secret-free export; invalid imports rejected; storage warning waits for a retry and recovers';
 });
 
 step('voice selection: an empty list speaks by language, Portuguese takes pt-BR only, the others their family; one notice a session', function () {
