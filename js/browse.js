@@ -106,7 +106,9 @@ const Browse = (function () {
     view.dataset.topic = 'browse';
     view.className = shuffled ? 'shuffled' : '';
     view.innerHTML =
-      '<div class="view-head"><h1 lang="pt-BR">Verbos</h1><p>Browse ' + window.DATA_VERBS.verbs.length + ' verbs — tap a word to hide or reveal it.</p></div>' +
+      '<div class="view-head"><h1 lang="pt-BR">Verbos</h1><p>Browse ' + window.DATA_VERBS.verbs.length + ' verbs — tap a word to hide or reveal it.</p>' +
+        (window.Rules ? '<p class="rules-link"><a class="tab-link" href="#regras">📖 How verbs conjugate — the rules</a></p>' : '') +
+      '</div>' +
       '<div class="browse-toolbar">' +
       '<label class="sr-only" for="browseSearch">Find a verb in Portuguese or English</label>' +
       '<div class="browse-search-field">' +

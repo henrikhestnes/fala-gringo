@@ -1899,3 +1899,117 @@ step('new verb intake balances all persons, including one-card extra batches and
     Store.setPref('newPerDay', NEW_PER_DAY); Store.resetAll();
   }
 });
+
+/* ---- the conjugation rules (js/rules.js, 1.33) ---- */
+
+function clickAs(sel, dataset) {
+  var target = { closest: function (s) { return s === sel ? { dataset: dataset || {} } : null; } };
+  (document._h.click || []).forEach(function (fn) { fn({ target: target }); });
+}
+function recordedState() {
+  var s = Store.snapshot();
+  return JSON.stringify([s.strength, s.mastered, s.days, s.right, s.drilled]);
+}
+
+step('the rules page (#regras): five tenses, endings from the oracle, the verbs that break each, linked from Browse', function () {
+  goTo('#browse');
+  if (!/href="#regras"/.test(registry.view.innerHTML)) throw new Error('Browse does not link the rules page');
+  goTo('#regras');
+  var html = registry.view.innerHTML;
+  if (registry.view.dataset.topic !== 'regras') throw new Error('view not marked as the rules page');
+  var cards = html.match(/class="rule-card"/g) || [];
+  if (cards.length !== 5) throw new Error(cards.length + ' tense cards');
+  if (/aria-selected="true"/.test(registry.tabs.innerHTML)) throw new Error('a tab is selected on the rules page');
+  // the endings come from conjugate.js, split at the stem
+  ['fal<b class="rule-end">ávamos</b>', 'part<b class="rule-end">imos</b>', 'com<b class="rule-end">êssemos</b>',
+   'fal<b class="rule-end">e</b>'].forEach(function (s) {
+    if (html.indexOf(s) < 0) throw new Error('missing ' + s);
+  });
+  // the imperfeito note says only ser, ter, vir and pôr are truly irregular: the data must agree
+  var imp = Rules.cardHtml('imperfeito');
+  var more = imp.split('More forms change')[1].split('</p>')[0];
+  var listed = (more.match(/<b>([^<]+)<\/b>/g) || []).map(function (b) { return b.replace(/<\/?b>/g, ''); });
+  if (listed.join() !== 'ser,ter,vir,pôr') throw new Error('imperfeito irregulars: ' + listed.join());
+  if (Rules.cardHtml('subjuntivo-presente').indexOf('faço → faça') < 0) throw new Error('no faço → faça chain');
+  if (Rules.cardHtml('nouns') !== '') throw new Error('a non-verb tab got a rule card');
+  return '5 tense cards; imperfeito irregulars ' + listed.join(', ');
+});
+
+step('an answer given with the rule open is practice: nothing recorded, no second opinion, the card comes back', function () {
+  Store.resetAll();
+  Store.setPref('mic', false);
+  goTo('#presente');
+  if (!/data-rules="1"/.test(registry.view.innerHTML)) throw new Error('no 📖 Rule chip on a verb tab');
+  var before = recordedState();
+  var knownBefore = String(registry.statKnown.textContent);
+  var calls = 0, real = window.Analytics && Analytics.answer;
+  if (real) Analytics.answer = function () { calls++; };
+  try {
+    clickAs('.chip[data-rules]');
+    if (!Quiz._practice().open || !Quiz._practice().assisted) throw new Error('opening the rule did not mark the card');
+    if (!/rule-card/.test(registry.rulePanel.innerHTML)) throw new Error('panel empty');
+    if (registry.assistNote.hidden) throw new Error('no practice notice on the card');
+    var card = shownCard('presente');
+    registry.answerInput.value = card.answer;
+    registry.actionBtn.fire('click');
+    if (!/✓/.test(registry.feedback.innerHTML) || !/class="assist-line"/.test(registry.feedback.innerHTML))
+      throw new Error('practice verdict not shown: ' + registry.feedback.innerHTML);
+    if (recordedState() !== before) throw new Error('a practice answer reached the store');
+    if (calls) throw new Error('a practice answer reached analytics');
+    if (String(registry.statKnown.textContent) !== knownBefore) throw new Error('the card cleared');
+    if (registry.overrideArea.innerHTML) throw new Error('second opinion offered on practice');
+    // the next card, with the rule still open, is practice too; a miss is not recorded either
+    registry.actionBtn.fire('click');
+    if (!Quiz._practice().assisted) throw new Error('next card not practice while the rule is open');
+    registry.answerInput.value = 'zzz';
+    registry.actionBtn.fire('click');
+    if (recordedState() !== before) throw new Error('a practice miss reached the store');
+  } finally {
+    if (real) Analytics.answer = real;
+  }
+  return 'right and wrong answers with the rule open left the store, analytics and Known untouched';
+});
+
+step('the rule seen on a card keeps it practice after closing and a re-render; the next card counts again', function () {
+  Store.resetAll();
+  goTo('#browse'); goTo('#presente');
+  var before = recordedState();
+  clickAs('.chip[data-rules]');   // open
+  clickAs('.chip[data-rules]');   // close
+  if (Quiz._practice().open) throw new Error('did not close');
+  Quiz.rerender();
+  if (!Quiz._practice().assisted || registry.assistNote.hidden) throw new Error('re-render forgot the rule was seen');
+  var card = shownCard('presente');
+  registry.answerInput.value = card.answer;
+  registry.actionBtn.fire('click');
+  if (recordedState() !== before) throw new Error('recorded after the rule was seen');
+  registry.actionBtn.fire('click');   // next card, rule closed
+  if (Quiz._practice().assisted) throw new Error('the next card is still practice');
+  var next = shownCard('presente');
+  registry.answerInput.value = next.answer;
+  registry.actionBtn.fire('click');
+  if (Store.masteredCount('presente') !== 1) throw new Error('an unassisted answer was not recorded');
+  return 'seen card: practice; next card: recorded';
+});
+
+step('the answer card\'s rule link opens the panel after the verdict without undoing it; another tense goes to #regras', function () {
+  Store.resetAll();
+  goTo('#browse'); goTo('#presente');
+  var card = shownCard('presente');
+  registry.answerInput.value = card.answer;
+  registry.actionBtn.fire('click');
+  if (!/data-rule="presente"/.test(registry.revealArea.innerHTML)) throw new Error('no rule link under the table');
+  clickAs('[data-rule]', { rule: 'presente' });
+  if (!Quiz._practice().open) throw new Error('link did not open the panel');
+  if (Store.masteredCount('presente') !== 1) throw new Error('the verdict given before the rule was undone');
+  registry.actionBtn.fire('click');
+  if (!Quiz._practice().assisted) throw new Error('the next card with the panel open is not practice');
+  clickAs('[data-rule]', { rule: 'perfeito' });
+  if (window.location.hash !== '#regras') throw new Error('another tense\'s link went to ' + window.location.hash);
+  (window._h.hashchange || []).forEach(function (fn) { fn(); });
+  if (registry.view.dataset.topic !== 'regras') throw new Error('rules page not shown');
+  goTo('#presente');
+  if (Quiz._practice().open) throw new Error('the panel survived leaving the tab');
+  Store.resetAll();
+  return 'verdict kept; next card practice; perfeito link → #regras; panel closed on return';
+});

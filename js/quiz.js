@@ -24,6 +24,12 @@ const QUIZ_STRINGS = Object.assign({
   micTitle: 'Mic mode: speak the answer instead of typing — it is recognized, ' +
             'submitted and read back, and the deck advances hands-free.',
   micChip: '🎤 Falar',
+  rulesChip: '📖 Rule',               // the tense's rule under the drill (js/rules.js, verb tabs only)
+  rulesTitle: 'How this tense is built. An answer given while the rule is open is practice: ' +
+              'it is not recorded, and the card comes back for a try without it.',
+  assistOpen: '📖 Rule open: this answer is practice. It won\'t be recorded, and the card comes back.',
+  assistSeen: '📖 You opened the rule on this card: this answer is practice. It won\'t be recorded, and the card comes back.',
+  practiceLine: 'Practice with the rule, so it isn\'t recorded. This card comes back for a try without it.',
   masteredLine: '{n} of {total} cards mastered',
   easyTag: ' · Easy Mode',
   reset: 'reset',
@@ -113,6 +119,14 @@ const Quiz = (function () {
   let missed = new Set();   // card ids missed in this run (they read as shaky on the chip)
   let dropped = new Set();   // due cards this run's answers covered through their word and pattern (js/infer.js)
   let extraHeld = new Map(); // held-back siblings the extra-batch button admitted: id -> 'verify' | 'new'
+
+  /* the 📖 Rule panel (js/rules.js): an answer given with the rule in view —
+     open now, or opened at any point on this card before answering — is
+     PRACTICE: nothing is written to the store and the card stays in the deck,
+     so it clears only on a try without the rule */
+  let rulesOpen = false;
+  let assisted = false;     // the card on screen has seen the rule
+  let seenCard = null;      // id of the card the rule was opened on, until answered (a re-render keeps it practice)
 
   /* mic mode (the 🎤 chip): hands-free spoken answers */
   let micTimer = 0;    // pending auto-advance
@@ -448,6 +462,9 @@ const Quiz = (function () {
   function mount(t) {
     topic = t;
     extraHeld = new Map();
+    rulesOpen = false;
+    assisted = false;
+    seenCard = null;
     if (!window.APP_LANG && !Store.getPref('firstRunStarted', false)) {
       const saved = Store.snapshot();
       const hasAnswers = Object.keys(saved.days).length ||
@@ -476,6 +493,9 @@ const Quiz = (function () {
     tierOf = new Map();
     dropped = new Set();
     rivalCache.clear();
+    rulesOpen = false;
+    assisted = false;
+    seenCard = null;
   }
 
   /* ---------------------------------------------------------------- chrome */
@@ -530,11 +550,16 @@ const Quiz = (function () {
         '" aria-pressed="' + (micOn() ? 'true' : 'false') + '" data-mic="1" title="' + escapeHtml(QUIZ_STRINGS.micTitle) + '">' +
         QUIZ_STRINGS.micChip + '</button>'
       : '';
+    const rulesChip = hasRules()
+      ? '<button class="chip rules' + (rulesOpen ? ' active' : '') + '" aria-pressed="' + (rulesOpen ? 'true' : 'false') +
+        '" aria-controls="rulePanel" id="rulesChip" data-rules="1" title="' + escapeHtml(QUIZ_STRINGS.rulesTitle) + '">' +
+        QUIZ_STRINGS.rulesChip + '</button>'
+      : '';
     return '<div class="view-head">' +
         '<h1>' + escapeHtml(topic.label) + '</h1>' +
         '<p id="masteredLine">' + masteredHtml() + '</p>' +
       '</div>' +
-      '<div class="filters" id="filterRow">' + focusChip + micChip + chips + '</div>' +
+      '<div class="filters" id="filterRow">' + focusChip + micChip + rulesChip + chips + '</div>' +
       '<div class="stats">' +
         '<div class="stat"><div class="stat-num" id="statTotal">0</div><div class="stat-lbl">' + QUIZ_STRINGS.statTotal + '</div></div>' +
         '<div class="stat"><div class="stat-num green" id="statKnown">0</div><div class="stat-lbl">' + QUIZ_STRINGS.statKnown + '</div></div>' +
@@ -544,7 +569,45 @@ const Quiz = (function () {
         '<div class="progress-bg"><div class="progress-fill" id="progressBar" style="width:0%"></div></div>' +
         '<span class="progress-pct" id="progressPct">0%</span>' +
       '</div>' +
-      '<div id="cardArea"></div>';
+      '<div id="cardArea"></div>' +
+      (hasRules() ? '<div class="rule-panel" id="rulePanel"' + (rulesOpen ? '' : ' hidden') + '>' +
+        (rulesOpen ? Rules.panelHtml(topic.id) : '') + '</div>' : '');
+  }
+
+  /* ------------------------------------------------------------ the rule */
+
+  function hasRules() { return !!(topic && window.Rules && Rules.has(topic.id)); }
+
+  /* The practice notice on the card: the rule is open, or was on this card. */
+  function showAssist() {
+    const note = document.getElementById('assistNote');
+    if (!note) return;
+    note.hidden = !assisted;
+    note.textContent = assisted ? (rulesOpen ? QUIZ_STRINGS.assistOpen : QUIZ_STRINGS.assistSeen) : '';
+  }
+
+  /* Open or close the 📖 panel. Opening it before the card is answered makes
+     that answer practice (and every card shown while it stays open); opening
+     it after the verdict leaves that verdict alone — it was recorded before
+     the rule was seen. `reveal` scrolls the panel into view. */
+  function setRules(open, reveal) {
+    if (!hasRules()) return;
+    rulesOpen = !!open;
+    if (rulesOpen && !answered && deck.length && known.size < deck.length) { assisted = true; seenCard = deck[current].id; }
+    const panel = document.getElementById('rulePanel');
+    if (panel) {
+      panel.innerHTML = rulesOpen ? Rules.panelHtml(topic.id) : '';
+      panel.hidden = !rulesOpen;
+    }
+    const chip = document.getElementById('rulesChip');
+    if (chip) {
+      chip.classList[rulesOpen ? 'add' : 'remove']('active');
+      chip.setAttribute('aria-pressed', rulesOpen ? 'true' : 'false');
+    }
+    showAssist();
+    if (rulesOpen && reveal && panel && typeof panel.scrollIntoView === 'function') {
+      try { panel.scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch (e) { /* old engines */ }
+    }
   }
 
   function updateStats() {
@@ -622,6 +685,7 @@ const Quiz = (function () {
         '<div class="card-prompt" id="answerPrompt" lang="' + UI_LANG + '">' + card.prompt + '</div>' +
         (card.target ? '<div class="card-target">' + card.target + '</div>' : '') +
         '<div class="card-sub">' + escapeHtml(card.sub) + '</div>' +
+        (hasRules() ? '<p class="assist-note" id="assistNote" hidden></p>' : '') +
         '<div class="input-row">' +
           '<label class="sr-only" for="answerInput">' + escapeHtml(QUIZ_STRINGS.answerLabel) + '</label>' +
           '<input class="answer-input" id="answerInput" aria-describedby="answerPrompt' + (firstCard ? ' answerGuideHelp' : '') + '" lang="' + TARGET_LANG + '" type="text" placeholder="' +
@@ -642,6 +706,8 @@ const Quiz = (function () {
       '</div>';
 
     answered = false;
+    assisted = rulesOpen || seenCard === card.id;   // practice while the rule is open, or once seen on this card
+    showAssist();
     const input = document.getElementById('answerInput');
     if (firstCard) document.getElementById('dismissAnswerGuide').addEventListener('click', () => {
       Store.setPref('answerGuideDismissed', true);
@@ -918,11 +984,16 @@ const Quiz = (function () {
     answered = true;
     btn.setAttribute('aria-label', QUIZ_STRINGS.nextLabel);
     input.disabled = true;
-    Store.markDrilled(topic.id);   // this tab is one of the learner's own (today's goal, js/app.js)
+    // with the rule in view the answer is practice: graded and shown, but
+    // nothing reaches the store (no record, tally, mastery, day log, goal or
+    // tab stamp) nor analytics, and the card stays in the deck
+    const practice = assisted;
+    seenCard = null;
+    if (!practice) Store.markDrilled(topic.id);   // this tab is one of the learner's own (today's goal, js/app.js)
 
     const res = gradeTyped(card, input.value);
     const ok = !!res;
-    if (window.Analytics) Analytics.answer(topic.id, 'drill',
+    if (window.Analytics && !practice) Analytics.answer(topic.id, 'drill',
       spoken === true ? 'spoken' : 'typed', ok ? (res.grade === 'near' ? 'near' : 'correct') : 'wrong');
     // the synonym the learner reached for (coloco for ponho) shows its own answer,
     // pronunciation and table — on a miss too, judged by how the typed text starts;
@@ -934,7 +1005,11 @@ const Quiz = (function () {
     // the record is written first so the tags can read this answer's tally
     const near = ok && res.grade === 'near';
     const freshMiss = !ok && !missed.has(card.id);   // what a "just a typo" afterwards takes back
-    if (ok) {
+    if (practice) {
+      // a run with practice answers in it is not a clean one (as with a skip)
+      perfect = false;
+      skipped = true;
+    } else if (ok) {
       known.add(current);
       Store.markMastered(topic.id, card.id);
       // a confirmed inferred-known form skips the first rung of the review ladder
@@ -945,7 +1020,17 @@ const Quiz = (function () {
       Store.recordAnswer(topic.id, card.id, false);
     }
     const line = answerLine(card, face);
-    if (ok) {
+    const practiceNote = '<p class="assist-line">' + escapeHtml(QUIZ_STRINGS.practiceLine) + '</p>';
+    if (practice) {
+      input.classList.add(ok ? 'correct' : 'wrong');
+      btn.classList.add(ok ? 'go-green' : 'go-red');
+      feedback.className = 'feedback ' + (ok ? 'ok' : 'err') + (near ? ' near' : '') + ' practice';
+      feedback.innerHTML = (!ok ? '✗ ' + missWord() + ' ' + QUIZ_STRINGS.answerIs
+        : near ? '≈ ' + tfill(QUIZ_STRINGS.nearIs, { typed: escapeHtml(input.value.trim()) })
+        : '✓ ' + praiseWord()) + ' ' + line + practiceNote;
+      revealArea.innerHTML = face.reveal || '';
+      updateStats();
+    } else if (ok) {
       // a near-miss (one slip, unambiguous) clears the card but earns no review
       // level: it comes back on its current interval instead of a longer one
       if (Mode.hard) stats.hardSolved++;
@@ -973,14 +1058,15 @@ const Quiz = (function () {
     }
     // the learner's second opinion: a miss can be a typo, a forgiven slip or a
     // by-sound spoken match can be a real mistake (overrideAnswer)
-    const second = ok ? ((near || res.phonetic) ? 'wrong' : '') : 'knew';
+    // (a practice answer has no recorded verdict to change)
+    const second = practice ? '' : ok ? ((near || res.phonetic) ? 'wrong' : '') : 'knew';
     document.getElementById('overrideArea').innerHTML = second
       ? '<button class="override-btn" id="overrideBtn" type="button">' +
         escapeHtml(second === 'knew' ? QUIZ_STRINGS.overrideKnew : QUIZ_STRINGS.overrideWrong) + '</button>' : '';
     if (second) document.getElementById('overrideBtn').addEventListener('click',
       () => overrideAnswer(card, face, second === 'knew', freshMiss));
 
-    const checkpoint = firstRunFeedback(ok, ok && res.grade === 'near', feedback);
+    const checkpoint = !practice && firstRunFeedback(ok, ok && res.grade === 'near', feedback);
     requestAnimationFrame(() => {
       const t = document.querySelector('.conj-table-wrapper');
       if (t) t.classList.add('visible');
@@ -1047,6 +1133,15 @@ const Quiz = (function () {
     toggleFocus: toggleFocus,
     toggleMic: toggleMic,
     resumeMic: resumeMic,
+    toggleRules: () => setRules(!rulesOpen, !rulesOpen),
+    // the answer card's "How the … works" link: open this tab's rule (true) — or
+    // false when the link names another tense (app.js then goes to #regras)
+    openRules: function (tense) {
+      if (!topic || topic.id !== tense || !hasRules()) return false;
+      setRules(true, true);
+      return true;
+    },
+    _practice: () => ({ open: rulesOpen, assisted: assisted }),   // exposed for the smoke checks
     stopVoice: stopVoice,
     isActive: () => !!topic,
     todayGoal: todayGoal,

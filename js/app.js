@@ -162,6 +162,10 @@
   /* The statistics page (js/stats.js) is a route of its own, not a topic: no
      tab is selected while it is open, and the tabs still lead out of it. */
   const statsRoute = () => (location.hash || '') === '#stats' && !!window.Stats;
+  /* The conjugation rules (#regras, js/rules.js, root app only) are a page of
+     the same kind: no tab selected, the tabs lead out. */
+  const rulesRoute = () => (location.hash || '') === '#regras' && !!window.Rules;
+  const pageRoute = () => statsRoute() || rulesRoute();
   const TIER_ROWS_FROM = 8;
   const drillTabs = () => TOPICS.filter(t => t.kind === 'quiz');
   const tieredStrip = () => drillTabs().length >= TIER_ROWS_FROM;
@@ -216,7 +220,7 @@
   }
 
   function renderTabs() {
-    const activeId = statsRoute() ? '' : currentTopicId();
+    const activeId = pageRoute() ? '' : currentTopicId();
     const nav = document.getElementById('tabs');
     const tiered = tieredStrip();
     if (nav.classList) nav.classList[tiered ? 'add' : 'remove']('tiered');
@@ -580,16 +584,17 @@
 
   function route() {
     const welcome = document.getElementById('rioWelcome');
-    if (statsRoute()) {
+    if (pageRoute()) {
+      const stats = statsRoute();
       if (welcome) welcome.hidden = true;
       Quiz.stopVoice();
       Quiz.unmount();
       closeSheet(false);
       renderTabs();
       window.scrollTo(0, 0);
-      Stats.render();
+      if (stats) Stats.render(); else Rules.render();
       view().removeAttribute('aria-labelledby');
-      const heading = document.querySelector('.stats-page h2');
+      const heading = document.querySelector(stats ? '.stats-page h2' : '.rules-page h2');
       if (heading && typeof heading.focus === 'function') { heading.tabIndex = -1; heading.focus(); }
       renderGoal();
       return;
@@ -648,6 +653,16 @@
 
     const mic = e.target.closest('.chip[data-mic]');
     if (mic) { Quiz.toggleMic(); return; }
+
+    const rules = e.target.closest('.chip[data-rules]');
+    if (rules) { Quiz.toggleRules(); return; }
+
+    // the answer card's "How the … works": the drill's own panel, else the rules page
+    const ruleLink = e.target.closest('[data-rule]');
+    if (ruleLink) {
+      if (!Quiz.openRules(ruleLink.dataset.rule) && window.Rules) location.hash = '#regras';
+      return;
+    }
 
     const micResume = e.target.closest('[data-mic-resume]');
     if (micResume) { Quiz.resumeMic(); return; }
@@ -751,6 +766,6 @@
   }
 
   // sync.js re-renders through this after pulling remote progress
-  const refreshProgress = () => { renderTabs(); renderGoal(); applyTheme(); updateModeButton(); if (statsRoute()) Stats.render(); };   // a pull re-draws an open stats page
+  const refreshProgress = () => { renderTabs(); renderGoal(); applyTheme(); updateModeButton(); if (statsRoute()) Stats.render(); if (rulesRoute()) Rules.render(); };   // a pull re-draws an open stats or rules page (its ✓ marks)
   window.App = { refresh: route, refreshProgress: refreshProgress, updateTabPct: updateTabPct, showTier: showTier, refreshGoal: renderGoal, openSheet: openSheet, closeSheet: closeSheet, heatmapHtml: heatmapHtml };
 })();

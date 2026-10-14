@@ -1434,3 +1434,86 @@ html.coastal {
 #analyticsControl { margin-top: 1rem; }
 #analyticsToggle { background: none; border: 0; padding: .4rem; color: inherit; font: inherit; text-decoration: underline; cursor: pointer; }
 #analyticsToggle:disabled { cursor: default; text-decoration: none; }
+
+/* ---- the conjugation rules (js/rules.js, 1.33): the drill's 📖 panel, the
+   answer card's link to it, and the #regras page ---- */
+.chip.rules.active {
+  background: var(--blue-soft);
+  border-color: var(--blue);
+  color: var(--blue-ink);
+}
+.rule-panel { margin-top: 1rem; }
+.rule-panel[hidden] { display: none; }
+.assist-note {
+  margin: .55rem 0 0;
+  padding: .4rem .6rem;
+  border-radius: var(--radius-sm);
+  background: var(--blue-soft);
+  color: var(--blue-ink);
+  font-size: .78rem;
+  line-height: 1.45;
+}
+.assist-note[hidden] { display: none; }
+.assist-line { flex-basis: 100%; margin: .2rem 0 0; font-size: .8rem; font-weight: 500; color: var(--text-2); }
+.rule-link {
+  display: inline-block;
+  margin-top: .5rem;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: .78rem;
+  color: var(--blue-ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+#view[data-topic="daily"] .rule-link { display: none; }   /* the Daily is exact-match, no help */
+.rules-link { margin-top: .4rem; }
+
+.rules-page { display: grid; grid-template-columns: minmax(0, 1fr); gap: .9rem; }   /* minmax: the tables never widen the page */
+.rules-page h2 { font-family: var(--display); font-style: italic; text-transform: uppercase; letter-spacing: .03em; margin: 0; font-size: 1.4rem; outline: none; }
+.rules-page .muted { color: var(--text-2); font-size: .86rem; margin: -.3rem 0 0; line-height: 1.55; }
+.rule-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .9rem 1rem;
+  font-size: .86rem;
+  line-height: 1.5;
+}
+.rule-card h3 { font-family: var(--display); font-style: italic; text-transform: uppercase; letter-spacing: .03em; font-size: 1.1rem; margin: 0 0 .25rem; }
+.rule-card i { font-family: var(--mono); font-style: normal; font-size: .95em; }
+.rule-lead { margin: 0 0 .7rem; }
+.rule-table-wrap { overflow-x: auto; }
+.rule-table { width: 100%; border-collapse: collapse; }
+.rule-table th { text-align: left; font-weight: 600; padding: .3rem .45rem; vertical-align: bottom; }
+.rule-table th small { display: block; font-weight: 500; font-size: .68rem; color: var(--text-3); }
+.rule-table td { padding: .28rem .45rem; border-top: 1px solid var(--border); white-space: nowrap; }
+.rule-cls { font-family: var(--mono); color: var(--blue-ink); }
+.rule-who { color: var(--text-3); width: 4.6rem; }
+.rule-src td { font-family: var(--mono); color: var(--text-2); font-size: .82rem; border-top: none; }
+.rule-src s { color: var(--red-ink); }
+.rule-form { border: 0; background: none; padding: 0; font: inherit; font-family: var(--mono); color: var(--text); cursor: pointer; }
+.rule-form:hover { text-decoration: underline; }
+.rule-end { color: var(--green-ink); font-weight: 700; }
+.rule-table td.is-known { background: var(--green-soft); }
+.rule-ok { margin-left: .3em; color: var(--green-ink); font-size: .75rem; }
+.rule-progress { margin: .45rem 0 0; font-size: .74rem; color: var(--text-3); }
+.rule-notes { margin: .6rem 0 0; padding-left: 1.1rem; }
+.rule-notes li + li { margin-top: .3rem; }
+.rule-breakers { margin-top: .8rem; padding-top: .7rem; border-top: 1px solid var(--border); }
+.rule-breakers h4 { margin: 0 0 .35rem; font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; color: var(--text-3); }
+.rule-breakers h4 small { text-transform: none; letter-spacing: 0; font-weight: 500; }
+.rule-group { margin: 0 0 .45rem; display: flex; flex-wrap: wrap; gap: .3rem; align-items: baseline; }
+.rule-group-name { flex-basis: 100%; font-size: .76rem; color: var(--text-2); }
+.rule-verb { border: 1px solid var(--border); background: var(--surface-2); border-radius: var(--radius-sm); padding: .1rem .45rem; font-family: var(--mono); font-size: .76rem; }
+.rule-verb b { font-family: var(--sans); font-weight: 600; margin-right: .2em; }
+.rule-verb mark.irr { background: var(--yellow-soft); color: var(--yellow-ink); border-radius: 3px; padding: 0 .08em; box-shadow: 0 1px 0 var(--yellow-ink); }
+.rule-verb mark.irr.drop { display: inline-block; width: .45em; height: .9em; vertical-align: -.1em; padding: 0; margin-left: .08em; border: 1px dashed var(--yellow-ink); background: transparent; box-shadow: none; }
+.rule-foot { margin: .7rem 0 0; }
+@media (max-width: 480px) {
+  .rule-card { padding: .8rem .75rem; }
+  .rule-table th, .rule-table td { padding: .26rem .3rem; }
+  .rule-who { width: auto; }
+}

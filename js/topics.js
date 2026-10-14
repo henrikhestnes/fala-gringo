@@ -142,7 +142,14 @@ function verbConjTable(verb, tense, tenseLabel, currentIndex) {
   return '<div class="conj-table-wrapper"><div class="conj-table-label" lang="pt-BR">' +
          escapeHtml(verb.pt + ' — ' + tenseLabel) + '</div>' +
          '<table class="conj-table" lang="pt-BR">' + rows + '</table>' +
-         conjNote(verb, expected, spans, currentIndex) + '</div>';
+         conjNote(verb, expected, spans, currentIndex) + ruleLink(tense, tenseLabel) + '</div>';
+}
+
+/* The way from a form to its rule (js/rules.js, 1.33): opens the drill's 📖
+   panel — app.js routes the click. The Daily hides it (css): no help there. */
+function ruleLink(tense, tenseLabel) {
+  return '<button class="rule-link" type="button" data-rule="' + escapeHtml(tense) + '" lang="en">📖 How the ' +
+    escapeHtml(tenseLabel) + ' works</button>';
 }
 
 /* The card's flag for the feedback line: "irregular" when this form breaks the

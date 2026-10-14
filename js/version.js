@@ -192,7 +192,15 @@
 // 1.32.8: on a phone the focused drill leads with the total · known · left chips at the top of the screen, the card under them
 // 1.32.9: fix: "Your progress isn't being saved" flashed on load — one refused localStorage access showed it at once and
 //         the next save took it away; the store now waits two seconds, retries the save, and warns only if that fails too
-const APP_VERSION = '1.32.9';
+// 1.33.0: the conjugation rules, readable (js/rules.js): one card per verb tense — the endings on falar / comer / partir
+//         computed from the conjugate.js oracle, a few notes, the verbs that break the pattern grouped by how (only
+//         the eu form, a new stem, only an accent; for the subjunctives the irregular source form that carries
+//         through, and the listed exceptions), and a ✓ on each ending the learner has shown on 5+ regular verbs. Shown
+//         under a verb drill by the 📖 Rule chip, from the answer card's "How the … works" link, and on a #regras
+//         page linked from Browse. An answer given with the rule open — or after it was opened on that card — is
+//         PRACTICE: graded and shown, but nothing is recorded (no ladder, tally, mastery, day log, goal or analytics)
+//         and the card stays in the deck until answered without it
+const APP_VERSION = '1.33.0';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

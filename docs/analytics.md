@@ -31,7 +31,9 @@ of zero data collection.
 
 Counting happens in the answer handlers rather than `Store.recordAnswer`, so
 sync, backups, imported progress, resets, inferred sibling confirmations, skips
-and reveal-only Daily actions cannot manufacture learner activity. The fifth
+and reveal-only Daily actions cannot manufacture learner activity. Drill answers
+given with the 📖 conjugation rule open (practice, never recorded) are not sent
+either. The fifth
 wrong Daily attempt counts once. The reports derive ten-answer days from events
 instead of storing another counter in the learner's synced progress.
 
