@@ -45,7 +45,7 @@ step('with no browse tab, the app boots straight into the first drill — Frases
   var tabs = (registry.tabs.innerHTML.match(/data-tab="/g) || []).length;
   if (tabs !== TOPICS.length) throw new Error('got ' + tabs + ' tabs');
   var order = TOPICS.map(function (t) { return t.tier; }).join('');
-  if (order !== '11223') throw new Error('tabs not stacked by tier: ' + order);
+  if (order !== '112223') throw new Error('tabs not stacked by tier: ' + order);
   return 'default tab = frases, ' + tabs + ' tabs, tiers ' + order;
 });
 
@@ -105,7 +105,7 @@ step('å is a letter, not an accented a: så (saw) is not sa (said)', function (
   return 'så ≠ sa, kjøpte ≠ kjopte, lærte ≠ larte; está = esta still';
 });
 
-step('bokmål alternatives pass: snakka for snakket, ei/en jente, jenta/jenten, syv for sju', function () {
+step('bokmål alternatives pass: snakka for snakket, ei/en jente, boka/boken, syv for sju — but never jenten or boka min', function () {
   var past = cardById('verbos', 'snakke|past');
   if (!matchAnswer(past, 'snakka', rivalsOf('verbos', past), false)) throw new Error('"snakka" rejected');
   if (past.answer !== 'snakket') throw new Error('canonical past is "' + past.answer + '"');
@@ -116,7 +116,15 @@ step('bokmål alternatives pass: snakka for snakket, ei/en jente, jenta/jenten, 
   if (matchAnswer(indef, 'et jente', rivalsOf('substantivos', indef), false)) throw new Error('"et jente" accepted');
   var def = cardById('substantivos', 'jente|def');
   if (def.answer !== 'jenta') throw new Error('canonical definite is "' + def.answer + '"');
-  if (!matchAnswer(def, 'jenten', rivalsOf('substantivos', def), false)) throw new Error('"jenten" rejected');
+  // en for ei and -en for -a are bokmål — but jenten sounds wrong (noEnDef), and
+  // the possessive follows the system: boka mi / boken min, never mixed
+  if (matchAnswer(def, 'jenten', rivalsOf('substantivos', def), false)) throw new Error('"jenten" accepted');
+  if (!matchAnswer(cardById('substantivos', 'bok|def'), 'boken', [], false)) throw new Error('"boken" rejected');
+  if (!matchAnswer(cardById('artigos', 'den nye boka'), 'den nye boken', [], false)) throw new Error('"den nye boken" rejected');
+  if (matchAnswer(cardById('artigos', 'den lille jenta'), 'den lille jenten', [], false)) throw new Error('"den lille jenten" accepted');
+  var mi = cardById('artigos', 'boka mi');
+  if (!matchAnswer(mi, 'boken min', [], false)) throw new Error('"boken min" rejected');
+  if (matchAnswer(mi, 'boka min', [], false) || matchAnswer(mi, 'boken mi', [], false)) throw new Error('a mixed possessive accepted');
   var hus = cardById('substantivos', 'hus|def');
   if (hus.answer !== 'huset') throw new Error('neuter definite is "' + hus.answer + '"');
   if (matchAnswer(hus, 'husen', rivalsOf('substantivos', hus), false)) throw new Error('"husen" accepted for huset');
@@ -125,7 +133,36 @@ step('bokmål alternatives pass: snakka for snakket, ei/en jente, jenta/jenten, 
   if (rom.answer !== 'rommet') throw new Error('def override lost: "' + rom.answer + '"');
   var sju = cardById('numeros', 'sju');
   if (!matchAnswer(sju, 'syv', rivalsOf('numeros', sju), false)) throw new Error('"syv" rejected');
-  return 'all alternatives accepted, canonicals unchanged; et jente / husen refused (exact cards)';
+  return 'all alternatives accepted, canonicals unchanged; et jente / husen / jenten / boka min refused';
+});
+
+step('the articles tab drills phrases exactly: det nye huset, not den nye huset; en/ei both pass', function () {
+  goTo('#artigos');
+  var chips = (registry.view.innerHTML.match(/data-group="/g) || []).length;
+  if (chips !== window.DATA_NO_ARTIGOS.groups.length) throw new Error('got ' + chips + ' group chips');
+  var card = shownCard('artigos');
+  registry.answerInput.value = card.answer;
+  registry.actionBtn.fire('click');
+  if (!/✓/.test(registry.feedback.innerHTML))
+    throw new Error('rejected "' + card.answer + '": ' + registry.feedback.innerHTML);
+  if (!/class="example"/.test(registry.revealArea.innerHTML))
+    throw new Error('no example in the reveal');
+  // each of these is one keyboard-shaped edit from the answer — a slip anywhere else, the lesson here
+  [['det nye huset', 'den nye huset'], ['et nytt hus', 'et nyt hus'], ['et nytt hus', 'en nytt hus'],
+   ['huset mitt', 'huset min'], ['dette huset', 'dette husen']].forEach(function (p) {
+    var c = cardById('artigos', p[0]);
+    if (matchAnswer(c, p[1], rivalsOf('artigos', c), false)) throw new Error('"' + p[1] + '" accepted for ' + p[0]);
+  });
+  var seng = cardById('artigos', 'ei stor seng');
+  if (!matchAnswer(seng, 'en stor seng', rivalsOf('artigos', seng), false)) throw new Error('"en stor seng" rejected');
+  var boka = cardById('artigos', 'boka mi');
+  if (!matchAnswer(boka, 'min bok', rivalsOf('artigos', boka), false)) throw new Error('"min bok" rejected');
+  ['min mor', 'min mamma', 'mammaen min', 'mora mi'].forEach(function (a) {
+    var mor = cardById('artigos', 'moren min');
+    if (!matchAnswer(mor, a, rivalsOf('artigos', mor), false)) throw new Error('"' + a + '" rejected for moren min');
+  });
+  if (card.hint && /^(en|ei|et|den|det|de) /.test(card.hint)) throw new Error('hint gives the article away: ' + card.hint);
+  return chips + ' chips; "' + card.answer + '" accepted; den nye huset, et nyt hus, huset min refused; en stor seng, min bok pass';
 });
 
 step('typed slips are tolerated, but not into another answer; sound key is identity', function () {

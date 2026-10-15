@@ -34,6 +34,7 @@ function runChecks() {
   const LISTS = [
     ['frases', window.DATA_NO_FRASES],
     ['numeros', window.DATA_NO_NUMEROS],
+    ['artigos', window.DATA_NO_ARTIGOS],
     ['palavrinhas', window.DATA_NO_PALAVRINHAS]
   ];
 
@@ -171,6 +172,52 @@ function runChecks() {
     });
     if (bad.length) fail(bad.join('\n'));
     return summary.join('\n');
+  });
+
+  check('feminines: en wherever ei; -en wherever -a (but not jenten); never boka min', () => {
+    // A feminine takes ei or en (ei jente / en jente, mi bok / min bok), and its
+    // definite -a or -en (boka / boken) — except the nouns marked `noEnDef`,
+    // where -en sounds wrong (jenten). After the noun the possessive follows the
+    // system: boka mi or boken min, never boka min or boken mi.
+    const fem = {};                       // normalised -a / -en form → { noun, kind }
+    S.nouns.filter(n => n.g === 'f').forEach(n => {
+      const stem = /e$/.test(n.n) ? n.n.slice(0, -1) : n.n;
+      fem[normalize(n.def || stem + 'a')] = { n: n, kind: 'a', twin: normalize(stem + 'en') };
+      fem[normalize(stem + 'en')] = { n: n, kind: 'en' };
+    });
+    const bad = [];
+    let pairs = 0;
+    ['substantivos', 'artigos'].forEach(id => {
+      topicCards(topicById(id)).forEach(c => {
+        const split = c.accepted.map(a => normalize(a).split(' '));
+        const has = want => split.some(o => o.join(' ') === want.join(' '));
+        const where = id + '/' + c.id + ': ';
+        split.forEach(words => {
+          words.forEach((w, i) => {
+            const f = fem[w];
+            if (f && f.kind === 'en' && f.n.noEnDef) bad.push(where + 'accepts "' + words.join(' ') + '" (' + f.n.n + ' is noEnDef)');
+            if (f && f.kind === 'a' && words[i + 1] === 'min') bad.push(where + 'mixes "' + words.join(' ') + '"');
+            if (f && f.kind === 'en' && words[i + 1] === 'mi') bad.push(where + 'mixes "' + words.join(' ') + '"');
+            if (f && f.kind === 'a' && !f.n.noEnDef) {
+              const want = words.slice(); want[i] = f.twin;
+              if (want[i + 1] === 'mi') want[i + 1] = 'min';
+              if (has(want)) pairs++;
+              else bad.push(where + '"' + words.join(' ') + '" without "' + want.join(' ') + '"');
+            }
+            // ei → en / mi → min before the noun; an adjective may change with
+            // the article (ei lita jente / en liten jente): one other word may differ
+            const swap = { ei: 'en', mi: 'min' }[w];
+            if (!swap || i !== words.findIndex(x => x === w) || (w === 'mi' && i > 0)) return;
+            const want = words.slice(); want[i] = swap;
+            if (split.some(o => o.length === words.length && o[i] === swap &&
+                                o.filter((x, j) => x !== want[j]).length <= 1)) pairs++;
+            else bad.push(where + '"' + words.join(' ') + '" without "' + want.join(' ') + '"');
+          });
+        });
+      });
+    });
+    if (bad.length) fail(bad.join('\n'));
+    return pairs + ' ei / mi / -a answers with their en / min / -en twin; no jenten, no boka min';
   });
 
   check('no alternative answer normalises to its own canonical', () => {

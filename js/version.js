@@ -200,7 +200,15 @@
 //         page linked from Browse. An answer given with the rule open — or after it was opened on that card — is
 //         PRACTICE: graded and shown, but nothing is recorded (no ladder, tally, mastery, day log, goal or analytics)
 //         and the card stays in the deck until answered without it
-const APP_VERSION = '1.33.0';
+// 1.34.0: /noruegues/ gets an Artigos tab (tier 2, after Substantivos) — 86 exact-match cards on the article inside
+//         the phrase, where Brazilians trip: et nytt hus (the neuter -t), det nye huset (the double definite),
+//         bussene / de nye bussene (plural), denne bussen / den bussen (esse / aquele), huset mitt (the possessive
+//         after, agreeing with the thing; min mamma / mammaen min accepted), and where Portuguese has an article
+//         and Norwegian none (hele huset, hver dag, neste buss); a tip names the rule. Substantivos grows from 44
+//         to 65 nouns (bil, sykkel, mobil, søster, bror, lege, lærer, bilde, ord, glass, gate, kirke…). Feminines take
+//         en for ei and -en for -a except where -en sounds wrong (noEnDef: jenten is no longer accepted); a possessive
+//         after the noun follows its system — boka mi / boken min, never boka min
+const APP_VERSION = '1.34.0';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

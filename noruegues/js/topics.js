@@ -55,7 +55,8 @@ function buildVerboCards() {
 
 /* --------------------------------------------------------- substantivos ---- */
 
-// artigo indefinido por gênero; o feminino também aceita `en` (bokmål)
+// artigo indefinido por gênero; o feminino também aceita `en` (bokmål), e o
+// definido -en (boken) — menos nos substantivos com `noEnDef` (jenten soa errado)
 const NO_ARTICLE = { m: 'en', f: 'ei', n: 'et' };
 
 function nounIndefinite(n) {
@@ -71,7 +72,7 @@ function nounDefinite(n) {
   const stem = /e$/.test(n.n) ? n.n.slice(0, -1) : n.n;
   const canon = n.def || (stem + { m: 'en', f: 'a', n: 'et' }[n.g]);
   const alts = (n.defAlts || []).slice();
-  if (n.g === 'f') alts.push(stem + 'en');
+  if (n.g === 'f' && !n.noEnDef) alts.push(stem + 'en');
   return { canon: canon, alts: alts };
 }
 
@@ -143,6 +144,14 @@ function buildNumeroCards() {
     c => (c.group === 'ordinais' ? 'ordinal' : 'número'),
     'Digite o número por extenso', null);
 }
+// artigos: a resposta é o sintagma inteiro (et nytt hus, det nye huset), e a
+// letra que o motor perdoaria como deslize é a própria matéria — det/den,
+// nytt/ny, huset/husene —, então as cartas são exatas como as de substantivo.
+// O `hint` do Modo Nutella são as palavras de dicionário, nunca o artigo.
+function buildArtigoCards() {
+  return buildListCards(window.DATA_NO_ARTIGOS, c => c.group,
+    'Digite com os artigos certos', c => c.hint).map(c => Object.assign(c, { exact: true }));
+}
 function buildPalavrinhaCards() {
   return buildListCards(window.DATA_NO_PALAVRINHAS, c => c.group,
     'Digite em norueguês', null);
@@ -157,6 +166,8 @@ const TOPICS = [
     groups: () => window.DATA_NO_NUMEROS.groups, build: buildNumeroCards },
   { id: 'substantivos', label: 'Substantivos', kind: 'quiz', tier: 2,
     groups: ['indefinido', 'definido'], build: buildSubstantivoCards },
+  { id: 'artigos', label: 'Artigos', kind: 'quiz', tier: 2,
+    groups: () => window.DATA_NO_ARTIGOS.groups, build: buildArtigoCards },
   { id: 'palavrinhas', label: 'Palavrinhas', kind: 'quiz', tier: 2,
     groups: () => window.DATA_NO_PALAVRINHAS.groups, build: buildPalavrinhaCards },
   { id: 'verbos', label: 'Verbos', kind: 'quiz', tier: 3,

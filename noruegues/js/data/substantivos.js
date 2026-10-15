@@ -5,8 +5,10 @@
 // substantivo vira duas cartas: "um carro" → en bil e "o carro" → bilen.
 //
 // `g`: 'm' (en), 'f' (ei) ou 'n' (et). Todo feminino também pode ir com `en`
-// no bokmål (en jente / jenten) — a carta aceita as duas grafias e a canônica
-// é a forma em -a, que é a que se OUVE em Oslo (jenta, boka, døra).
+// no bokmål (en jente), e a carta aceita. O definido canônico é a forma em -a,
+// a que se OUVE em Oslo (jenta, boka, døra); a forma em -en (boken, døren)
+// também é aceita — menos onde soa errado: `noEnDef` (jente: jenten não).
+// Com possessivo é um sistema OU o outro: boka mi / boken min, nunca misturado.
 // `def`: só quando a forma definida não é o padrão (noun + en / a / et).
 //
 // `ex` deve conter o substantivo cru (o check verifica) e `exDef` a forma
@@ -17,7 +19,7 @@ window.DATA_NO_SUBSTANTIVOS = {
   nouns: [
     /* -------------------------------------------------------- pessoas ---- */
 
-    { n: 'jente', g: 'f', pt: 'menina', ptDef: 'a menina', pron: 'iénte', pronDef: 'iénta',
+    { n: 'jente', g: 'f', noEnDef: true, pt: 'menina', ptDef: 'a menina', pron: 'iénte', pronDef: 'iénta',
       ex: 'Hun er ei snill jente.', exPt: 'Ela é uma menina legal.',
       exDef: 'Jenta heter Ida.', exDefPt: 'A menina se chama Ida.' },
 
@@ -54,6 +56,26 @@ window.DATA_NO_SUBSTANTIVOS = {
     { n: 'far', g: 'm', pt: 'pai', ptDef: 'o pai', pron: 'fár', pronDef: 'fáren',
       ex: 'Han er en stolt far.', exPt: 'Ele é um pai orgulhoso.',
       exDef: 'Faren min er norsk.', exDefPt: 'Meu pai é norueguês.' },
+
+    { n: 'søster', g: 'f', pt: 'irmã', ptDef: 'a irmã', pron: 'sêster', pronDef: 'sêstera',
+      ex: 'Jeg har ei søster.', exPt: 'Tenho uma irmã.',
+      exDef: 'Søstera mi bor i Bergen.', exDefPt: 'Minha irmã mora em Bergen.' },
+
+    { n: 'bror', g: 'm', pt: 'irmão', ptDef: 'o irmão', pron: 'brúr', pronDef: 'brúren',
+      ex: 'Jeg har en bror.', exPt: 'Tenho um irmão.',
+      exDef: 'Broren min heter Pedro.', exDefPt: 'Meu irmão se chama Pedro.' },
+
+    { n: 'lege', g: 'm', pt: 'médico', ptDef: 'o médico', pron: 'légue', pronDef: 'léguen',
+      ex: 'Jeg trenger en lege.', exPt: 'Preciso de um médico.',
+      exDef: 'Legen kommer snart.', exDefPt: 'O médico já vem.' },
+
+    { n: 'lærer', g: 'm', pt: 'professor', ptDef: 'o professor', pron: 'lérer', pronDef: 'lérern',
+      ex: 'Hun er en god lærer.', exPt: 'Ela é uma boa professora.',
+      exDef: 'Læreren snakker fort.', exDefPt: 'O professor fala rápido.' },
+
+    { n: 'hånd', g: 'f', pt: 'mão', ptDef: 'a mão', pron: 'rrón', pronDef: 'rróna',
+      ex: 'Jeg har bare ei hånd fri.', exPt: 'Só tenho uma mão livre.',
+      exDef: 'Hånda mi er kald.', exDefPt: 'Minha mão está fria.' },
 
     /* ----------------------------------------------------------- casa ---- */
 
@@ -101,6 +123,26 @@ window.DATA_NO_SUBSTANTIVOS = {
       ex: 'Jeg leser ei bok.', exPt: 'Estou lendo um livro.',
       exDef: 'Boka er god.', exDefPt: 'O livro é bom.' },
 
+    { n: 'leilighet', g: 'm', pt: 'apartamento', ptDef: 'o apartamento', pron: 'láilirret', pronDef: 'láilirreten',
+      ex: 'Vi leier en leilighet.', exPt: 'A gente aluga um apartamento.',
+      exDef: 'Leiligheten har to rom.', exDefPt: 'O apartamento tem dois quartos.' },
+
+    { n: 'bilde', g: 'n', pt: 'foto', ptDef: 'a foto', pron: 'bílde', pronDef: 'bílde',
+      ex: 'Jeg tok et bilde.', exPt: 'Tirei uma foto.',
+      exDef: 'Bildet er fint.', exDefPt: 'A foto ficou bonita.' },
+
+    { n: 'mobil', g: 'm', pt: 'celular', ptDef: 'o celular', pron: 'mubíl', pronDef: 'mubílen',
+      ex: 'Har du en mobil jeg kan låne?', exPt: 'Você tem um celular pra me emprestar?',
+      exDef: 'Mobilen er tom for strøm.', exDefPt: 'O celular está sem bateria.' },
+
+    { n: 'jakke', g: 'f', pt: 'casaco (jaqueta)', ptDef: 'o casaco (jaqueta)', pron: 'iáke', pronDef: 'iáka',
+      ex: 'Ta med ei jakke!', exPt: 'Leva um casaco!',
+      exDef: 'Jakka er varm.', exDefPt: 'O casaco é quente.' },
+
+    { n: 'ord', g: 'n', pt: 'palavra', ptDef: 'a palavra', pron: 'úr', pronDef: 'úre',
+      ex: 'Det er et vanskelig ord.', exPt: 'É uma palavra difícil.',
+      exDef: 'Hva betyr ordet?', exDefPt: 'O que significa a palavra?' },
+
     /* --------------------------------------------------- comer e beber ---- */
 
     { n: 'kaffe', g: 'm', pt: 'café', ptDef: 'o café', pron: 'káfe', pronDef: 'káfen',
@@ -122,6 +164,22 @@ window.DATA_NO_SUBSTANTIVOS = {
     { n: 'eple', g: 'n', def: 'eplet', pt: 'maçã', ptDef: 'a maçã', pron: 'éple', pronDef: 'éple',
       ex: 'Jeg spiser et eple.', exPt: 'Estou comendo uma maçã.',
       exDef: 'Eplet er rødt.', exDefPt: 'A maçã é vermelha.' },
+
+    { n: 'glass', g: 'n', pt: 'copo', ptDef: 'o copo', pron: 'glás', pronDef: 'gláse',
+      ex: 'Jeg tar et glass til.', exPt: 'Vou querer mais um copo.',
+      exDef: 'Glasset er tomt.', exDefPt: 'O copo está vazio.' },
+
+    { n: 'vin', g: 'm', pt: 'vinho', ptDef: 'o vinho', pron: 'vín', pronDef: 'vínen',
+      ex: 'Vi kjøpte en god vin.', exPt: 'A gente comprou um vinho bom.',
+      exDef: 'Vinen er fra Chile.', exDefPt: 'O vinho é do Chile.' },
+
+    { n: 'fisk', g: 'm', pt: 'peixe', ptDef: 'o peixe', pron: 'físk', pronDef: 'físken',
+      ex: 'Han fikk en stor fisk.', exPt: 'Ele pescou um peixe grande.',
+      exDef: 'Fisken er fersk.', exDefPt: 'O peixe está fresco.' },
+
+    { n: 'egg', g: 'n', pt: 'ovo', ptDef: 'o ovo', pron: 'ég', pronDef: 'égue',
+      ex: 'Jeg spiser et egg til frokost.', exPt: 'Como um ovo no café da manhã.',
+      exDef: 'Egget er kokt.', exDefPt: 'O ovo está cozido.' },
 
     /* --------------------------------------------------------- bichos ---- */
 
@@ -151,6 +209,10 @@ window.DATA_NO_SUBSTANTIVOS = {
     { n: 'år', g: 'n', pt: 'ano', ptDef: 'o ano', pron: 'ôr', pronDef: 'ôre',
       ex: 'Jeg bodde der et år.', exPt: 'Morei lá um ano.',
       exDef: 'Året går fort.', exDefPt: 'O ano passa rápido.' },
+
+    { n: 'måned', g: 'm', pt: 'mês', ptDef: 'o mês', pron: 'môned', pronDef: 'mônen',
+      ex: 'Jeg er her en måned.', exPt: 'Fico aqui um mês.',
+      exDef: 'Måneden er nesten over.', exDefPt: 'O mês está quase acabando.' },
 
     /* ---------------------------------------------------- lá fora ---- */
 
@@ -204,6 +266,30 @@ window.DATA_NO_SUBSTANTIVOS = {
 
     { n: 'språk', g: 'n', pt: 'língua (idioma)', ptDef: 'a língua (idioma)', pron: 'sprôk', pronDef: 'sprôke',
       ex: 'Norsk er et vanskelig språk.', exPt: 'Norueguês é uma língua difícil.',
-      exDef: 'Språket er vakkert.', exDefPt: 'A língua é bonita.' }
+      exDef: 'Språket er vakkert.', exDefPt: 'A língua é bonita.' },
+
+    { n: 'bil', g: 'm', pt: 'carro', ptDef: 'o carro', pron: 'bíl', pronDef: 'bílen',
+      ex: 'Vi har en ny bil.', exPt: 'A gente tem um carro novo.',
+      exDef: 'Bilen står ute.', exDefPt: 'O carro está lá fora.' },
+
+    { n: 'sykkel', g: 'm', pt: 'bicicleta', ptDef: 'a bicicleta', pron: 'sükel', pronDef: 'sükelen',
+      ex: 'Jeg kjøpte en sykkel.', exPt: 'Comprei uma bicicleta.',
+      exDef: 'Sykkelen er ny.', exDefPt: 'A bicicleta é nova.' },
+
+    { n: 'billett', g: 'm', pt: 'passagem', ptDef: 'a passagem', pron: 'bilét', pronDef: 'biléten',
+      ex: 'Jeg vil kjøpe en billett.', exPt: 'Quero comprar uma passagem.',
+      exDef: 'Billetten koster hundre kroner.', exDefPt: 'A passagem custa cem coroas.' },
+
+    { n: 'flyplass', g: 'm', pt: 'aeroporto', ptDef: 'o aeroporto', pron: 'flüplás', pronDef: 'flüplássen',
+      ex: 'Byen har en liten flyplass.', exPt: 'A cidade tem um aeroporto pequeno.',
+      exDef: 'Flyplassen er langt unna.', exDefPt: 'O aeroporto fica longe.' },
+
+    { n: 'gate', g: 'f', pt: 'rua', ptDef: 'a rua', pron: 'gáte', pronDef: 'gáta',
+      ex: 'Det er ei fin gate.', exPt: 'É uma rua bonita.',
+      exDef: 'Gata er stengt.', exDefPt: 'A rua está fechada.' },
+
+    { n: 'kirke', g: 'f', pt: 'igreja', ptDef: 'a igreja', pron: 'chírke', pronDef: 'chírka',
+      ex: 'Det er ei gammel kirke der.', exPt: 'Tem uma igreja antiga ali.',
+      exDef: 'Kirka er stengt i dag.', exDefPt: 'A igreja está fechada hoje.' }
   ]
 };

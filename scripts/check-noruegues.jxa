@@ -15,7 +15,8 @@ function read(path) {
 const ROOT = ObjC.unwrap($.NSFileManager.defaultManager.currentDirectoryPath);
 const FILES = [
   'js/lib/text.js',
-  'noruegues/js/data/verbos.js', 'noruegues/js/data/substantivos.js', 'noruegues/js/data/frases.js',
+  'noruegues/js/data/verbos.js', 'noruegues/js/data/substantivos.js', 'noruegues/js/data/artigos.js',
+  'noruegues/js/data/frases.js',
   'noruegues/js/data/numeros.js', 'noruegues/js/data/palavrinhas.js',
   'noruegues/js/topics.js',
   'noruegues/js/checks.js'
