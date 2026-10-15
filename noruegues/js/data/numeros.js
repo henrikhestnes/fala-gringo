@@ -62,7 +62,7 @@ window.DATA_NO_NUMEROS = {
       tip: 'Dezena + unidade, tudo junto: tjueto, tjuetre, tjuefire…' },
     { no: 'tretti', alts: ['tredve'], pt: 'trinta (30)', group: 'dezenas e mais', pron: 'tréti',
       example: 'Hun er tretti år.', examplePt: 'Ela tem trinta anos.' },
-    { no: 'førti', pt: 'quarenta (40)', group: 'dezenas e mais', pron: 'fêrti',
+    { no: 'førti', pt: 'quarenta (40)', group: 'dezenas e mais', pron: 'förti',
       example: 'Det koster førti kroner.', examplePt: 'Custa quarenta coroas.' },
     { no: 'femti', pt: 'cinquenta (50)', group: 'dezenas e mais', pron: 'fémti',
       example: 'Femti prosent rabatt!', examplePt: 'Cinquenta por cento de desconto!' },
@@ -80,7 +80,7 @@ window.DATA_NO_NUMEROS = {
       example: 'Tusen takk!', examplePt: 'Muito obrigado! (literalmente: mil obrigados)' },
 
     /* ------------------------------------------------------- ordinais ---- */
-    { no: 'første', pt: 'primeiro (1º)', group: 'ordinais', pron: 'fêrste',
+    { no: 'første', pt: 'primeiro (1º)', group: 'ordinais', pron: 'förste',
       example: 'Det er første gang.', examplePt: 'É a primeira vez.' },
     { no: 'andre', alts: ['annen'], pt: 'segundo (2º)', group: 'ordinais', pron: 'ándre',
       example: 'Vi bor i andre etasje.', examplePt: 'A gente mora no segundo andar.',

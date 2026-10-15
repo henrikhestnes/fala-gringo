@@ -12,8 +12,9 @@
 // `def`: só quando a forma definida não é o padrão (noun + en / a / et).
 //
 // `ex` deve conter o substantivo cru (o check verifica) e `exDef` a forma
-// definida exata. Pronúncia como em verbos.js (rr = h aspirado, ê em ø,
-// ü em y, o longo = u, å = ô). O -et definido é mudo: huset = rrûsse.
+// definida exata. Pronúncia como em verbos.js (rr = h aspirado, ö em ø,
+// ü em y, o longo = u, å = ô, ê = e fechado e longo). O -et definido é mudo:
+// huset = rrûsse.
 
 window.DATA_NO_SUBSTANTIVOS = {
   nouns: [
@@ -57,7 +58,7 @@ window.DATA_NO_SUBSTANTIVOS = {
       ex: 'Han er en stolt far.', exPt: 'Ele é um pai orgulhoso.',
       exDef: 'Faren min er norsk.', exDefPt: 'Meu pai é norueguês.' },
 
-    { n: 'søster', g: 'f', pt: 'irmã', ptDef: 'a irmã', pron: 'sêster', pronDef: 'sêstera',
+    { n: 'søster', g: 'f', pt: 'irmã', ptDef: 'a irmã', pron: 'söster', pronDef: 'söstera',
       ex: 'Jeg har ei søster.', exPt: 'Tenho uma irmã.',
       exDef: 'Søstera mi bor i Bergen.', exDefPt: 'Minha irmã mora em Bergen.' },
 
@@ -87,11 +88,11 @@ window.DATA_NO_SUBSTANTIVOS = {
       ex: 'Jeg vil ha et rom.', exPt: 'Quero um quarto.',
       exDef: 'Rommet er lyst.', exDefPt: 'O quarto é claro.' },
 
-    { n: 'kjøkken', g: 'n', pt: 'cozinha', ptDef: 'a cozinha', pron: 'chêken', pronDef: 'chêkene',
+    { n: 'kjøkken', g: 'n', pt: 'cozinha', ptDef: 'a cozinha', pron: 'chöken', pronDef: 'chökene',
       ex: 'Vi har et lite kjøkken.', exPt: 'A gente tem uma cozinha pequena.',
       exDef: 'Kjøkkenet er rent.', exDefPt: 'A cozinha está limpa.' },
 
-    { n: 'dør', g: 'f', pt: 'porta', ptDef: 'a porta', pron: 'dêr', pronDef: 'dêra',
+    { n: 'dør', g: 'f', pt: 'porta', ptDef: 'a porta', pron: 'dör', pronDef: 'döra',
       ex: 'Det er ei dør der.', exPt: 'Tem uma porta ali.',
       exDef: 'Døra er åpen.', exDefPt: 'A porta está aberta.' },
 
@@ -111,7 +112,7 @@ window.DATA_NO_SUBSTANTIVOS = {
       ex: 'Det er ei seng der.', exPt: 'Tem uma cama ali.',
       exDef: 'Senga er myk.', exDefPt: 'A cama é macia.' },
 
-    { n: 'nøkkel', g: 'm', def: 'nøkkelen', pt: 'chave', ptDef: 'a chave', pron: 'nêkel', pronDef: 'nêkelen',
+    { n: 'nøkkel', g: 'm', def: 'nøkkelen', pt: 'chave', ptDef: 'a chave', pron: 'nökel', pronDef: 'nökelen',
       ex: 'Jeg har en nøkkel.', exPt: 'Tenho uma chave.',
       exDef: 'Nøkkelen ligger på bordet.', exDefPt: 'A chave está na mesa.' },
 
@@ -153,7 +154,7 @@ window.DATA_NO_SUBSTANTIVOS = {
       ex: 'Kan jeg få et glass vann?', exPt: 'Me vê um copo d’água?',
       exDef: 'Vannet er kaldt.', exDefPt: 'A água está gelada.' },
 
-    { n: 'brød', g: 'n', pt: 'pão', ptDef: 'o pão', pron: 'brê', pronDef: 'brêe',
+    { n: 'brød', g: 'n', pt: 'pão', ptDef: 'o pão', pron: 'brö', pronDef: 'bröe',
       ex: 'Vi trenger et brød.', exPt: 'A gente precisa de um pão.',
       exDef: 'Brødet er ferskt.', exDefPt: 'O pão está fresco.' },
 

@@ -220,6 +220,19 @@ function runChecks() {
     return pairs + ' ei / mi / -a answers with their en / min / -en twin; no jenten, no boka min';
   });
 
+  check('pronunciation: ö wherever the answer has ø, and nowhere else (ê is the long e)', () => {
+    // A legenda do rodapé: ö = ø, ê = e fechado e longo (heter = rrêter). Até a
+    // 1.34.1 o ø também era ê, e "hele" lia-se como "høle".
+    const bad = [];
+    cards.forEach(c => {
+      const hasO = /ø/i.test(c.answer), hasOe = /ö/i.test(c.pron);
+      if (hasO && !hasOe) bad.push(c.id + ': "' + c.answer + '" → "' + c.pron + '" lacks ö');
+      if (!hasO && hasOe) bad.push(c.id + ': "' + c.answer + '" → "' + c.pron + '" has ö without ø');
+    });
+    if (bad.length) fail(bad.join('\n'));
+    return cards.filter(c => /ø/i.test(c.answer)).length + ' cards with ø';
+  });
+
   check('no alternative answer normalises to its own canonical', () => {
     // én for en, tjueén for tjueen: normalize() drops the accent, so such an alt is dead data
     const bad = [];

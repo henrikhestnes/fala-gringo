@@ -14,8 +14,10 @@
 // sto/stod) — a canônica é a que sai no texto padrão, a outra é aceita.
 //
 // Pronúncia aportuguesada, pensada para ouvidos brasileiros:
-//   rr = h aspirado (como "had" = rréd no /ingles/)  ·  ê em ø = e com boca de o
+//   rr = h aspirado (como "had" = rréd no /ingles/)  ·  ö em ø = e com boca de o
 //   ü em y = i com boca de u  ·  å = ô (long) / ó (curto)  ·  o longo = u
+//   ê = e fechado e longo (heter = rrêter, det = dê) — nunca o ø, que é ö
+//   (o check confere: ö em toda palavra com ø, e só nelas)
 //   j = i (semivogal) · kj/sj/skj = ch · d final geralmente muda (god = gu)
 //   o acento marca a sílaba forte.
 
@@ -36,7 +38,7 @@ window.DATA_NO_VERBOS = {
       pastEx: 'Vi hadde det gøy.', pastExPt: 'A gente se divertiu.' },
 
     { inf: 'gjøre', pt: 'fazer',
-      pres: 'gjør', presPron: 'iêr',
+      pres: 'gjør', presPron: 'iör',
       presEx: 'Hva gjør du?', presExPt: 'O que você está fazendo?',
       past: 'gjorde', pastPron: 'iúrde',
       pastEx: 'Jeg gjorde det i går.', pastExPt: 'Eu fiz isso ontem.' },
@@ -178,15 +180,15 @@ window.DATA_NO_VERBOS = {
       pastEx: 'Jeg sov dårlig.', pastExPt: 'Dormi mal.' },
 
     { inf: 'kjøpe', pt: 'comprar',
-      pres: 'kjøper', presPron: 'chêper',
+      pres: 'kjøper', presPron: 'chöper',
       presEx: 'Jeg kjøper brød.', presExPt: 'Vou comprar pão.',
-      past: 'kjøpte', pastPron: 'chêpte',
+      past: 'kjøpte', pastPron: 'chöpte',
       pastEx: 'Vi kjøpte et hus.', pastExPt: 'A gente comprou uma casa.' },
 
     { inf: 'kjøre', pt: 'dirigir',
-      pres: 'kjører', presPron: 'chêrer',
+      pres: 'kjører', presPron: 'chörer',
       presEx: 'Jeg kjører til jobben.', presExPt: 'Vou de carro pro trabalho.',
-      past: 'kjørte', pastPron: 'chêrte',
+      past: 'kjørte', pastPron: 'chörte',
       pastEx: 'Han kjørte fort.', pastExPt: 'Ele dirigiu rápido.' },
 
     { inf: 'betale', pt: 'pagar',
@@ -270,9 +272,9 @@ window.DATA_NO_VERBOS = {
       pastEx: 'Hun elsket Rio.', pastExPt: 'Ela amava o Rio.' },
 
     { inf: 'høre', pt: 'ouvir',
-      pres: 'hører', presPron: 'rrêrer',
+      pres: 'hører', presPron: 'rrörer',
       presEx: 'Hører du meg?', presExPt: 'Está me ouvindo?',
-      past: 'hørte', pastPron: 'rrêrte',
+      past: 'hørte', pastPron: 'rrörte',
       pastEx: 'Jeg hørte ingenting.', pastExPt: 'Não ouvi nada.' },
 
     { inf: 'sitte', pt: 'estar sentado',

@@ -85,7 +85,7 @@ window.DATA_NO_FRASES = {
     { no: 'Lykke til', pt: 'Boa sorte', group: 'educação', pron: 'lüke tíl',
       example: '— Lykke til på eksamen!', examplePt: '— Boa sorte na prova!' },
 
-    { no: 'Et øyeblikk', pt: 'Um momento', group: 'educação', pron: 'et êie-blík',
+    { no: 'Et øyeblikk', pt: 'Um momento', group: 'educação', pron: 'et öie-blík',
       example: '— Et øyeblikk, jeg kommer straks.', examplePt: '— Um momento, já volto.' },
 
     /* ------------------------------------------------- se apresentar ---- */
@@ -147,7 +147,7 @@ window.DATA_NO_FRASES = {
     { no: 'Jeg vil ha en kaffe', pt: 'Eu quero um café', group: 'no dia a dia', pron: 'iái víl rrá en káfe',
       example: '— Jeg vil ha en kaffe, takk.', examplePt: '— Eu quero um café, por favor.' },
 
-    { no: 'En øl, takk', pt: 'Uma cerveja, por favor', group: 'no dia a dia', pron: 'en êl, ták',
+    { no: 'En øl, takk', pt: 'Uma cerveja, por favor', group: 'no dia a dia', pron: 'en öl, ták',
       example: '— En øl, takk! — Stor eller liten?', examplePt: '— Uma cerveja, por favor! — Grande ou pequena?' },
 
     { no: 'Regningen, takk', alts: ['kan jeg få regningen'], pt: 'A conta, por favor', group: 'no dia a dia', pron: 'ráininguen, ták',
@@ -160,7 +160,7 @@ window.DATA_NO_FRASES = {
     { no: 'Jeg er sulten', pt: 'Estou com fome', group: 'no dia a dia', pron: 'iái ér sûlten',
       example: '— Jeg er sulten. Skal vi spise?', examplePt: '— Estou com fome. Vamos comer?' },
 
-    { no: 'Jeg er tørst', pt: 'Estou com sede', group: 'no dia a dia', pron: 'iái ér têrst',
+    { no: 'Jeg er tørst', pt: 'Estou com sede', group: 'no dia a dia', pron: 'iái ér törst',
       example: '— Jeg er tørst. Har du vann?', examplePt: '— Estou com sede. Tem água?' },
 
     { no: 'Jeg er sliten', alts: ['jeg er trøtt'], pt: 'Estou cansado', group: 'no dia a dia', pron: 'iái ér slíten',

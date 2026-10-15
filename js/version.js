@@ -208,7 +208,11 @@
 //         to 65 nouns (bil, sykkel, mobil, søster, bror, lege, lærer, bilde, ord, glass, gate, kirke…). Feminines take
 //         en for ei and -en for -a except where -en sounds wrong (noEnDef: jenten is no longer accepted); a possessive
 //         after the noun follows its system — boka mi / boken min, never boka min
-const APP_VERSION = '1.34.0';
+// 1.34.1: Artigos review — the neuter -t tip now states the real rule (consonant + t takes no second t: kokt, lett;
+//         vowel + t doubles: hvit → hvitt); every other card, alternative, example and tip checked against the grammar.
+//         /noruegues/ pronunciation: ø is now ö (the pair of ü for y) — ê had stood for both ø and the closed long e,
+//         so "hele" read as "høle" by the legend; ê is the long e only, the footer says so, and a check keeps ö ⇔ ø
+const APP_VERSION = '1.34.1';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name
