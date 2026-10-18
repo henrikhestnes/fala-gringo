@@ -2,8 +2,9 @@
 //
 // Core loop kept from the source flashcards repo (credited in the README): a card answered
 // wrongly is NOT marked known — it stays in the deck and comes back around until
-// you get it right. Foco offers the full eligible queue; switching it off drills
-// the whole topic minus any group chips you switch off.
+// you get it right. Foco offers every eligible review and the new cards today's
+// goal has room for; switching it off drills the whole topic minus any group
+// chips you switch off.
 
 /* Every user-facing string in the engine, so a page teaching another language
    can reword the chrome (window.APP_STRINGS, set before this file loads — the
@@ -14,7 +15,8 @@ const QUIZ_STRINGS = Object.assign({
   focoTitle: 'The cards needing work, reviews first: due (after 7, 14, 30, 60, then 120 days ' +
              'of confirmed answers), missed (until answered right again), ' +
              'forms you likely know from the verb and the pattern (one quick confirmation), ' +
-             'and up to {cap} new cards a day, including confirmations. Switch off to drill the whole deck.',
+             'and the new cards today\'s goal still has room for, confirmations included (at most {cap} ' +
+             'a day on this tab; "Keep practicing" adds more). Switch off to drill the whole deck.',
   focoChip: '🎯 Foco',
   focoDue: '{n} due',
   focoImplied: '{n} implied',
@@ -39,7 +41,7 @@ const QUIZ_STRINGS = Object.assign({
   emptyFocoTitle: 'Tudo em dia! 🎯',
   emptyFocoBody: 'Every card here is mastered and fresh. Reviews come due on an expanding ' +
                  'schedule (7, 14, 30… days) — or switch the Foco chip off to drill the whole deck now.',
-  emptyFocoWaiting: 'Nothing due and today\'s new cards are done — {n} more wait for tomorrow. ' +
+  emptyFocoWaiting: 'Nothing due here, and today\'s goal has no room for more new cards — {n} wait. ' +
                     'Switch the Foco chip off to drill the whole deck now.',
   emptyTitle: 'No cards',
   emptyBody: 'Every category is switched off — turn one back on above.',
@@ -190,28 +192,85 @@ const Quiz = (function () {
     return parts.length > 1 ? parts[parts.length - 1] : null;
   }
 
+  /* What the store says about a tab today, computed once per store revision
+     and day for every drill tab (one snapshot for the lot — it is a deep copy):
+       blocked   words whose unseen forms wait (a due, shaky or answered form)
+       reserved  word -> the one form introduced today that a rebuild resumes
+       resumed   the intake already handed out today and still unanswered
+       owed      due + shaky cards (the reviews today's goal counts)
+       done / newDone   cards and new cards got right today (Store)
+     newIntake reads the fences from here, goalRoom the sums. */
+  let tabCache = { key: '', per: new Map() };
+  function tabFacts(topicId) {
+    const key = Store.revision() + '|' + Store.today();
+    if (tabCache.key !== key) {
+      const today = Store.today(), strength = Store.snapshot().strength;
+      tabCache = { key: key, per: new Map() };
+      TOPICS.filter(t => t.kind === 'quiz').forEach(t => {
+        const records = strength[t.id] || {};
+        const blocked = new Set(), reserved = new Map();
+        let owed = 0;
+        const cards = topicCards(t);
+        cards.forEach(c => {
+          const key = lexeme(c), record = records[c.id] || {};
+          const state = Store.cardState(t.id, c.id);
+          if (state === 'due' || state === 'shaky') owed++;
+          const answeredToday = (record.a !== undefined ? record.a : record.t) === today;
+          if (state === 'due' || state === 'shaky' || answeredToday ||
+              (record.i === today && state !== 'new')) blocked.add(key);
+          // Older versions admitted whole verbs. Keep only one unfinished form,
+          // chosen in data order, even if several siblings already have a stamp.
+          if (record.i === today && !reserved.has(key)) reserved.set(key, c.id);
+        });
+        const resumed = cards.filter(c => {
+          const key = lexeme(c);
+          return Store.introducedOn(t.id, c.id) === today && Store.cardState(t.id, c.id) === 'new' &&
+            !blocked.has(key) && reserved.get(key) === c.id;
+        }).length;
+        tabCache.per.set(t.id, { blocked: blocked, reserved: reserved, resumed: resumed, owed: owed,
+                                 done: Store.doneToday(t.id), newDone: Store.newDoneToday(t.id) });
+      });
+    }
+    return tabCache.per.get(topicId);
+  }
+
+  /* The new cards today's goal still has room for — todayGoal's own
+     arithmetic, over the learner's active tabs and the one asking: goalNew
+     less the new cards got right today, within goalMax less what was got
+     right and the reviews owed (reviews first, new cards in the room left).
+     `fresh` is what is left for cards not yet handed out: the intake already
+     introduced today and unanswered on the learner's tabs has first claim, so
+     a deck never adds fresh words while the goal's new cards sit unfinished
+     on a tab being drilled. A tab merely looked at is not the learner's
+     (Store.isActiveTopic needs an answer): its dealt cards claim nothing, so
+     browsing the tabs never commits the day to the first one opened — they
+     simply resume if the learner comes back. The extra batch ("Keep
+     practicing") is appetite and ignores all of this. */
+  function goalRoom(topicId) {
+    let done = 0, newDone = 0, owed = 0, pending = 0;
+    TOPICS.filter(t => t.kind === 'quiz' && (t.id === topicId || Store.isActiveTopic(t.id))).forEach(t => {
+      const f = tabFacts(t.id);
+      done += f.done; newDone += f.newDone; owed += f.owed; pending += f.resumed;
+    });
+    const allowance = Math.max(0, Math.min(Store.goalNew() - newDone, Store.goalMax() - done - owed));
+    return { allowance: allowance, fresh: Math.max(0, allowance - pending) };
+  }
+
   /* One new form per word per topic per day: seeing an answer (including its
      conjugation table) must not prime a sibling's first assessment. Derive the
      exclusions from saved progress so reloads, filters and extra batches obey
-     the same rule. Reviews still run in full; their unseen siblings wait. */
+     the same rule. Reviews still run in full; their unseen siblings wait.
+     The regular deck introduces fresh cards only as far as today's goal has
+     room (goalRoom) and the tab's own daily cap; an extra batch takes the cap. */
   function newIntake(topicId, cards, extra) {
     const today = Store.today();
-    const records = Store.snapshot().strength[topicId] || {};
-    const blocked = new Set(), reserved = new Map();
-    topicCards(topicById(topicId)).forEach(c => {
-      const key = lexeme(c), record = records[c.id] || {};
-      const state = Store.cardState(topicId, c.id);
-      const answeredToday = (record.a !== undefined ? record.a : record.t) === today;
-      if (state === 'due' || state === 'shaky' || answeredToday ||
-          (record.i === today && state !== 'new')) blocked.add(key);
-      // Older versions admitted whole verbs. Keep only one unfinished form,
-      // chosen in data order, even if several siblings already have a stamp.
-      if (record.i === today && !reserved.has(key)) reserved.set(key, c.id);
-    });
+    const { blocked, reserved } = tabFacts(topicId);
     const unseen = cards.filter(c => Store.cardState(topicId, c.id) === 'new');
     const likely = (window.Infer && Infer.likelyKnown) ? Infer.likelyKnown(topicId, cards, unseen) : new Set();
     let room = extra ? Store.newPerDay() : Store.newPerDay() - Store.introducedToday(topicId);
+    let fresh = extra ? Infinity : goalRoom(topicId).fresh;
     const intake = [];
+    let resumedN = 0;
     const formCounts = new Map();
     const countForm = c => {
       const form = intakeForm(c);
@@ -249,12 +308,12 @@ const Quiz = (function () {
         (formCounts.get(intakeForm(a)) || 0) - (formCounts.get(intakeForm(b)) || 0));
       const c = group[0], introduced = Store.introducedOn(topicId, c.id);
       const resume = !extra && introduced === today;
-      if (!resume && room <= 0) return;
+      if (!resume && (room <= 0 || fresh <= 0)) return;
       intake.push(c);
       if (introduced !== today) countForm(c);
-      if (!resume) room--;
+      if (resume) resumedN++; else { room--; fresh--; }
     });
-    return { intake: intake, likely: likely, waiting: unseen.length - intake.length };
+    return { intake: intake, likely: likely, waiting: unseen.length - intake.length, resumed: resumedN };
   }
 
   /* The Foco deck (the default) — the cards needing work, in tiers:
@@ -262,7 +321,8 @@ const Quiz = (function () {
        shaky   only forms actually missed and not answered right since
        verify  likely-known unseen forms, sharing the daily new-card allowance
        new     unseen cards, at most one form per word per day, in data order
-     All eligible reviews are included; the daily goal does not limit the deck.
+     All eligible reviews are included; new cards only as far as today's goal
+     has room (goalRoom) — "Keep practicing" on the done screen adds a batch.
      A regular verb form is due only while its word or its pattern has no
      fresher confirmation anywhere (the derived schedule, js/infer.js), so an
      answer in this run can cover other due cards: syncDeck() drops them and
@@ -282,7 +342,7 @@ const Quiz = (function () {
       else if (st === 'due') due.push(c);
     });
 
-    const { intake, likely, waiting } = newIntake(topicId, cards, false);
+    const { intake, likely, waiting, resumed } = newIntake(topicId, cards, false);
 
     // leeches first, then the answers that confirm the most waiting words and
     // patterns (js/infer.js coverage), then most overdue, then the worst
@@ -296,7 +356,7 @@ const Quiz = (function () {
       (Store.overdue(topicId, b.id) - Store.overdue(topicId, a.id)) || harder(a, b));
     return { due: dueOrdered, shaky: shuffle(shaky).sort(harder),
              verify: shuffle(intake.filter(c => likely.has(c.id))),
-             intake: shuffle(intake.filter(c => !likely.has(c.id))), waiting: waiting };
+             intake: shuffle(intake.filter(c => !likely.has(c.id))), waiting: waiting, resumed: resumed };
   }
 
   function focusDeck(cards) {
@@ -342,11 +402,13 @@ const Quiz = (function () {
      cards a day: the REVIEWS Foco owes first (due + missed), then
      up to Store.goalNew() NEW cards in total (verify, intake) if room
      is left. Both allowances are spent by what was already got right today,
-     and handed to the tabs in registry order (beginner tabs first). Reviews
-     beyond today's ceiling are `waiting`: shown, not owed — a backlog is paid
-     off at the learner's pace, and Foco keeps offering all of it. Computed
-     from the store alone, so it follows every answer and is the same whichever
-     tab is open. */
+     and handed to the tabs in registry order (beginner tabs first) — except
+     that new cards already handed out today and unanswered claim their share
+     first, wherever they are, as the decks do (goalRoom). Reviews beyond
+     today's ceiling are `waiting`: shown, not owed — a backlog is paid off at
+     the learner's pace, and Foco keeps offering all of it. Computed from the
+     store alone, so it follows every answer and is the same whichever tab is
+     open. */
   function todayGoal() {
     const active = TOPICS.filter(t => t.kind === 'quiz' && Store.isActiveTopic(t.id));
     let done = 0, newDone = 0;
@@ -363,11 +425,16 @@ const Quiz = (function () {
       per.push({ topic: topic, reviews: take, fresh: 0, left: take, done: Store.doneToday(topic.id) });
     });
     allowance = Math.min(allowance, room);
-    plans.forEach(({ plan }, i) => {                          // then new cards, in the room left
-      const pool = plan.verify.length + plan.intake.length;
-      const take = Math.min(pool, allowance);
+    plans.forEach(({ plan }, i) => {                          // then new cards: the intake out already…
+      const take = Math.min(plan.resumed, allowance);
       allowance -= take; fresh += take;
       per[i].fresh = take; per[i].left += take;
+    });
+    plans.forEach(({ plan }, i) => {                          // …then fresh ones, in the room left
+      const pool = plan.verify.length + plan.intake.length - plan.resumed;
+      const take = Math.min(pool, allowance);
+      allowance -= take; fresh += take;
+      per[i].fresh += take; per[i].left += take;
     });
     per.sort((a, b) => b.left - a.left);
     return { active: active.length, left: reviews + fresh, reviews: reviews, fresh: fresh,

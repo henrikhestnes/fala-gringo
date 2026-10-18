@@ -81,7 +81,8 @@ window.APP_STRINGS = {
   nextLabel: "Próximo cartão",
   focoTitle: 'As cartas que precisam de atenção, revisões primeiro: vencidas (após 7, 14, 30, 60 ' +
              'e depois 120 dias de acertos confirmados), erradas (até acertar de novo) ' +
-             'e até {cap} cartas novas por dia, incluindo confirmações. Desligue para treinar o baralho inteiro.',
+             'e as cartas novas que ainda cabem na meta de hoje, incluindo confirmações (no máximo {cap} ' +
+             'por dia nesta aba; "Continuar praticando" traz mais). Desligue para treinar o baralho inteiro.',
   focoChip: '🎯 Foco',
   focoDue: '{n} p/ revisar',
   focoImplied: '{n} implícitas',
@@ -101,7 +102,7 @@ window.APP_STRINGS = {
   emptyFocoBody: 'Todas as cartas daqui estão dominadas e frescas. As revisões voltam num ritmo ' +
                  'crescente (7, 14, 30… dias) — ou desligue o Foco para treinar tudo agora.',
   moreNew: 'Continuar praticando · {n} cartões novos →',
-  emptyFocoWaiting: 'Nada vencido e as novas de hoje já foram — {n} esperam por amanhã. ' +
+  emptyFocoWaiting: 'Nada vencido aqui, e a meta de hoje não tem mais espaço pra cartas novas — {n} esperam. ' +
                     'Desligue o Foco para treinar tudo agora.',
   emptyTitle: 'Sem cartas',
   emptyBody: 'Todas as categorias estão desligadas — religue uma acima.',
@@ -171,10 +172,10 @@ window.APP_STRINGS = {
   streakNone: 'sem sequência ainda — hoje começa uma',
   // configurações e backup (⚙, js/app.js)
   settingsTitle: 'Configurações e backup',
-  settingsHelp: 'A meta diária soma suas revisões e cartas novas. O Foco oferece todas as revisões; você pode parar quando bater a meta. Confirmações contam no limite de cartas novas. Verbos entram com a conjugação inteira.',
+  settingsHelp: 'A meta diária é as revisões pendentes mais as cartas novas. O Foco oferece todas as revisões, e cartas novas só até onde a meta tem espaço — "Continuar praticando" adiciona uma leva além dela. Confirmações contam como cartas novas.',
   settingGoalMax: 'Meta diária total',
   settingGoalNew: 'Cartas novas na meta',
-  settingNewPerDay: 'Cartas novas por aba',
+  settingNewPerDay: 'Cartas novas por aba, por leva',
   settingsSave: 'Salvar',
   settingsSaved: 'Configurações salvas',
   settingsInvalid: 'Use números inteiros: total de 1 a 100, novas de 0 até o total e novas por aba de 1 a 100.',

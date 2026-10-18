@@ -31,26 +31,31 @@ const FOCUS_STREAK = 1;
    for good; a miss makes it shaky again and restarts the ladder. */
 const REVIEW_INTERVALS = [7, 14, 30, 60, 120];
 
-/* Unseen cards Foco introduces per topic per day — the deck would otherwise be
-   the whole topic (a tense tab is ~500 forms) and the first pass would never
-   end. Verb topics round up to whole conjugations. The `newPerDay` pref
-   overrides it on a device. */
+/* The most unseen cards Foco introduces per topic per day, and the size of a
+   "Keep practicing" batch. Since 1.35 the regular deck stops earlier, at the
+   new cards today's goal still has room for (GOAL_NEW within GOAL_MAX —
+   goalRoom in quiz.js), so this is the ceiling, not the usual count; without
+   it the deck would be the whole topic (a tense tab is ~500 forms). The
+   `newPerDay` pref overrides it on a device. */
 const NEW_PER_DAY = 20;
 
 /* New cards in TODAY'S GOAL (the ring in the top bar), across all of the
-   learner's tabs together. The per-tab intake (NEW_PER_DAY) is how much Foco
-   will SHOW when a tab is opened; the goal must not sum that over every tab —
-   twelve drilled tabs made a 290-card "day". The goal is the reviews owed plus
-   this many new cards, wherever they come from; the rest is appetite. The
-   `goalNew` pref overrides it on a device. */
+   learner's tabs together: the goal is the reviews owed plus this many new
+   cards, wherever they come from, and since 1.35 the decks follow it — a tab
+   introduces new cards only as far as this allowance (within GOAL_MAX) has
+   room, so the deck and the ring agree. The per-tab NEW_PER_DAY is only a
+   ceiling, and the goal must never sum it over every tab (twelve drilled tabs
+   once made a 290-card "day"). "Keep practicing" past the goal is appetite.
+   The `goalNew` pref overrides it on a device. */
 const GOAL_NEW = 10;
 
 /* The most cards TODAY'S GOAL asks for in total. Reviews owed come first (a
    backlog of 200 missed forms is weeks of lapses — a daily goal that only
    closes when the whole debt is paid is the opposite of a habit), then the new
    cards up to GOAL_NEW if there is room. Once this many are right today the
-   ring closes; whatever still waits is shown, not owed. Foco itself keeps
-   offering everything. The `goalMax` pref overrides it on a device. */
+   ring closes; whatever still waits is shown, not owed. Foco keeps offering
+   every review; its new cards stop at the room this leaves. The `goalMax` pref
+   overrides it on a device. */
 const GOAL_MAX = 30;
 
 /* A tab counts as one of the learner's own — part of today's goal in the top

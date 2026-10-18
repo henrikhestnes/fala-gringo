@@ -102,13 +102,15 @@ step('typed slips are tolerated in English too, but not into another answer', fu
 });
 
 step('the phrasal tab drills with theme chips and a tip reveal', function () {
+  // 1.35: the deck stops at the goal's new-card room, which the verbs tab answered above had spent — make it the only tab that counts
+  var snap = Store.snapshot(); snap.drilled = {}; seedState(snap);
   goTo('#phrasal');
   var total = parseInt(registry.statTotal.textContent, 10);
   var all = topicCards(topicById('phrasal')).length;
-  // Foco caps a fresh topic at the daily intake; the rest wait behind the chip
-  var cap = Math.min(all, Store.newPerDay());
-  if (total !== cap) throw new Error('deck has ' + total + ' of ' + all + ' phrasal cards, expected the ' + cap + ' daily intake');
-  if (!/· 20 novas/.test(registry.view.innerHTML)) throw new Error('Foco chip does not read "20 novas"');
+  // Foco introduces a fresh topic only as far as today's goal has room (10 new a day, under the tab's cap of 20); the rest wait behind the chip
+  var cap = Math.min(all, Store.newPerDay(), GOAL_NEW);
+  if (total !== cap) throw new Error('deck has ' + total + ' of ' + all + ' phrasal cards, expected the goal\'s ' + cap + ' new cards');
+  if (!new RegExp('· ' + cap + ' novas').test(registry.view.innerHTML)) throw new Error('Foco chip does not read "' + cap + ' novas"');
   var chips = (registry.view.innerHTML.match(/data-group="/g) || []).length;
   if (chips !== window.DATA_EN_PHRASAL.groups.length)
     throw new Error('got ' + chips + ' theme chips');

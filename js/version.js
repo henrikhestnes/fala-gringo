@@ -212,7 +212,12 @@
 //         vowel + t doubles: hvit → hvitt); every other card, alternative, example and tip checked against the grammar.
 //         /noruegues/ pronunciation: ø is now ö (the pair of ü for y) — ê had stood for both ø and the closed long e,
 //         so "hele" read as "høle" by the legend; ê is the long e only, the footer says so, and a check keeps ö ⇔ ø
-const APP_VERSION = '1.34.1';
+// 1.35.0: the Foco deck follows the daily goal — a tab introduces new cards only as far as today's goal still has
+//         room (10 new a day across the tabs, within the 30-card ceiling the reviews owed come first in), not 20 per
+//         tab regardless; intake already handed out today and unanswered claims that room first wherever it is, and
+//         the "Still today" links are allocated the same way, so the deck, the chip and the ring agree. Every review
+//         is still offered; "Keep practicing" still adds a batch past the goal (the per-tab cap is its size)
+const APP_VERSION = '1.35.0';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

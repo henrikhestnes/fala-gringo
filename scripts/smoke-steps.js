@@ -474,16 +474,19 @@ function advanceDays(n) {
   Date.now = function () { return _realNow() + _dayOffset; };
 }
 
-step('Foco is the default and a fresh topic shows only the daily intake', function () {
+step('Foco is the default and a fresh topic shows only the new cards today\'s goal has room for', function () {
   Store.resetTopic('adverbs');           // clear anything earlier steps recorded
+  // 1.35: the deck introduces new cards only as far as today's goal has room, and the goal counts the
+  // reviews owed on the learner's active tabs — drop the stamps earlier steps left so none is active here
+  var snap = Store.snapshot(); snap.drilled = {}; seedState(snap);
   goTo('#adverbs');
   if (!/chip focus active/.test(registry.view.innerHTML))
     throw new Error('Foco chip not active by default');
   var total = parseInt(registry.statTotal.textContent, 10);
   var all = topicCards(topicById('adverbs')).length;
-  var cap = Store.newPerDay();
+  var cap = Math.min(Store.newPerDay(), GOAL_NEW);     // the goal's new cards (10), under the tab's cap (20)
   if (all <= cap) throw new Error('adverbs (' + all + ') no longer exceed the cap; pick a bigger topic');
-  if (total !== cap) throw new Error('fresh Foco deck ' + total + ', expected the ' + cap + ' daily intake of ' + all);
+  if (total !== cap) throw new Error('fresh Foco deck ' + total + ', expected the goal\'s ' + cap + ' new cards of ' + all);
   if (!new RegExp('· ' + cap + ' new').test(registry.view.innerHTML))
     throw new Error('Foco chip does not read "' + cap + ' new"');
   if (Store.introducedToday('adverbs') !== cap)
@@ -492,12 +495,12 @@ step('Foco is the default and a fresh topic shows only the daily intake', functi
   Quiz.toggleFocus(); Quiz.toggleFocus();
   if (parseInt(registry.statTotal.textContent, 10) !== cap)
     throw new Error('rebuild changed the intake to ' + registry.statTotal.textContent);
-  return 'chip active on a fresh profile; ' + cap + ' of ' + all + ' cards, chip reads "' + cap + ' new"; stable across rebuilds';
+  return 'chip active on a fresh profile; ' + cap + ' of ' + all + ' cards (the goal\'s new-card room, not the tab\'s cap of ' + Store.newPerDay() + '), chip reads "' + cap + ' new"; stable across rebuilds';
 });
 
 step('clearing the intake leaves the rest waiting; a new day brings them', function () {
   var all = topicCards(topicById('adverbs')).length;
-  var cap = Store.newPerDay();
+  var cap = Math.min(Store.newPerDay(), GOAL_NEW);
   var guard = 0;
   while (registry.answerInput && guard++ < 60) {
     var c = shownCard('adverbs');
@@ -510,7 +513,7 @@ step('clearing the intake leaves the rest waiting; a new day brings them', funct
   registry.againBtn.fire('click');       // rebuild: intake mastered, remainder still capped out
   if (!/Tudo em dia/.test(registry.cardArea.innerHTML))
     throw new Error('deck did not empty after mastering the intake');
-  if (!new RegExp((all - cap) + ' more wait for tomorrow').test(registry.cardArea.innerHTML))
+  if (!new RegExp('no room for more new cards — ' + (all - cap) + ' wait\\.').test(registry.cardArea.innerHTML))
     throw new Error('waiting count missing: ' + registry.cardArea.innerHTML);
   Quiz.toggleFocus();                    // off -> the full deck must come back
   if (parseInt(registry.statTotal.textContent, 10) !== all) throw new Error('full deck did not come back');
@@ -532,7 +535,7 @@ step('clearing the intake leaves the rest waiting; a new day brings them', funct
     registry.againBtn.fire('click');
     left -= want;
   }
-  if (!/Tudo em dia/.test(registry.cardArea.innerHTML) || /wait for tomorrow/.test(registry.cardArea.innerHTML))
+  if (!/Tudo em dia/.test(registry.cardArea.innerHTML) || /no room for more new cards/.test(registry.cardArea.innerHTML))
     throw new Error('topic not fully mastered: ' + registry.cardArea.innerHTML);
   return 'day 1: ' + cap + ' mastered, ' + (all - cap) + ' waiting; the rest over ' + (days - 1) + ' more day(s); then "Tudo em dia"';
 });
@@ -577,6 +580,7 @@ step('the Foco deck puts due reviews before new cards, most overdue first', func
   var today = Store.today();
   var snap = Store.snapshot();
   snap.mastered.nouns = {}; snap.strength.nouns = {};
+  snap.drilled = {};                                // no other active tab: the goal's new-card room is nouns' own
   var due = cards.slice(-5);                        // the LAST five in data order, so intake order can't mask it
   due.forEach(function (c, i) {
     snap.mastered.nouns[c.id] = 1;
@@ -586,16 +590,17 @@ step('the Foco deck puts due reviews before new cards, most overdue first', func
   seedState(snap);
   goTo('#browse'); goTo('#nouns');
   var total = parseInt(registry.statTotal.textContent, 10);
-  if (total !== 5 + Store.newPerDay()) throw new Error('deck is ' + total + ', expected 5 due + ' + Store.newPerDay() + ' new');
-  if (!/· 5 due · 20 new/.test(registry.view.innerHTML)) throw new Error('chip breakdown missing: ' + registry.view.innerHTML.match(/chip focus[^<]*/)[0]);
+  var fresh = Math.min(Store.newPerDay(), GOAL_NEW);   // 5 due leave room for all 10 of the goal's new cards
+  if (total !== 5 + fresh) throw new Error('deck is ' + total + ', expected 5 due + ' + fresh + ' new');
+  if (!new RegExp('· 5 due · ' + fresh + ' new').test(registry.view.innerHTML)) throw new Error('chip breakdown missing: ' + registry.view.innerHTML.match(/chip focus[^<]*/)[0]);
   var first = shownCard('nouns');
   if (first.id !== due[4].id) throw new Error('first card is "' + first.id + '", expected the most overdue "' + due[4].id + '"');
   // the header follows every answer: a miss reads as shaky, a hit leaves its tier,
   // and the mastered count moves as soon as a new card is answered right
-  if (!/· 5 due · 20 new$/.test(registry.focoChip.innerHTML)) throw new Error('live chip starts as "' + registry.focoChip.innerHTML + '"');
+  if (!new RegExp('· 5 due · ' + fresh + ' new$').test(registry.focoChip.innerHTML)) throw new Error('live chip starts as "' + registry.focoChip.innerHTML + '"');
   registry.answerInput.value = 'zzz-wrong';
   registry.actionBtn.fire('click');
-  if (!/· 4 due · 1 shaky · 20 new$/.test(registry.focoChip.innerHTML)) throw new Error('after a miss the chip reads "' + registry.focoChip.innerHTML + '"');
+  if (!new RegExp('· 4 due · 1 shaky · ' + fresh + ' new$').test(registry.focoChip.innerHTML)) throw new Error('after a miss the chip reads "' + registry.focoChip.innerHTML + '"');
   registry.actionBtn.fire('click');                          // advance; the missed card cycles back later
   for (var i = 0; i < 4; i++) {
     var c = shownCard('nouns');
@@ -603,15 +608,15 @@ step('the Foco deck puts due reviews before new cards, most overdue first', func
     registry.answerInput.value = c.answer;
     registry.actionBtn.fire('click'); registry.actionBtn.fire('click');
   }
-  if (!/· 1 shaky · 20 new$/.test(registry.focoChip.innerHTML)) throw new Error('after the due reviews the chip reads "' + registry.focoChip.innerHTML + '"');
+  if (!new RegExp('· 1 shaky · ' + fresh + ' new$').test(registry.focoChip.innerHTML)) throw new Error('after the due reviews the chip reads "' + registry.focoChip.innerHTML + '"');
   var sixth = shownCard('nouns');
   if (Store.cardState('nouns', sixth.id) !== 'new') throw new Error('sixth card "' + sixth.id + '" is not new');
   if (!/^5 of \d+ cards mastered/.test(registry.masteredLine.innerHTML)) throw new Error('mastered line reads "' + registry.masteredLine.innerHTML + '"');
   registry.answerInput.value = sixth.answer;
   registry.actionBtn.fire('click');
   if (!/^6 of \d+ cards mastered/.test(registry.masteredLine.innerHTML)) throw new Error('mastered line did not move: "' + registry.masteredLine.innerHTML + '"');
-  if (!/· 1 shaky · 19 new$/.test(registry.focoChip.innerHTML)) throw new Error('after a new card the chip reads "' + registry.focoChip.innerHTML + '"');
-  return '5 due first (most overdue leading), then the 20 new; chip + mastered line follow each answer';
+  if (!new RegExp('· 1 shaky · ' + (fresh - 1) + ' new$').test(registry.focoChip.innerHTML)) throw new Error('after a new card the chip reads "' + registry.focoChip.innerHTML + '"');
+  return '5 due first (most overdue leading), then the ' + fresh + ' new; chip + mastered line follow each answer';
 });
 
 step('equally overdue reviews are shuffled, not served in data order', function () {
@@ -655,6 +660,7 @@ step('inference: a known word + a known pattern makes an unseen regular form a "
   if (!irregularForm) throw new Error('no irregular -ar vocês form to test against');
   var snap = Store.snapshot();
   snap.mastered.presente = {}; snap.strength.presente = {};
+  snap.drilled = {};                                // no other active tab filling the goal with its reviews
   // pattern: PATTERN_MIN distinct regular -ar verbs confirmed in vocês
   voces.slice(0, Infer.PATTERN_MIN).forEach(function (c) {
     snap.mastered.presente[c.id] = 1;
@@ -948,6 +954,7 @@ step('a second opinion on the verdict (1.32): "just a typo" clears a missed card
   Store.resetTopic('presente');
   var snap = Store.snapshot(), today = Store.today();
   snap.mastered.presente = {}; snap.strength.presente = {};
+  snap.drilled = {};              // no other active tab filling the goal with its reviews
   cards.forEach(function (c) {    // a fresh topic whose only unseen card is falo
     if (c.id === falo.id) return;
     snap.mastered.presente[c.id] = 1;
@@ -1418,6 +1425,66 @@ step('a backlog of misses is capped at GOAL_MAX a day and the rest waits; unseen
   return '200 missed -> goal ' + GOAL_MAX + ', 170 wait; 30 right closes it ("still wait", not Tudo em dia); ser miss = 1 review + siblings as new in both deck and goal';
 });
 
+step('the Foco deck follows the daily goal (1.35): new cards only as far as the goal has room, the intake out already first', function () {
+  Store.resetAll();
+  var d = Store.today(), fresh = Math.min(Store.newPerDay(), GOAL_NEW);
+  // a fresh profile: the first deck carries the goal's new cards (10), not the tab's cap (20)
+  goTo('#browse'); goTo('#nouns');
+  if (Quiz._counts().new !== fresh) throw new Error('fresh nouns deck: ' + JSON.stringify(Quiz._counts()));
+  var c = shownCard('nouns');
+  registry.answerInput.value = c.answer; registry.actionBtn.fire('click'); registry.actionBtn.fire('click');   // nouns is the learner's now
+  // the nine still unanswered on nouns hold the rest of the room: another tab adds no fresh word
+  goTo('#adverbs');
+  var cc = Quiz._counts();
+  if (cc.new !== 0 || !cc.waiting) throw new Error('adverbs added fresh words past the goal: ' + JSON.stringify(cc));
+  if (!/no room for more new cards/.test(registry.cardArea.innerHTML)) throw new Error('empty Foco wording: ' + registry.cardArea.innerHTML.slice(0, 300));
+  if (!new RegExp('data-tab="nouns"[^>]*>Nouns <b>' + (fresh - 1) + '</b>').test(registry.cardArea.innerHTML)) throw new Error('"Still today" does not point at the pending nouns: ' + registry.cardArea.innerHTML.slice(-400));
+  if (!registry.moreNewBtn) throw new Error('"Keep practicing" missing — the way past the goal');
+  var g = Quiz.todayGoal();
+  if (g.fresh !== fresh - 1 || g.per[0].topic.id !== 'nouns' || g.per[0].fresh !== fresh - 1)
+    throw new Error('goal allocation: ' + JSON.stringify(g.per.map(function (p) { return p.topic.id + ':' + p.fresh; })));
+  // a review backlog counts first: 25 misses on an active tab leave room for 5 new cards
+  Store.resetAll();
+  var snap = Store.snapshot();
+  snap.drilled = { presente: d }; snap.strength.presente = {}; snap.mastered.presente = {};
+  var missed = topicCards(topicById('presente')).slice(0, GOAL_MAX - 5);
+  missed.forEach(function (m) { snap.strength.presente[m.id] = { s: 0, m: 1, l: 0, i: d - 30 }; });
+  seedState(snap);
+  goTo('#browse'); goTo('#nouns');
+  cc = Quiz._counts();
+  if (cc.new !== 5) throw new Error('nouns with 25 reviews owed elsewhere: ' + JSON.stringify(cc));
+  // a tab only looked at claims nothing: adverbs deals the 5 again (nouns' resume if the learner comes back);
+  // once adverbs is answered on, its 4 left hold the room, and a tab opened for the first time deals no new card
+  goTo('#adverbs');
+  cc = Quiz._counts();
+  if (cc.new !== 5) throw new Error('adverbs after a look at nouns: ' + JSON.stringify(cc));
+  c = shownCard('adverbs');
+  registry.answerInput.value = c.answer; registry.actionBtn.fire('click'); registry.actionBtn.fire('click');
+  goTo('#presente');
+  cc = Quiz._counts();
+  if (cc.shaky !== GOAL_MAX - 5 || cc.new + cc.verify !== 0) throw new Error('presente: every review, no new (the 4 sit on adverbs): ' + JSON.stringify(cc));
+  g = Quiz.todayGoal();
+  if (g.fresh !== 4 || g.per.filter(function (p) { return p.fresh; }).map(function (p) { return p.topic.id; }).join() !== 'adverbs')
+    throw new Error('the goal\'s new cards should be the 4 on adverbs: ' + JSON.stringify(g.per.map(function (p) { return p.topic.id + ':' + p.fresh; })));
+  // a backlog that fills the ceiling: no new cards anywhere today, every review still offered
+  missed = topicCards(topicById('presente')).slice(0, GOAL_MAX + 10);
+  snap = Store.snapshot(); snap.strength = { presente: {} }; snap.mastered = {}; snap.drilled = { presente: d };
+  missed.forEach(function (m) { snap.strength.presente[m.id] = { s: 0, m: 1, l: 0, i: d - 30 }; });
+  seedState(snap);
+  goTo('#browse'); goTo('#nouns');
+  if (Quiz._counts().new !== 0) throw new Error('new cards with the goal full of reviews: ' + JSON.stringify(Quiz._counts()));
+  goTo('#presente');
+  if (Quiz._counts().shaky !== GOAL_MAX + 10) throw new Error('the backlog was capped: ' + JSON.stringify(Quiz._counts()));
+  // goalNew 0: reviews only, ever; the extra batch still takes the tab's cap
+  Store.resetAll(); Store.setPref('goalNew', 0);
+  goTo('#browse'); goTo('#adverbs');
+  if (Quiz._counts().new !== 0 || !registry.moreNewBtn) throw new Error('goalNew=0: ' + JSON.stringify(Quiz._counts()));
+  registry.moreNewBtn.fire('click');
+  if (Quiz._counts().new !== Store.newPerDay()) throw new Error('extra batch: ' + JSON.stringify(Quiz._counts()));
+  Store.setPref('goalNew', GOAL_NEW); Store.resetAll();
+  return 'fresh tab ' + fresh + ' new (not ' + Store.newPerDay() + '); 9 pending on nouns -> adverbs 0 fresh, "Still today: Nouns 9", goal 9 to nouns; 25 owed -> 5 new, dealt again after a mere look, held once answered on (goal: adverbs 4); 40 owed -> none, all 40 offered; goalNew 0 -> none, extra batch ' + Store.newPerDay();
+});
+
 /* ------------------------------------------------ the Daily's own streak (1.20) */
 
 step('the Daily remembers what was typed and its done screen names the synonym reached for', function () {
@@ -1861,6 +1928,7 @@ step('hundreds of inferred confirmations share intake and cannot refill automati
 step('new verb intake balances all persons, including one-card extra batches and an existing eu-only day', function () {
   try {
     Store.setPref('foco', true); Store.setPref('mic', false);
+    Store.setPref('goalNew', 20);            // the deck stops at the goal's new-card room; let it admit the tab's 20
     const t = topicById('presente'), cards = topicCards(t);
     const admitted = () => cards.filter(c => Quiz._tierOf(c.id) === 'new' || Quiz._tierOf(c.id) === 'verify');
     Store.resetAll(); Store.setPref('newPerDay', 20);
@@ -1896,7 +1964,7 @@ step('new verb intake balances all persons, including one-card extra batches and
       throw new Error('extra batch did not compensate for the eu-only intake');
     return '20 cards: five of each person; one-card batches rotate; old eu reservations kept and next batch balances them';
   } finally {
-    Store.setPref('newPerDay', NEW_PER_DAY); Store.resetAll();
+    Store.setPref('newPerDay', NEW_PER_DAY); Store.setPref('goalNew', GOAL_NEW); Store.resetAll();
   }
 });
 
