@@ -9,7 +9,7 @@ you actually hear in Rio, not textbook European Portuguese. It is aimed at an
 English speaker: you are shown English and type the Portuguese.
 
 Browse 162 verbs with their conjugations across three indicative tenses — plus the
-present and imperfect subjunctive on a 58-verb core — or drill any of thirteen topics by typing
+present and imperfect subjunctive on a 59-verb core — or drill any of thirteen topics by typing
 the answer.
 
 **Static site, no build step, no required dependencies.** Optional sync and production-only usage analytics run separately from lessons. Open
@@ -23,15 +23,15 @@ the answer.
 | **Presente** | Verb drill, present tense | 638 |
 | **Perfeito** | Verb drill, pretérito perfeito | 636 |
 | **Imperfeito** | Verb drill, pretérito imperfeito | 637 |
-| **Subj. Presente** | Verb drill, presente do subjuntivo — 58 core verbs | 228 |
-| **Subj. Imperfeito** | Verb drill, imperfeito do subjuntivo — 58 core verbs | 228 |
-| **Nouns** | With gender and article — incl. family, body & mind | 139 |
+| **Subj. Presente** | Verb drill, presente do subjuntivo — 59 core verbs | 232 |
+| **Subj. Imperfeito** | Verb drill, imperfeito do subjuntivo — 59 core verbs | 232 |
+| **Nouns** | With gender and article — incl. family, body & mind | 143 |
 | **Adjectives** | With agreement | 80 |
 | **Adverbs** | Frequency, manner, place, time | 42 |
-| **Connecting** | Prepositions, contractions, demonstratives, articles, conjunctions — fill the gap | 96 |
+| **Connecting** | Prepositions, contractions, demonstratives, articles, conjunctions — fill the gap | 101 |
 | **Numbers** | Numbers, weekdays, months, colours | 77 |
-| **Glossary** | Everyday carioca expressions | 70 |
-| **Sentences** | Full-sentence translation — incl. hypotheticals & wishes, real conditions (se + future subjunctive), verb + preposition, opinions | 129 |
+| **Glossary** | Everyday carioca expressions | 71 |
+| **Sentences** | Full-sentence translation — incl. hypotheticals & wishes, real conditions (se + future subjunctive), verb + preposition, opinions, subjunctive triggers | 149 |
 | **★ Daily** | 7 cards a day, one per topic, deterministic from the date, 5 attempts each, shareable result | 7 |
 
 3096 quiz cards in total.
@@ -45,12 +45,12 @@ The forms derive from the presente **eu** form: drop the `-o`, add `-e / -e / -e
 for -ar verbs and `-a / -a / -amos / -am` for the rest (falo → fale, tenho → tenha, faço →
 faça, peço → peça), an -ar stem keeping its sound (fico → fique, chego → chegue, começo →
 comece). Six verbs have no eu form in `-o` and keep their old forms: ser *seja*, estar
-*esteja*, ir *vá*, dar *dê*, saber *saiba*, querer *queira*. The data checks verify all 232
+*esteja*, ir *vá*, dar *dê*, saber *saiba*, querer *queira*. The data checks verify all 236
 stored forms against that rule.
 
 Every example embeds a trigger: `quero/espero que…`, `tomara que…`, `talvez…`, `é
 importante que…`, `não acho que…`, `duvido que…`, `caso…`. The drill accepts the bare
-form, `eu fale`, and `que eu fale`. Same 58-verb core as the imperfect below.
+form, `eu fale`, and `que eu fale`. Same 59-verb core as the imperfect below.
 
 ### Se eu soubesse… — the imperfect subjunctive (Subj. Imperfeito tab)
 
@@ -60,7 +60,7 @@ learner.*
 The forms are the easy half: for **every** Portuguese verb, regular or irregular, the
 imperfect subjunctive derives from the pretérito perfeito 3pl — drop `-ram`, add
 `-sse / -sse / -ssemos / -ssem` (falaram → falasse, fizeram → fizesse, foram → fosse).
-The data checks verify all 232 stored forms against that rule.
+The data checks verify all 236 stored forms against that rule.
 
 The hard half is knowing **when** to use it, so every gloss and example embeds a
 trigger: `se…` hypotheticals, `queria/gostaria que…` past wishes, `como se…` (as if),
@@ -68,7 +68,7 @@ trigger: `se…` hypotheticals, `queria/gostaria que…` past wishes, `como se�
 the trigger-prefixed `se/que eu falasse`. The Sentences tab's *Hypotheticals & wishes*
 group practices producing whole trigger sentences.
 
-It covers a curated 58-verb core (the verbs you actually reach for in hypotheticals)
+It covers a curated 59-verb core (the verbs you actually reach for in hypotheticals)
 rather than all 162 — and `haver` stays out for the same reason it is not drilled
 elsewhere: only 3sg `houvesse` is live usage.
 
@@ -126,7 +126,7 @@ same data checks in the browser — just open it.
 162 verbs; 1944 forms with all three indicative tenses; every drilled form has a
 form, meaning, pronunciation and example; every regular verb matches an independent
 conjugation oracle (`js/conjugate.js`); every verb flagged irregular really is;
-58 complete imperfect-subjunctive blocks whose forms all derive from the perfeito 3pl (a rule
+59 complete imperfect-subjunctive blocks whose forms all derive from the perfeito 3pl (a rule
 with no exceptions, so it verifies irregulars too) and whose examples all contain
 their form inside a trigger context; every card's answer is among its own accepted
 answers; and **no ambiguous prompts** — identical, distinguished only by word

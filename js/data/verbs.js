@@ -8,7 +8,8 @@
 // almoçar, jantar, avisar, descobrir, ensinar, gastar, buscar, visitar, virar, arrumar,
 // aproveitar, desligar) — each placed in its category block — later cadastrar (to sign up), and in 1.28.7 fifteen verbs
 // from a Rio teacher's caderno (sentar, fugir, cuidar, emprestar, paquerar, acompanhar, lidar, torcer,
-// experimentar, devolver, demorar, consertar, suar, reparar, gritar).
+// experimentar, devolver, demorar, consertar, suar, reparar, gritar). The subjunctive core is 59 verbs:
+// the 58 of 1.23.6/1.29 plus abrir (1.35.1, the -ir model verb of an October 2026 lesson).
 window.DATA_VERBS = {
   categories: [
     { name: "Essenciais", color: "#ec4899" },
@@ -28,7 +29,7 @@ window.DATA_VERBS = {
     { key: "presente",   label: "Presente" },
     { key: "perfeito",   label: "Pretérito Perfeito" },
     { key: "imperfeito", label: "Pretérito Imperfeito" },
-    // Optional per verb: a curated 58-verb subset carries both subjunctives.
+    // Optional per verb: a curated 59-verb subset carries both subjunctives.
     // The tense key doubles as the drill tab's id (Browse reads the tally by it).
     { key: "subjuntivo-presente", label: "Presente do Subjuntivo" },
     { key: "subjuntivo", label: "Imperfeito do Subjuntivo" },
@@ -1955,6 +1956,18 @@ window.DATA_VERBS = {
           { form: "abria", meaning: "you used to open / were opening", pron: "ah-BREE-ah", example: "Você abria a porta para os visitantes?" },
           { form: "abríamos", meaning: "we used to open / were opening", pron: "ah-BREE-ah-moosh", example: "Nós abríamos a loja às oito." },
           { form: "abriam", meaning: "you all used to open / were opening", pron: "ah-BREE-ahng", example: "Vocês abriam os presentes no Natal?" },
+        ],
+        "subjuntivo-presente": [
+          { form: "abra", meaning: "that I open", pron: "AH-brah", example: "Quer que eu abra a janela?" },
+          { form: "abra", meaning: "that you open", pron: "AH-brah", example: "Prefiro que você abra a porta devagar." },
+          { form: "abramos", meaning: "that we open", pron: "ah-BRAH-moosh", example: "Tomara que nós abramos a loja cedo amanhã." },
+          { form: "abram", meaning: "that you all open", pron: "AH-brahng", example: "Espero que vocês abram o presente só no Natal." },
+        ],
+        subjuntivo: [
+          { form: "abrisse", meaning: "if I opened", pron: "ah-BREE-see", example: "Se eu abrisse a janela, entrava mosquito." },
+          { form: "abrisse", meaning: "if you opened", pron: "ah-BREE-see", example: "Queria que você abrisse a porta pra mim." },
+          { form: "abríssemos", meaning: "if we opened", pron: "ah-BREE-seh-moosh", example: "Era melhor que nós abríssemos a loja mais cedo." },
+          { form: "abrissem", meaning: "if you all opened", pron: "ah-BREE-seng", example: "Se vocês abrissem a janela, o quarto esfriava." },
         ],
       },
     },

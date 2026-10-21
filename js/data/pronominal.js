@@ -193,6 +193,29 @@ window.DATA_PRONOMINAL = {
         ],
       },
     },
+    // From the caderno (October 2026)
+    {
+      pt: "se despedir", en: "to say goodbye", irregular: true, tip: "'Despedir-se de' = to say goodbye to: 'me despedi de todo mundo'. e→i verb: eu me DESPEÇO, but você se DESPEDE. Without the pronoun, 'despedir' is to fire someone ('fui despedido'). The noun is 'a despedida'.",
+      tenses: {
+        presente: [
+          { form: "me despeço", meaning: "I say goodbye", pron: "mee desh-PEH-soo", example: "Eu me despeço de todo mundo antes de sair." },
+          { form: "se despede", meaning: "you say goodbye", pron: "see desh-PEH-djee", example: "Você nunca se despede quando vai embora?" },
+          { form: "nos despedimos", meaning: "we say goodbye", pron: "noosh desh-peh-DJEE-moosh", example: "Nós nos despedimos no aeroporto." },
+          { form: "se despedem", meaning: "you all say goodbye", pron: "see desh-PEH-deng", example: "Vocês se despedem com beijo ou com abraço?" },
+        ],
+      },
+    },
+    {
+      pt: "se arrepender", en: "to regret", tip: "'Arrepender-se de' = to regret: 'me arrependo de não ter ido'. A regular -er verb. 'Arrependido' = sorry, regretful; the noun is 'o arrependimento'. Not 'to reject' — that is 'rejeitar'.",
+      tenses: {
+        presente: [
+          { form: "me arrependo", meaning: "I regret", pron: "mee ah-heh-PEN-doo", example: "Eu me arrependo de ter falado aquilo." },
+          { form: "se arrepende", meaning: "you regret", pron: "see ah-heh-PEN-djee", example: "Você se arrepende de ter mudado pro Rio?" },
+          { form: "nos arrependemos", meaning: "we regret", pron: "noosh ah-heh-pen-DEH-moosh", example: "Nós nos arrependemos de não ter ido à festa." },
+          { form: "se arrependem", meaning: "you all regret", pron: "see ah-heh-PEN-deng", example: "Vocês se arrependem de alguma coisa?" },
+        ],
+      },
+    },
   ],
 
   // ── Everyday phrases ──────────────────────────────────────

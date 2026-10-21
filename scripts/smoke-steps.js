@@ -437,8 +437,8 @@ step('subjuntivo-presente drill accepts the "que"-prefixed answer and flags seja
   if (!seja || seja.flag !== 'irregular') throw new Error('seja not flagged irregular');
   if (!faca || !/fa<mark class="irr">ç<\/mark>a/.test(faca.reveal)) throw new Error('faça: ' + (faca && faca.reveal));
   if (!fale || fale.flag || /mark class="irr"/.test(fale.reveal)) throw new Error('fale shows irregularity markup');
-  if (cards.length !== 228) throw new Error('expected 228 cards, got ' + cards.length);
-  return '"que ' + card.answer + '" accepted; seja flagged, faça → "ç", fale silent; 228 cards';
+  if (cards.length !== 232) throw new Error('expected 232 cards, got ' + cards.length);
+  return '"que ' + card.answer + '" accepted; seja flagged, faça → "ç", fale silent; 232 cards';
 });
 
 step('pronominal drill accepts every declared answer variant', function () {

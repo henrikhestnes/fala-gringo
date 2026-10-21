@@ -217,7 +217,13 @@
 //         tab regardless; intake already handed out today and unanswered claims that room first wherever it is, and
 //         the "Still today" links are allocated the same way, so the deck, the chip and the ring agree. Every review
 //         is still offered; "Keep practicing" still adds a batch past the goal (the per-tab cap is its size)
-const APP_VERSION = '1.35.0';
+// 1.35.1: a Rio lesson on the present subjunctive (October 2026): a Sentences group "Subjunctive triggers" — the verbs,
+//         feelings, doubts and conjunctions that call for it (quero que, tomara que, prefiro que, sugiro que, fico feliz
+//         que, tenho medo que, duvido que, não acho que seja vs acho que é, para que, sem que, caso, por mais que) — five
+//         Connecting words (cada vez que, caso, para que, sem que, mesmo que), abrir joins the subjunctive core (59 verbs),
+//         se despedir and se arrepender in Pronominais, four nouns (desejo, despedida, marcha, ato), tomara in the
+//         Glossary, and the rule card names the trigger families
+const APP_VERSION = '1.35.1';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name

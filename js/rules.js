@@ -54,7 +54,8 @@ window.Rules = (function () {
       lead: 'Take the <b>eu</b> form of the presente, drop the <b>-o</b> and swap the vowel: <b>-ar</b> verbs take <b>-e</b>, <b>-er</b> and <b>-ir</b> verbs take <b>-a</b>.',
       source: { tense: 'presente', row: 0, cut: /o$/, label: 'eu' },
       notes: [
-        'It follows a wish, a doubt or a feeling: <i>quero que…</i>, <i>tomara que…</i>, <i>talvez…</i>, <i>espero que…</i>, <i>é bom que…</i>',
+        'It follows a wish or request — <i>quero / espero / prefiro que…</i>, <i>peço / sugiro / recomendo que…</i>, <i>tomara que…</i> — a feeling — <i>fico feliz que…</i>, <i>tenho medo que…</i>, <i>lamento que…</i> — or a doubt: <i>duvido que…</i>, <i>é possível que…</i>, <i>talvez…</i>, and <i>não acho que seja…</i> (but <i>acho que é</i>: a plain belief stays indicative).',
+        'Some conjunctions call for it too: <i>para que</i>, <i>sem que</i>, <i>caso</i>, and the concessives <i>embora / mesmo que / ainda que / por mais que</i>.',
         'An -ar stem keeps its sound: <i>fico → fique, chego → chegue, começo → comece</i>.',
         'Because it starts from the eu form, an irregular eu carries through: <i>faço → faça, tenho → tenha, digo → diga</i>.'
       ]

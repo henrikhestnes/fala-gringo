@@ -106,7 +106,7 @@ function runChecks() {
     return bad.length ? bad.slice(0, 8).join('\n') : true;
   });
 
-  check('58 verbs carry a complete subjuntivo block', () => {
+  check('59 verbs carry a complete subjuntivo block', () => {
     const bad = [];
     let n = 0;
     V.verbs.forEach(v => {
@@ -120,10 +120,10 @@ function runChecks() {
       });
     });
     if (bad.length) return bad.slice(0, 8).join(', ');
-    return n === 58 ? true : 'got ' + n + ' verbs with subjuntivo';
+    return n === 59 ? true : 'got ' + n + ' verbs with subjuntivo';
   });
 
-  check('the same 58 verbs carry a complete subjuntivo-presente block', () => {
+  check('the same 59 verbs carry a complete subjuntivo-presente block', () => {
     const bad = [];
     let n = 0;
     V.verbs.forEach(v => {
@@ -138,7 +138,7 @@ function runChecks() {
       });
     });
     if (bad.length) return bad.slice(0, 8).join(', ');
-    return n === 58 ? true : 'got ' + n + ' verbs with subjuntivo-presente';
+    return n === 59 ? true : 'got ' + n + ' verbs with subjuntivo-presente';
   });
 
   check('every subjuntivo-presente form derives from the presente eu form', () => {

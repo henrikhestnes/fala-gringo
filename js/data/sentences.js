@@ -1,7 +1,7 @@
 // Card data for the 'sentences' topic.
 // Ported from the source flashcards repo credited in the README (sentences.html).
 window.DATA_SENTENCES = {
-  groups: ["Present basics", "Ser vs Estar", "Past", "Prepositions", "Questions", "Time expressions", "Hypotheticals & wishes", "Real conditions", "Verb + preposition", "Opinions & stances"],
+  groups: ["Present basics", "Ser vs Estar", "Past", "Prepositions", "Questions", "Time expressions", "Hypotheticals & wishes", "Real conditions", "Verb + preposition", "Opinions & stances", "Subjunctive triggers"],
   cards: [
   // Present basics
   { en: "I drink water.", pt: "Eu bebo água.", group: "Present basics",
@@ -338,6 +338,48 @@ window.DATA_SENTENCES = {
   { en: "What time do you have dinner?", pt: "Você janta que horas?", alts: ["Que horas você janta?", "A que horas você janta?", "Você janta a que horas?"], group: "Questions",
     note: "Spoken BR puts the question word at the end and drops the 'a': 'você janta que horas?'. Textbook: 'a que horas você janta?'." },
   { en: "What is it about?", pt: "É sobre o quê?", alts: ["É sobre quê?", "Sobre o que é?", "É sobre o que?"], group: "Questions",
-    note: "'Quê' takes its accent at the end of a sentence. Ask it about a film, a series, a book, a fight." }
+    note: "'Quê' takes its accent at the end of a sentence. Ask it about a film, a series, a book, a fight." },
+
+  // Subjunctive triggers — the present subjunctive in the contexts that call for it (caderno, October 2026)
+  { en: "I want you to come tomorrow.", pt: "Quero que você venha amanhã.", alts: ["Eu quero que você venha amanhã"], group: "Subjunctive triggers",
+    note: "Wanting someone ELSE to do something: querer que + present subjunctive (venha, from venho). Desejar, esperar and preferir que work the same way." },
+  { en: "Hopefully it won't rain tomorrow.", pt: "Tomara que não chova amanhã.", alts: ["Tomara que amanhã não chova", "Espero que não chova amanhã", "Espero que amanhã não chova"], group: "Subjunctive triggers",
+    note: "'Tomara que' = I hope / hopefully, always + present subjunctive. 'Espero que' is its flatter twin. On its own, 'Tomara!' = I hope so." },
+  { en: "I'd rather you stayed home.", pt: "Prefiro que você fique em casa.", alts: ["Eu prefiro que você fique em casa"], group: "Subjunctive triggers",
+    note: "'Preferir que' + subjunctive. Fique comes from fico — the -ar verb keeps its sound (c → qu)." },
+  { en: "I suggest you take the metro.", pt: "Sugiro que você pegue o metrô.", alts: ["Eu sugiro que você pegue o metrô", "Sugiro que você vá de metrô", "Eu sugiro que você vá de metrô"], group: "Subjunctive triggers",
+    note: "Advice verbs take que + subjunctive: sugerir, recomendar, pedir que. Pegue from pego (g → gu). In speech you'll also hear 'pede pra você pegar' with the infinitive." },
+  { en: "I recommend that you try the açaí.", pt: "Recomendo que você experimente o açaí.", alts: ["Eu recomendo que você experimente o açaí", "Recomendo que você prove o açaí", "Eu recomendo que você prove o açaí"], group: "Subjunctive triggers",
+    note: "'Recomendar que' + subjunctive: experimente from experimento. 'Provar' (to taste) fits here too." },
+  { en: "My mom forbids me to go out at night.", pt: "Minha mãe proíbe que eu saia à noite.", alts: ["Minha mãe proíbe que eu saia de noite", "A minha mãe proíbe que eu saia à noite", "A minha mãe proíbe que eu saia de noite", "Minha mãe me proíbe de sair à noite", "Minha mãe me proíbe de sair de noite"], group: "Subjunctive triggers",
+    note: "'Proibir que' + subjunctive (saia, from saio). The infinitive version, 'me proíbe de sair', is just as common — both accepted." },
+  { en: "Don't let that happen.", pt: "Não deixe que isso aconteça.", alts: ["Não deixa que isso aconteça", "Não deixe isso acontecer", "Não deixa isso acontecer"], group: "Subjunctive triggers",
+    note: "'Deixar que' + subjunctive. Two subjunctives here: 'deixe' is the negative command itself, 'aconteça' follows 'que'. Rio says 'não deixa' and gets away with it; both accepted." },
+  { en: "I'm glad you're here.", pt: "Fico feliz que você esteja aqui.", alts: ["Eu fico feliz que você esteja aqui", "Fico feliz de você estar aqui", "Eu fico feliz de você estar aqui"], group: "Subjunctive triggers",
+    note: "Feelings take que + subjunctive: ficar feliz que, gostar que, ter medo que, lamentar que. Esteja is estar's listed form (not 'este')." },
+  { en: "She doesn't like us to arrive late.", pt: "Ela não gosta que a gente chegue atrasado.", alts: ["Ela não gosta que a gente chegue tarde", "Ela não gosta que a gente chegue atrasada", "Ela não gosta que nós cheguemos atrasados", "Ela não gosta que nós cheguemos tarde"], group: "Subjunctive triggers",
+    note: "'Gostar que' + subjunctive. 'A gente' is grammatically singular, so chegue (from chego, g → gu); with nós, cheguemos." },
+  { en: "I'm afraid she won't come.", pt: "Tenho medo que ela não venha.", alts: ["Eu tenho medo que ela não venha", "Tenho medo de que ela não venha", "Eu tenho medo de que ela não venha"], group: "Subjunctive triggers",
+    note: "'Ter medo (de) que' + subjunctive; spoken BR drops the 'de'. The past version is in Hypotheticals: 'tinha medo que você esquecesse'." },
+  { en: "I'm sorry you can't come.", pt: "Lamento que você não possa vir.", alts: ["Eu lamento que você não possa vir", "Sinto muito que você não possa vir", "Eu sinto muito que você não possa vir"], group: "Subjunctive triggers",
+    note: "'Lamentar que' + subjunctive — possa from posso. 'Sinto muito que' is the warmer everyday version." },
+  { en: "I think it's easy.", pt: "Acho que é fácil.", alts: ["Eu acho que é fácil"], group: "Subjunctive triggers",
+    note: "'Achar que' in the affirmative is a belief, so it takes the plain indicative: acho que É. Negate it and the subjunctive appears: 'não acho que seja fácil'." },
+  { en: "I don't think it's easy.", pt: "Não acho que seja fácil.", alts: ["Eu não acho que seja fácil"], group: "Subjunctive triggers",
+    note: "A negated opinion is a doubt, so que + subjunctive: 'não acho que SEJA'. Compare 'acho que é fácil'. Duvidar que and não ter certeza que behave the same." },
+  { en: "I doubt he knows.", pt: "Duvido que ele saiba.", alts: ["Eu duvido que ele saiba"], group: "Subjunctive triggers",
+    note: "'Duvidar que' + subjunctive. Saiba is saber's listed exception (sei does not give 'seia')." },
+  { en: "It's possible that it'll rain.", pt: "É possível que chova.", alts: ["Pode ser que chova", "É possível que vá chover"], group: "Subjunctive triggers",
+    note: "'É + adjective + que' takes the subjunctive when it judges rather than states: é possível que, é bom que, é importante que, é melhor que. 'É verdade que' and 'é certo que' state, so they take the indicative." },
+  { en: "Speak slowly so that everyone understands.", pt: "Fala devagar {para} que todo mundo entenda.", slots: { para: ["para", "pra"] }, alts: ["Fale devagar para que todo mundo entenda", "Fale devagar pra que todo mundo entenda"], group: "Subjunctive triggers",
+    note: "'Para que' (so that) always takes the subjunctive: entenda from entendo. 'Pra que' is the spoken form. With the same subject on both sides it is just 'para' + infinitive: 'falo devagar para ser entendido'." },
+  { en: "I can't do it without you helping me.", pt: "Não consigo fazer sem que você me ajude.", alts: ["Eu não consigo fazer sem que você me ajude", "Não consigo fazer isso sem que você me ajude", "Eu não consigo fazer isso sem que você me ajude", "Não consigo fazer sem você me ajudar", "Não consigo fazer isso sem você me ajudar"], group: "Subjunctive triggers",
+    note: "'Sem que' (without … -ing) takes the subjunctive: ajude from ajudo. Rio often prefers the personal infinitive, 'sem você me ajudar' — accepted too." },
+  { en: "However much I like drinking, I don't do it often.", pt: "Por mais que eu goste de beber, não faço isso com frequência.", alts: ["Por mais que eu goste de beber, eu não faço isso com frequência", "Mesmo que eu goste de beber, não faço isso com frequência", "Mesmo que eu goste de beber, eu não faço isso com frequência", "Ainda que eu goste de beber, não faço isso com frequência", "Ainda que eu goste de beber, eu não faço isso com frequência", "Embora eu goste de beber, não faço isso com frequência", "Embora eu goste de beber, eu não faço isso com frequência"], group: "Subjunctive triggers",
+    note: "Four concessives, one subjunctive: por mais que (however much), mesmo que / ainda que (even if), embora (although) — all take goste, from gosto. 'Apesar de gostar' does the same job with the infinitive." },
+  { en: "In case you want to take part, go on the website.", pt: "Caso você queira participar, entre no site.", alts: ["Caso você queira participar, entra no site", "Caso queira participar, entre no site", "Caso queira participar, entra no site"], group: "Subjunctive triggers",
+    note: "'Caso' (in case, if) takes the PRESENT subjunctive where 'se' takes the future subjunctive: 'caso você queira' = 'se você quiser'. Queira is querer's listed exception. 'Entre' is the textbook command; Rio says 'entra'." },
+  { en: "I'm almost sure it was him.", pt: "Tenho quase certeza que foi ele.", alts: ["Tenho quase certeza de que foi ele", "Eu tenho quase certeza que foi ele", "Eu tenho quase certeza de que foi ele"], group: "Opinions & stances",
+    note: "'Ter certeza (de) que' + indicative — certainty states a fact, and 'quase' softens it. Negate it and the subjunctive comes back: 'não tenho certeza que seja ele'." }
 ]
 };
