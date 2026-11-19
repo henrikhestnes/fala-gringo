@@ -249,6 +249,125 @@ function buildVerbCards(tense, tenseLabel) {
   return cards;
 }
 
+/* ------------------------------------------------------------ imperative ---- */
+
+/* Commands, to one person and to a group. The forms are looked up, never
+   stored twice: spoken Rio commands one person with the presente você form
+   (fala!), the textbook with the present subjunctive (fale!), and a group with
+   the present subjunctive vocês form (falem!). Both singular forms are
+   accepted; the spoken one leads and the textbook one is a variant face
+   (cardFace), so whichever the learner typed is the one answered back, with
+   the other named in the "also" line. ser and estar have no spoken short form
+   (`spoken: false`): nobody says "é!", seja does both jobs. */
+const IMPERATIVE_LABEL = 'Imperativo';
+const LETTER = 'A-Za-zÀ-ÖØ-öø-ÿ';
+
+/* Where `form` stands as a word of its own in `text`, any case; -1 if nowhere. */
+function wordIndex(text, form) {
+  const m = new RegExp('(^|[^' + LETTER + '])' + form + '(?![' + LETTER + '])', 'i').exec(text);
+  return m ? m.index + m[1].length : -1;
+}
+/* The same sentence with one form swapped for another, capital kept. */
+function swapForm(text, from, to) {
+  const at = wordIndex(text, from);
+  if (at < 0) return text;
+  const was = text.slice(at, at + from.length);
+  const cap = was[0] !== was[0].toLowerCase();
+  return text.slice(0, at) + (cap ? to[0].toUpperCase() + to.slice(1) : to) + text.slice(at + from.length);
+}
+
+function imperativeFaces(verb, entry) {
+  const pres = verb.tenses.presente[1], subj = verb.tenses['subjuntivo-presente'];
+  const face = (row, tense, i, who, register) => ({
+    form: row.form, pron: row.pron, who: who, register: register,
+    span: irregularSpan(row.form, (regularExpectation(verb, tense) || [])[i]),
+    flag: verbFlag(verb, tense, i, row.form)
+  });
+  return {
+    spoken: entry.spoken === false ? null : face(pres, 'presente', 1, 'você', 'spoken'),
+    textbook: face(subj[1], 'subjuntivo-presente', 1, 'você', entry.spoken === false ? '' : 'textbook'),
+    plural: face(subj[3], 'subjuntivo-presente', 3, 'vocês', '')
+  };
+}
+
+function imperativeTable(verb, faces, current) {
+  const rows = [faces.spoken, faces.textbook, faces.plural].filter(Boolean).map(f =>
+    '<tr class="' + (f === current ? 'is-current' : '') + (f.span ? ' is-irregular' : '') + '">' +
+    '<td class="conj-pronoun">' + escapeHtml(f.who) + '</td>' +
+    '<td class="conj-form">' + markIrregular(f.form, f.span) +
+    (f.register ? ' <span class="conj-register" lang="en">' + f.register + '</span>' : '') + '</td>' +
+    '<td class="conj-pron" lang="en">' + escapeHtml(f.pron) + '</td></tr>').join('');
+  return '<div class="conj-table-wrapper"><div class="conj-table-label" lang="pt-BR">' +
+         escapeHtml(verb.pt + ' — ' + IMPERATIVE_LABEL) + '</div>' +
+         '<table class="conj-table" lang="pt-BR">' + rows + '</table></div>';
+}
+
+function buildImperativeCards() {
+  const byPt = {};
+  V.verbs.forEach(v => { byPt[v.pt] = v; });
+  const it = f => '<i lang="pt-BR">' + escapeHtml(f) + '</i>';
+  const cards = [];
+
+  window.DATA_IMPERATIVO.cards.forEach(entry => {
+    const verb = byPt[entry.verb];
+    if (!verb || !verb.tenses['subjuntivo-presente']) return;   // the checks name the entry
+    const faces = imperativeFaces(verb, entry);
+    const lead = faces.spoken || faces.textbook;
+    const prompt = who => escapeHtml(entry.en + ' (' + (entry.note ? entry.note + ' · ' : '') + who + ')');
+    const base = {
+      group: verbGroup(verb),
+      meta: IMPERATIVE_LABEL,
+      hint: verb.pt,
+      // its own clock (regular: false), but a hit still vouches for the word in the other tense tabs
+      infer: { lexeme: verb.pt, pattern: verb.pt.slice(-2) + '|imperativo', regular: false }
+    };
+    const tip = faces.spoken
+      ? 'Rio says ' + it(faces.spoken.form) + '; ' + it(faces.textbook.form) + ' is the textbook form you see on signs and in ' +
+        'writing. Both count. For "don\'t", put ' + it('não') + ' in front: ' + it('não ' + faces.spoken.form) + ' / ' +
+        it('não ' + faces.textbook.form) + '.'
+      : 'No short spoken form here: ' + it(verb.tenses.presente[1].form) + ' is never a command, so ' +
+        it(faces.textbook.form) + ' does both jobs.';
+
+    const single = Object.assign({}, base, {
+      id: verb.pt + '|você',
+      prompt: prompt('to one person'),
+      sub: faces.spoken ? 'Type the command — the spoken form or the textbook one, both count'
+                        : 'Type the command — one word',
+      accepted: [lead.form],
+      answer: lead.form,
+      pron: lead.pron,
+      flag: lead.flag,
+      speak: lead.form,
+      reveal: exampleBlock(entry.sg) + tipBlock(tip) + imperativeTable(verb, faces, lead)
+    });
+    if (faces.spoken) {
+      const t = faces.textbook;
+      single.accepted.push(t.form);
+      single.variants = [{
+        accepted: [t.form], answer: t.form, pron: t.pron, flag: t.flag, speak: t.form,
+        reveal: exampleBlock(swapForm(entry.sg, lead.form, t.form)) + tipBlock(tip) + imperativeTable(verb, faces, t)
+      }];
+    }
+    cards.push(single);
+
+    const p = faces.plural;
+    cards.push(Object.assign({}, base, {
+      id: verb.pt + '|vocês',
+      prompt: prompt('to a group'),
+      sub: 'Type the command — one word',
+      accepted: [p.form],
+      answer: p.form,
+      pron: p.pron,
+      flag: p.flag,
+      speak: p.form,
+      reveal: exampleBlock(entry.pl) +
+              tipBlock('To a group, speech and textbook agree: ' + it(p.form) + '.') +
+              imperativeTable(verb, faces, p)
+    }));
+  });
+  return cards;
+}
+
 /* ----------------------------------------------------- pronominal verbs ---- */
 
 const PRONOMINAL_TENSE_LABEL = { presente: 'Presente', perfeito: 'Pretérito Perfeito' };
@@ -498,6 +617,8 @@ const TOPICS = [
     build: () => buildVerbCards('perfeito', 'Pretérito Perfeito') },
   { id: 'imperfeito', label: 'Imperfeito', kind: 'quiz', tier: 2, groups: VERB_GROUPS,
     build: () => buildVerbCards('imperfeito', 'Pretérito Imperfeito') },
+  { id: 'imperativo', label: 'Imperativo', kind: 'quiz', tier: 2, groups: VERB_GROUPS,
+    build: buildImperativeCards },
   { id: 'pronominal', label: 'Pronominais', kind: 'quiz', tier: 2,
     groups: () => window.DATA_PRONOMINAL.groups, build: buildPronominalCards },
   { id: 'adjectives', label: 'Adjectives', kind: 'quiz', tier: 2,

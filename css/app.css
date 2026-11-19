@@ -844,6 +844,7 @@ main { max-width: 880px; width: 100%; margin: 0 auto; padding: 1.1rem 1rem 4rem;
 .conj-table .conj-pronoun { color: var(--text-3); width: 4.6rem; }
 .conj-table .conj-form { font-family: var(--mono); font-weight: 600; }
 .conj-table .conj-pron { font-family: var(--mono); font-size: .76rem; color: var(--text-3); text-align: right; }
+.conj-table .conj-register { font-family: var(--sans); font-size: .68rem; font-weight: 500; color: var(--text-3); margin-left: .35em; }   /* Imperativo: spoken / textbook */
 .conj-table tr.is-current td { background: var(--green-soft); }
 /* the letters that break the regular pattern (topics.js irregularSpan) */
 .conj-table mark.irr, .conj-line mark.irr {

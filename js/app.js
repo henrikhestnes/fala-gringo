@@ -150,7 +150,7 @@
   /* The strip is stacked by tier, and says so. A small registry (the two
      subpages, 2 and 5 drill tabs) gets one row with a caption opening each
      tier's run (Iniciante · Presente Nouns … | Intermediário · …). A large one
-     (the root's 13 drill tabs, TIER_ROWS_FROM or more) gets two rows: a level
+     (the root's 14 drill tabs, TIER_ROWS_FROM or more) gets two rows: a level
      row — Browse · INICIANTE · INTERMEDIÁRIO · AVANÇADO · ★ Daily, each level
      with its tabs' combined % — and under it the tabs of one level only, so the
      strip is one line of at most six tabs on a laptop instead of fifteen pills

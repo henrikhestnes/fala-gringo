@@ -47,7 +47,7 @@ window.Milestones = (function () {
   }
 
   /* Lexemes (the part of a card id before "|") with at least four forms across
-     the drill tabs — the verbs of the main app (presente + passado + imperfeito
+     the drill tabs — the verbs of the main app (presente + passado + imperfeito + imperativo
      + subjuntivo), nothing in /ingles/ (two forms a verb). Built once. */
   let lexemes = null;
   function lexemeGroups() {

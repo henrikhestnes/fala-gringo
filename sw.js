@@ -16,7 +16,7 @@ const CORE = [
   'js/analytics-config.js', 'js/lib/analytics.js',
   'js/lib/text.js', 'js/lib/tts.js', 'js/lib/stt.js', 'js/lib/fx.js',
   'js/lib/state.js', 'js/progress.js', 'js/conjugate.js',
-  'js/data/verbs.js', 'js/data/pronominal.js', 'js/data/nouns.js',
+  'js/data/verbs.js', 'js/data/pronominal.js', 'js/data/imperativo.js', 'js/data/nouns.js',
   'js/data/adjectives.js', 'js/data/adverbs.js', 'js/data/connecting.js',
   'js/data/numbers.js', 'js/data/glossary.js', 'js/data/sentences.js',
   'js/topics.js', 'js/infer.js', 'js/quiz.js', 'js/browse.js', 'js/daily.js',

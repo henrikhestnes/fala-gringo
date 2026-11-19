@@ -28,7 +28,7 @@ step('Browse defers conjugations until a row is expanded, then preserves irregul
 
 step('tab strip: a level row (Browse · 3 levels · Daily) over the tabs of one level', function () {
   var html = registry.tabs.innerHTML;
-  if (!registry.tabs.classList.contains('tiered')) throw new Error('13 drill tabs should get the two-row strip');
+  if (!registry.tabs.classList.contains('tiered')) throw new Error('14 drill tabs should get the two-row strip');
   var rows = html.match(/<div class="tab-row[^"]*"[^>]*>/g) || [];
   if (rows.length !== 2 || !/tab-levels/.test(rows[0]) || !/tab-topics" data-tier="1"/.test(rows[1]))
     throw new Error('rows: ' + rows.join(' | '));
@@ -45,7 +45,7 @@ step('tab strip: a level row (Browse · 3 levels · Daily) over the tabs of one 
   html = registry.tabs.innerHTML;
   if (!/data-tier-tab="2"[^>]*aria-pressed="true"/.test(html) || /data-tier-tab="1"[^>]*aria-pressed="true"/.test(html)) throw new Error('level 2 not open');
   order = (html.match(/data-tab="([^"]+)"/g) || []).map(function (m) { return m.slice(10, -1); }).join(' ');
-  if (order !== 'browse daily perfeito imperfeito pronominal adjectives adverbs connecting') throw new Error('level 2 tabs: ' + order);
+  if (order !== 'browse daily perfeito imperfeito imperativo pronominal adjectives adverbs connecting') throw new Error('level 2 tabs: ' + order);
   if (!/aria-selected="true"[^>]*data-tab="browse"/.test(html)) throw new Error('Browse should still be selected');
   if (registry.view.dataset.topic && registry.view.dataset.topic !== 'browse') throw new Error('navigated to ' + registry.view.dataset.topic);
   App.showTier(9);                                              // unknown level: ignored
@@ -421,6 +421,45 @@ step('subjuntivo drill accepts the trigger-prefixed answer', function () {
   if (!/✓/.test(registry.feedback.innerHTML))
     throw new Error('rejected "se ' + card.answer + '"');
   return '"se ' + card.answer + '" accepted';
+});
+
+step('imperativo takes the spoken and the textbook command, and answers with the one typed', function () {
+  var cards = topicCards(topicById('imperativo'));
+  var by = function (id) { return cards.filter(function (c) { return c.id === id; })[0]; };
+  var rivals = function (card) {
+    var own = {}; card.accepted.forEach(function (a) { own[normalize(a)] = 1; });
+    return cards.filter(function (c) { return c !== card; }).reduce(function (acc, c) {
+      return acc.concat(c.accepted.filter(function (a) { return !own[normalize(a)]; }));
+    }, []);
+  };
+  var fala = by('falar|você'), falem = by('falar|vocês'), seja = by('ser|você'), faz = by('fazer|você');
+  if (!fala || !falem || !seja || !faz) throw new Error('cards missing');
+  if (fala.answer !== 'fala' || fala.accepted.join() !== 'fala,fale') throw new Error('falar: ' + fala.answer + ' / ' + fala.accepted.join());
+  ['fala', 'Fala!', 'fale'].forEach(function (typed) {
+    var m = matchAnswer(fala, typed, rivals(fala), false);
+    if (!m || m.grade !== 'exact') throw new Error('"' + typed + '" not accepted: ' + JSON.stringify(m));
+  });
+  var face = cardFace(fala, 'fale');
+  if (face.answer !== 'fale' || face.pron !== 'FAH-lee' || !/"Fale mais devagar/.test(face.reveal)) throw new Error('textbook face: ' + face.answer + ' ' + face.reveal);
+  if (otherFaces(fala, face).join() !== 'fala' || otherFaces(fala, fala).join() !== 'fale') throw new Error('also line');
+  if (matchAnswer(fala, 'falem', rivals(fala), false) || matchAnswer(falem, 'fale', rivals(falem), false) ||
+      matchAnswer(falem, 'fala', rivals(falem), false)) throw new Error('singular and plural commands mixed up');
+  if (falem.answer !== 'falem' || falem.variants) throw new Error('falem: ' + falem.answer);
+  // ser has no spoken short form: seja alone, and "é" is a miss
+  if (seja.answer !== 'seja' || seja.variants || matchAnswer(seja, 'é', rivals(seja), false)) throw new Error('ser: ' + seja.accepted.join());
+  if (seja.flag !== 'irregular' || faz.flag !== 'irregular' || fala.flag) throw new Error('flags: ' + seja.flag + '/' + faz.flag + '/' + fala.flag);
+  if (!/faz<mark class="irr drop"/.test(faz.reveal) || !/fa<mark class="irr">ç<\/mark>a/.test(faz.reveal)) throw new Error('fazer table: ' + faz.reveal);
+  // through the UI: the textbook form where the shown card has one
+  goTo('#imperativo');
+  var card = shownCard('imperativo');
+  var typed = card.variants ? card.variants[0].answer : card.answer;
+  registry.answerInput.value = typed;
+  registry.actionBtn.fire('click');
+  var fb = registry.feedback.innerHTML;
+  if (!/✓/.test(fb) || fb.indexOf('>' + typed + '<') < 0) throw new Error('feedback for "' + typed + '": ' + fb);
+  if (card.variants && fb.indexOf(card.answer) < 0) throw new Error('the spoken form is not named beside ' + typed + ': ' + fb);
+  Store.resetTopic('imperativo');
+  return cards.length + ' cards; fala and fale both exact, fale answered as fale (also fala); falem ≠ fale; seja alone; "' + typed + '" ✓ in the drill';
 });
 
 step('subjuntivo-presente drill accepts the "que"-prefixed answer and flags seja', function () {
@@ -1275,7 +1314,7 @@ step('every drill tab carries a tier from 1 to 3', function () {
   var bad = TOPICS.filter(function (t) { return t.kind === 'quiz' && !(t.tier >= 1 && t.tier <= 3); });
   if (bad.length) throw new Error('no tier: ' + bad.map(function (t) { return t.id; }).join(', '));
   var order = TOPICS.filter(function (t) { return t.kind === 'quiz'; }).map(function (t) { return t.tier; }).join('');
-  if (order !== '1111222222333') throw new Error('tabs not stacked by tier: ' + order);
+  if (order !== '11112222222333') throw new Error('tabs not stacked by tier: ' + order);
   if (TOPICS[0].id !== 'browse' || TOPICS[TOPICS.length - 1].id !== 'daily') throw new Error('Browse/Daily moved');
   var byTier = [1, 2, 3].map(function (n) {
     return n + ': ' + TOPICS.filter(function (t) { return t.tier === n; }).map(function (t) { return t.id; }).join(' ');
@@ -1604,7 +1643,7 @@ step('milestones are earned once with a toast, and the goal ring opens the progr
   snap.mastered.presente[lastP.id] = 1;
   snap.strength.presente[lastP.id] = { s: 5, m: 0, l: 5, t: d, i: d - 200 };
   snap.dailyDone = {}; snap.dailyDone['20260901'] = 7;
-  ['presente', 'perfeito', 'imperfeito', 'subjuntivo-presente', 'subjuntivo'].forEach(function (tid) {
+  ['presente', 'perfeito', 'imperfeito', 'imperativo', 'subjuntivo-presente', 'subjuntivo'].forEach(function (tid) {
     snap.mastered[tid] = snap.mastered[tid] || {}; snap.strength[tid] = snap.strength[tid] || {};
     topicCards(topicById(tid)).filter(function (c) { return c.id.indexOf('ser|') === 0; }).forEach(function (c) {
       snap.mastered[tid][c.id] = 1; snap.strength[tid][c.id] = { s: 3, m: 0, l: 3, t: d - 1, i: d - 30 };

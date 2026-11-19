@@ -23,6 +23,7 @@ the answer.
 | **Presente** | Verb drill, present tense | 638 |
 | **Perfeito** | Verb drill, pretérito perfeito | 636 |
 | **Imperfeito** | Verb drill, pretérito imperfeito | 637 |
+| **Imperativo** | Commands to one person and to a group — 43 core verbs; the spoken form (`fala`) and the textbook one (`fale`) both count | 86 |
 | **Subj. Presente** | Verb drill, presente do subjuntivo — 59 core verbs | 232 |
 | **Subj. Imperfeito** | Verb drill, imperfeito do subjuntivo — 59 core verbs | 232 |
 | **Nouns** | With gender and article — incl. family, body & mind | 143 |
@@ -34,7 +35,7 @@ the answer.
 | **Sentences** | Full-sentence translation — incl. hypotheticals & wishes, real conditions (se + future subjunctive), verb + preposition, opinions, subjunctive triggers | 149 |
 | **★ Daily** | 7 cards a day, one per topic, deterministic from the date, 5 attempts each, shareable result | 7 |
 
-3096 quiz cards in total.
+3228 quiz cards in total.
 
 ### Espero que dê certo — the present subjunctive (Subj. Presente tab)
 

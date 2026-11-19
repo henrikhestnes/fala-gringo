@@ -19,6 +19,7 @@ function runChecks() {
   const V = window.DATA_VERBS;
   const TENSES = ['presente', 'perfeito', 'imperfeito'];
   const quizTopics = TOPICS.filter(t => t.kind === 'quiz');
+  const stripTagsOf = s => String(s == null ? '' : s).replace(/<[^>]*>/g, '').replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&');
 
   /* -------------------------------------------------------------- verbs --- */
 
@@ -218,6 +219,55 @@ function runChecks() {
     return bad.length ? bad.join(', ') : true;
   });
 
+  /* ---------------------------------------------------------- imperative --- */
+  /* The Imperativo tab stores no forms: it looks them up in the presente and the
+     present subjunctive (topics.js buildImperativeCards). What is its own — the
+     English command and the two examples — is checked here. */
+
+  check('every imperative entry names a core verb once, with a command and two examples', () => {
+    const I = window.DATA_IMPERATIVO.cards;
+    const byPt = {}, seen = {}, bad = [];
+    V.verbs.forEach(v => { byPt[v.pt] = v; });
+    I.forEach(e => {
+      const v = byPt[e.verb];
+      if (!v) bad.push(e.verb + ' (not in verbs.js)');
+      else if (!v.tenses['subjuntivo-presente']) bad.push(e.verb + ' (no present subjunctive to look up)');
+      else if (v.quiz === false) bad.push(e.verb + ' (not drilled anywhere else)');
+      if (seen[e.verb]) bad.push(e.verb + ' (twice)');
+      seen[e.verb] = 1;
+      if (!e.en || !/!/.test(e.en) || !e.sg || !e.pl) bad.push(e.verb + ' (incomplete)');
+    });
+    if (bad.length) return bad.slice(0, 8).join(', ');
+    const n = topicCards(topicById('imperativo')).length;
+    return n === I.length * 2 ? { ok: true, detail: I.length + ' verbs, ' + n + ' cards' }
+                              : 'built ' + n + ' cards from ' + I.length + ' entries';
+  });
+
+  check('every imperative example uses its form as a word, for the textbook face too', () => {
+    const bad = [];
+    topicCards(topicById('imperativo')).forEach(c => {
+      const text = f => stripTagsOf((f.reveal.match(/<div class="example"[^>]*>"([^"]*)"/) || [])[1]);
+      [c].concat(c.variants || []).forEach(f => {
+        const ex = text(f);
+        if (!ex) bad.push(c.id + ' ' + f.answer + ' (no example)');
+        else if (wordIndex(ex, f.answer) < 0) bad.push(c.id + ' "' + ex + '" lacks ' + f.answer);
+      });
+      if (c.variants && normalize(c.variants[0].answer) === normalize(c.answer))
+        bad.push(c.id + ' (spoken and textbook forms are the same word)');
+    });
+    return bad.length ? bad.slice(0, 8).join('; ') : true;
+  });
+
+  check('no imperative form is accepted by two cards', () => {
+    const owner = {}, bad = [];
+    topicCards(topicById('imperativo')).forEach(c => c.accepted.forEach(a => {
+      const k = normalize(a);
+      if (owner[k] && owner[k] !== c.id) bad.push(a + ': ' + owner[k] + ' / ' + c.id);
+      owner[k] = c.id;
+    }));
+    return bad.length ? bad.join('; ') : true;
+  });
+
   /* --------------------------------------------------- pronominal verbs --- */
 
   const P = window.DATA_PRONOMINAL;
@@ -267,8 +317,8 @@ function runChecks() {
 
   /* ------------------------------------------------------------- topics --- */
 
-  check('all 13 quiz topics build cards', () => {
-    if (quizTopics.length !== 13) return 'expected 13 quiz topics, got ' + quizTopics.length;
+  check('all 14 quiz topics build cards', () => {
+    if (quizTopics.length !== 14) return 'expected 14 quiz topics, got ' + quizTopics.length;
     const counts = quizTopics.map(t => t.label + '=' + topicCards(t).length);
     const empty = quizTopics.filter(t => topicCards(t).length === 0);
     return empty.length ? 'empty: ' + empty.map(t => t.id).join(', ')

@@ -223,7 +223,13 @@
 //         Connecting words (cada vez que, caso, para que, sem que, mesmo que), abrir joins the subjunctive core (59 verbs),
 //         se despedir and se arrepender in Pronominais, four nouns (desejo, despedida, marcha, ato), tomara in the
 //         Glossary, and the rule card names the trigger families
-const APP_VERSION = '1.35.1';
+// 1.36.0: the Imperativo tab (tier 2, id imperativo, after Imperfeito): commands for 43 of the 59 core verbs, to one person and
+//         to a group — 86 cards. Nothing is stored twice: the spoken command is the presente você form (fala!), the
+//         textbook one the present subjunctive (fale!), the group one its vocês form (falem!), all looked up in verbs.js
+//         by js/data/imperativo.js, which adds only the English command and two examples. Both singular forms are
+//         accepted; the spoken one leads and the textbook one is a variant face, so "fale" is answered as fale with
+//         "also fala". ser and estar take seja / esteja alone. The Daily's seeded pick changes once with the registry
+const APP_VERSION = '1.36.0';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name
