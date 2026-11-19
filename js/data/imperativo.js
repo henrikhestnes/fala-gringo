@@ -84,6 +84,8 @@ window.DATA_IMPERATIVO = {
       sg: "Paga no caixa, por favor.", pl: "Paguem no Pix, que é mais fácil." },
     { verb: "pedir", en: "Order! / Ask for!",
       sg: "Pede a conta, por favor.", pl: "Peçam uma porção de batata frita." },
+    { verb: "abrir", en: "Open!",
+      sg: "Abre a janela, que tá calor.", pl: "Abram o livro na página dez." },
 
     // Rotina e lazer
     { verb: "comer", en: "Eat!",

@@ -229,7 +229,8 @@
 //         by js/data/imperativo.js, which adds only the English command and two examples. Both singular forms are
 //         accepted; the spoken one leads and the textbook one is a variant face, so "fale" is answered as fale with
 //         "also fala". ser and estar take seja / esteja alone. The Daily's seeded pick changes once with the registry
-const APP_VERSION = '1.36.0';
+// 1.36.1: abrir joins the Imperativo tab (abre / abra, abram) — 44 verbs, 88 cards
+const APP_VERSION = '1.36.1';
 
 (function () {
   if (typeof document === 'undefined') return;   // also loaded by sw.js for the cache name
