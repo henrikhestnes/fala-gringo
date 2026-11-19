@@ -2,6 +2,8 @@
 
 *"Fala, gringo!" — the Rio greeting, and exactly what this app makes you do.*
 
+[![Fala Gringo on StartupScores](https://startupscores.com/badge/fala-gringo.svg?style=shield&v=combo&theme=dark)](https://startupscores.com/open-source/fala-gringo)
+
 **Live at [falagringo.com](https://falagringo.com)** — free, no account, works offline.
 
 A tool for learning everyday **Brazilian Portuguese** — the spoken carioca register
